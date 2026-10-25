@@ -579,6 +579,7 @@ button,input,select,textarea{font:inherit}
 .social a{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.12)}
 .social a:hover{background:var(--gold)}
 .social svg{width:14px;height:14px;fill:#fff}
+.home-announcement{margin:0;padding:12px 16px;background:#ffdf58;color:#1f2937;text-align:center;font-size:16px;font-weight:700;line-height:1.5;overflow-wrap:break-word}
 .site-header{background:var(--card);border-bottom:1px solid var(--line)}
 .site-header .wrap{display:flex;align-items:center;gap:18px;padding-top:10px;padding-bottom:10px}
 .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--hc);min-width:0}
@@ -5398,7 +5399,7 @@ R('', path => {
     enlaces: () => `<section class="sec alt"><div class="wrap"><div class="sec-h"><span class="kicker">Plataformas del Estado</span><h2>Enlaces institucionales</h2></div>${mineduLinks()}</div></section>`,
   };
   const body = h.bloques.filter(b => b.on && blocks[b.k]).map(b => blocks[b.k]()).join('');
-  return `${headerHTML(path)}<main id="contenido" tabindex="-1"><h1 class="sr-only">${esc(inst().nombre)} – Portal institucional</h1>${body}</main>${footerHTML()}`;
+  return `<p class="home-announcement">¡Admisión 2026 abierta! Consulta nuestros programas de estudio</p>${headerHTML(path)}<main id="contenido" tabindex="-1"><h1 class="sr-only">${esc(inst().nombre)} – Portal institucional</h1>${body}</main>${footerHTML()}`;
 });
 function cifra(v) {
   if (!String(v).startsWith('auto:')) return v;
