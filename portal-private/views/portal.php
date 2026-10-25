@@ -2154,6 +2154,7 @@ tr.pz-bad td{background:var(--errbg)}
 <body>
 <noscript><p style="padding:20px">Este portal requiere JavaScript habilitado.</p></noscript>
 <div id="app" aria-live="off"></div>
+<script>window.PORTAL_BOOTSTRAP = <?= json_encode($bootstrap, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?>;</script>
 <div class="ix ix-layer" id="ix-layer" data-palette="web"><div id="ixmodal"></div></div>
 <script>
 /* ==== academico.js ==== (módulos académicos integrados: horarios, certificación modular, títulos, bolsa laboral) */
@@ -2197,201 +2198,7 @@ const slotStarts = t => SLOTS[t].filter(s => s[0] !== "REC").map(s => s[0]);
 const slotEnds = t => SLOTS[t].filter(s => s[0] !== "REC").map(s => s[1]);
 
 /* ---------- datos de demostración (ficticios) ---------- */
-function seed(){
-  const P = "2026-II";
-  return {
-    v:3,
-    cfg:{ nombre:"Instituto de Educación Superior Tecnológico Público \"Pisco\"", siglas:"IESTP Pisco", director:"Mg. Pedro Armando Tasayco Díaz", direccion:"Av. Las Américas, 5.ª cuadra S/N, Pisco – Ica", web:"iestppisco.edu.pe", periodo:P, plazoReclamo:15, horarioAtencion:"Lunes a viernes, 08:00 a 15:40", maxAdjuntoMB:10 },
-    seq:{ exp:241, rec:18, cert:660 },
-    programas:[
-      {id:1,cod:"APSTI",nombre:"Arquitectura de Plataformas y Servicios de Tecnologías de la Información",dur:"3 años",sem:6,activo:true},
-      {id:2,cod:"CONT",nombre:"Contabilidad",dur:"3 años",sem:6,activo:true},
-      {id:3,cod:"PAGRO",nombre:"Producción Agropecuaria",dur:"3 años",sem:6,activo:true},
-      {id:4,cod:"ENFT",nombre:"Enfermería Técnica",dur:"3 años",sem:6,activo:false}],
-    uds:[
-      {id:1,cod:"APS-301",nombre:"Base de Datos",prog:1,ciclo:"III",horas:4,cred:3},
-      {id:2,cod:"APS-302",nombre:"Programación Web",prog:1,ciclo:"III",horas:4,cred:3},
-      {id:3,cod:"APS-303",nombre:"Redes de Comunicación",prog:1,ciclo:"III",horas:3,cred:2},
-      {id:4,cod:"APS-304",nombre:"Comunicación Oral",prog:1,ciclo:"III",horas:2,cred:2},
-      {id:5,cod:"APS-305",nombre:"Seguridad Informática",prog:1,ciclo:"III",horas:3,cred:2},
-      {id:6,cod:"APS-501",nombre:"Servicios en la Nube",prog:1,ciclo:"V",horas:4,cred:3},
-      {id:7,cod:"APS-502",nombre:"Administración de Servidores",prog:1,ciclo:"V",horas:4,cred:3},
-      {id:8,cod:"CON-301",nombre:"Contabilidad de Costos",prog:2,ciclo:"III",horas:4,cred:3},
-      {id:9,cod:"CON-302",nombre:"Tributación I",prog:2,ciclo:"III",horas:3,cred:2},
-      {id:10,cod:"CON-303",nombre:"Ofimática Contable",prog:2,ciclo:"III",horas:3,cred:2},
-      {id:11,cod:"PAG-301",nombre:"Manejo de Cultivos de Agroexportación",prog:3,ciclo:"III",horas:5,cred:4},
-      {id:12,cod:"PAG-302",nombre:"Riego Tecnificado",prog:3,ciclo:"III",horas:3,cred:2}],
-    docentes:[
-      {id:1,nom:"Richard Iván Barrios Quispe",per:"",dni:"21456789",tel:"956112334",correo:"rquispe@iestppisco.edu.pe",cond:"Nombrado",esp:"Ingeniería de Sistemas",uds:[1,5,7],dias:["Lun","Mar","Mié","Jue","Vie"],desde:"08:00",hasta:"14:15"},
-      {id:2,nom:"Patricia Elena Torres Rivera",per:"d4",dni:"21567890",tel:"965223445",correo:"lramos@iestppisco.edu.pe",cond:"Contratado",esp:"Ingeniería de Software",uds:[2,6],dias:["Lun","Mié","Jue","Vie"],desde:"08:00",hasta:"13:15"},
-      {id:3,nom:"Carlos Alberto Rojas Valenzuela",per:"",dni:"22678901",tel:"947334556",correo:"mventura@iestppisco.edu.pe",cond:"Contratado",esp:"Telecomunicaciones",uds:[3,7],dias:["Mar","Jue","Vie"],desde:"08:00",hasta:"14:15"},
-      {id:4,nom:"Luis Fernando Quispe Ramos",per:"",dni:"21789012",tel:"958445667",correo:"caquije@iestppisco.edu.pe",cond:"Nombrado",esp:"Contabilidad y Finanzas",uds:[8,9],dias:["Lun","Mar","Mié","Jue","Vie"],desde:"08:00",hasta:"14:15"},
-      {id:5,nom:"Rocío del Pilar Echevarría Pérez",per:"",dni:"22890123",tel:"951556778",correo:"jhuamani@iestppisco.edu.pe",cond:"Nombrado",esp:"Comunicación y Humanidades",uds:[4,10],dias:["Lun","Mar","Mié","Jue","Vie"],desde:"08:00",hasta:"14:15"},
-      {id:6,nom:"Wilfredo César Napa Avalos",per:"",dni:"23901234",tel:"944667889",correo:"ptorres@iestppisco.edu.pe",cond:"Contratado",esp:"Ingeniería Agrónoma",uds:[11,12],dias:["Lun","Mar","Mié"],desde:"08:00",hasta:"14:15"}],
-    ambientes:[
-      {id:1,cod:"LAB-01",tipo:"Laboratorio",cap:30,ubic:"Pabellón A, 2.º piso",caract:"30 PC, proyector multimedia",prog:1},
-      {id:2,cod:"LAB-02",tipo:"Laboratorio",cap:25,ubic:"Pabellón A, 2.º piso",caract:"25 PC, software contable",prog:0},
-      {id:3,cod:"AULA-04",tipo:"Aula",cap:35,ubic:"Pabellón B, 1.er piso",caract:"Proyector",prog:0},
-      {id:4,cod:"AULA-05",tipo:"Aula",cap:35,ubic:"Pabellón B, 1.er piso",caract:"Pizarra acrílica",prog:0},
-      {id:5,cod:"TALL-02",tipo:"Taller",cap:25,ubic:"Pabellón C",caract:"Rack de redes, herramientas",prog:1},
-      {id:6,cod:"CAMPO-01",tipo:"Taller",cap:40,ubic:"Parcela demostrativa",caract:"Sistema de riego por goteo",prog:3}],
-    sesiones:[
-      {id:1,per:P,prog:1,ciclo:"III",sec:"A",turno:"Mañana",ud:1,doc:1,amb:1,dia:"Lun",ini:"08:00",fin:"10:00"},
-      {id:2,per:P,prog:1,ciclo:"III",sec:"A",turno:"Mañana",ud:2,doc:2,amb:1,dia:"Lun",ini:"11:15",fin:"13:15"},
-      {id:3,per:P,prog:1,ciclo:"III",sec:"A",turno:"Mañana",ud:3,doc:3,amb:5,dia:"Mar",ini:"08:00",fin:"11:00"},
-      {id:4,per:P,prog:1,ciclo:"III",sec:"A",turno:"Mañana",ud:4,doc:5,amb:3,dia:"Mié",ini:"08:00",fin:"10:00"},
-      {id:5,per:P,prog:1,ciclo:"III",sec:"A",turno:"Mañana",ud:2,doc:2,amb:1,dia:"Jue",ini:"08:00",fin:"10:00"},
-      {id:6,per:P,prog:1,ciclo:"III",sec:"A",turno:"Mañana",ud:1,doc:1,amb:1,dia:"Mié",ini:"11:15",fin:"13:15"},
-      {id:7,per:P,prog:1,ciclo:"III",sec:"A",turno:"Mañana",ud:5,doc:1,amb:1,dia:"Vie",ini:"08:00",fin:"11:00"},
-      {id:8,per:P,prog:2,ciclo:"III",sec:"A",turno:"Mañana",ud:8,doc:4,amb:3,dia:"Lun",ini:"08:00",fin:"10:00"},
-      {id:9,per:P,prog:2,ciclo:"III",sec:"A",turno:"Mañana",ud:9,doc:4,amb:2,dia:"Mar",ini:"09:00",fin:"11:00"},
-      {id:10,per:P,prog:2,ciclo:"III",sec:"A",turno:"Mañana",ud:10,doc:5,amb:3,dia:"Jue",ini:"08:00",fin:"10:00"},
-      {id:11,per:P,prog:2,ciclo:"III",sec:"A",turno:"Mañana",ud:8,doc:4,amb:1,dia:"Jue",ini:"11:15",fin:"13:15"}],
-    publicados:{ ["1|III|A|Mañana|"+P]:{fecha:ago(6,"16:20"),por:"Richard Iván Barrios Quispe"} },
-    modulos:[
-      {id:1,prog:1,cod:"MF1",nombre:"Soporte técnico y mantenimiento de equipos informáticos",ciclos:"I – II"},
-      {id:2,prog:1,cod:"MF2",nombre:"Desarrollo de soluciones de software",ciclos:"III – IV"},
-      {id:3,prog:1,cod:"MF3",nombre:"Administración de redes y servicios de TI",ciclos:"V – VI"},
-      {id:4,prog:2,cod:"MF1",nombre:"Registro de operaciones contables",ciclos:"I – II"},
-      {id:5,prog:2,cod:"MF2",nombre:"Gestión tributaria y laboral",ciclos:"III – IV"},
-      {id:6,prog:3,cod:"MF1",nombre:"Producción de cultivos",ciclos:"I – II"},
-      {id:7,prog:3,cod:"MF2",nombre:"Manejo de riego y fertilización",ciclos:"III – IV"},
-      {id:8,prog:3,cod:"MF3",nombre:"Poscosecha y agroexportación",ciclos:"V – VI"}],
-    estudiantes:[
-      {id:1,dni:"74125896",nom:"Diego Alonso Martínez Huarcaya",prog:1,ciclo:"III",sec:"A",turno:"Mañana",periodo:"2025-II",estado:"Regular",correo:"diego.mh@correo.pe",tel:"947555210"},
-      {id:2,dni:"75236987",nom:"Lucía Fernanda Tasayco Uribe",prog:1,ciclo:"VI",sec:"A",turno:"Mañana",periodo:"2023-I",estado:"Egresado",correo:"lucia.tu@correo.pe",tel:"956778210"},
-      {id:3,dni:"76347198",nom:"Jhon Kevin Arones Lévano",prog:2,ciclo:"III",sec:"A",turno:"Mañana",periodo:"2025-II",estado:"Regular",correo:"jhon.al@correo.pe",tel:"965101202"},
-      {id:4,dni:"72458369",nom:"María José Hernández Ccahua",prog:3,ciclo:"VI",sec:"A",turno:"Mañana",periodo:"2022-I",estado:"Titulado",correo:"mariaj.hc@correo.pe",tel:"958300401"},
-      {id:5,dni:"74569123",nom:"Ana Paula Mendoza Quispe",prog:1,ciclo:"III",sec:"A",turno:"Mañana",periodo:"2025-II",estado:"Regular",correo:"ana.mq@correo.pe",tel:"944120330"},
-      {id:6,dni:"73690234",nom:"Bryan Alexis Cueto Pachas",prog:3,ciclo:"III",sec:"A",turno:"Mañana",periodo:"2025-II",estado:"Regular",correo:"bryan.cp@correo.pe",tel:"951440221"},
-      {id:7,dni:"71569470",nom:"César Augusto Yupanqui Mendoza",prog:1,ciclo:"VI",sec:"A",turno:"Mañana",periodo:"2021-I",estado:"Titulado",correo:"cesar.ym@correo.pe",tel:"956009988"},
-      {id:8,dni:"75812369",nom:"Karen Milagros Uchuya Tipacti",prog:2,ciclo:"V",sec:"A",turno:"Mañana",periodo:"2024-II",estado:"Regular",correo:"karen.ut@correo.pe",tel:"947212343"}],
-    certs:[
-      {id:1,est:2,mod:1,fecha:ago(640),num:"CM-0231-2024"},
-      {id:2,est:2,mod:2,fecha:ago(300),num:"CM-0418-2025"},
-      {id:3,est:2,mod:3,fecha:ago(60),num:"CM-0602-2026"},
-      {id:4,est:1,mod:1,fecha:ago(120),num:"CM-0560-2026"},
-      {id:5,est:4,mod:6,fecha:ago(980),num:"CM-0101-2023"},
-      {id:6,est:4,mod:7,fecha:ago(800),num:"CM-0177-2023"},
-      {id:7,est:4,mod:8,fecha:ago(480),num:"CM-0305-2024"},
-      {id:8,est:7,mod:1,fecha:ago(1200),num:"CM-0044-2022"},
-      {id:9,est:7,mod:2,fecha:ago(1000),num:"CM-0090-2023"},
-      {id:10,est:7,mod:3,fecha:ago(720),num:"CM-0222-2024"},
-      {id:11,est:8,mod:4,fecha:ago(200),num:"CM-0511-2025"}],
-    notas:[
-      {id:1,est:1,ud:"Fundamentos de Programación",periodo:"2025-II",nota:15},
-      {id:2,est:1,ud:"Arquitectura de Computadoras",periodo:"2025-II",nota:16},
-      {id:3,est:1,ud:"Soporte Técnico",periodo:"2026-I",nota:17},
-      {id:4,est:2,ud:"Fundamentos de Programación",periodo:"2023-I",nota:16},
-      {id:5,est:2,ud:"Base de Datos",periodo:"2024-I",nota:17},
-      {id:6,est:2,ud:"Programación Web",periodo:"2024-I",nota:15},
-      {id:7,est:2,ud:"Redes de Comunicación",periodo:"2024-II",nota:14},
-      {id:8,est:2,ud:"Servicios en la Nube",periodo:"2025-II",nota:18},
-      {id:9,est:3,ud:"Contabilidad General",periodo:"2025-II",nota:14},
-      {id:10,est:8,ud:"Contabilidad General",periodo:"2024-II",nota:17},
-      {id:11,est:8,ud:"Tributación I",periodo:"2025-II",nota:16}],
-    titulos:[
-      {id:1,est:4,culm:ago(500),tit:ago(260),cod:"T-PAGRO-0087-2025",resol:"R.D. N.º 045-2025-IESTP-P"},
-      {id:2,est:7,culm:ago(700),tit:ago(420),cod:"T-APSTI-0062-2025",resol:"R.D. N.º 012-2025-IESTP-P"}],
-    areas:[
-      {id:1,cod:"MP",nivel:"Mesa de Partes",nombre:"Mesa de Partes Virtual",resp:"Responsable de Mesa de Partes",correo:"mesadepartes.iestpisco@gmail.com",activo:true},
-      {id:2,cod:"DG",nivel:"Dirección",nombre:"Dirección General",resp:"Mg. Pedro Armando Tasayco Díaz",correo:"direcciongeneral@iestppisco.edu.pe",activo:true},
-      {id:3,cod:"CA",nivel:"Dirección",nombre:"Consejo Asesor",resp:"Presidente del Consejo Asesor",correo:"consejoasesor@iestppisco.edu.pe",activo:true},
-      {id:4,cod:"CGR",nivel:"Órganos y comités",nombre:"Comisión de Gestión de Recursos, Proyectos y Actividades Productivas",resp:"Presidente de la Comisión",correo:"gestionrecursos@iestppisco.edu.pe",activo:true},
-      {id:5,cod:"AD",nivel:"Órganos y comités",nombre:"Asamblea de Docentes",resp:"Presidente de la Asamblea de Docentes",correo:"asambleadocentes@iestppisco.edu.pe",activo:true},
-      {id:6,cod:"CFC",nivel:"Órganos y comités",nombre:"Comité de Fiscalización y Control",resp:"Presidente del Comité",correo:"fiscalizacion@iestppisco.edu.pe",activo:true},
-      {id:7,cod:"CE",nivel:"Órganos y comités",nombre:"Consejo Estudiantil",resp:"Presidente del Consejo Estudiantil",correo:"consejoeestudiantil@iestppisco.edu.pe",activo:true},
-      {id:8,cod:"ADM",nivel:"Áreas",nombre:"Jefatura de Área de Administración",resp:"Mg. Yeny Sofía Laurente Mejía",correo:"administracion@iestppisco.edu.pe",activo:true},
-      {id:9,cod:"SA",nivel:"Áreas",nombre:"Secretaría Académica",resp:"Secretario Académico",correo:"secretariaacademica@iestppisco.edu.pe",activo:true},
-      {id:10,cod:"CAL",nivel:"Áreas",nombre:"Coordinación de Área de Calidad",resp:"Coordinador de Área de Calidad",correo:"calidad@iestppisco.edu.pe",activo:true},
-      {id:11,cod:"UA",nivel:"Unidades",nombre:"Jefatura de Unidad Académica",resp:"Mg. Sabina Elizabeth Arones Morales",correo:"unidadacademica@iestppisco.edu.pe",activo:true},
-      {id:12,cod:"UI",nivel:"Unidades",nombre:"Jefatura de Unidad de Investigación",resp:"Jefe de Unidad de Investigación",correo:"investigacion@iestppisco.edu.pe",activo:true},
-      {id:13,cod:"UFC",nivel:"Unidades",nombre:"Jefatura de Unidad de Formación Continua",resp:"Jefe de Unidad de Formación Continua",correo:"formacioncontinua@iestppisco.edu.pe",activo:true},
-      {id:14,cod:"UBE",nivel:"Unidades",nombre:"Jefatura de Unidad de Bienestar y Empleabilidad",resp:"Jefe de Unidad de Bienestar y Empleabilidad",correo:"bienestaryempleabilidad@iestppisco.edu.pe",activo:true},
-      {id:15,cod:"CASHR",nivel:"Coordinaciones de programas de estudio",nombre:"Coordinación Prog. Estudios ASHR",resp:"Coordinador Prog. Estudios ASHR",correo:"coordinacion.ashr@iestppisco.edu.pe",activo:true},
-      {id:16,cod:"CAPSTI",nivel:"Coordinaciones de programas de estudio",nombre:"Coordinación Prog. Estudios APSTI",resp:"Coordinador Prog. Estudios APSTI",correo:"coordinacion.apsti@iestppisco.edu.pe",activo:true},
-      {id:17,cod:"CCONT",nivel:"Coordinaciones de programas de estudio",nombre:"Coordinación Prog. Estudios Contabilidad",resp:"Coordinador Prog. Estudios Contabilidad",correo:"coordinacion.contabilidad@iestppisco.edu.pe",activo:true},
-      {id:18,cod:"CENF",nivel:"Coordinaciones de programas de estudio",nombre:"Coordinación Prog. Estudios Enfermería Técnica",resp:"Coordinador Prog. Estudios Enfermería Técnica",correo:"coordinacion.enfermeria@iestppisco.edu.pe",activo:true},
-      {id:19,cod:"CPA",nivel:"Coordinaciones de programas de estudio",nombre:"Coordinación Prog. Estudios Producción Agropecuaria",resp:"Coordinador Prog. Estudios Producción Agropecuaria",correo:"coordinacion.agropecuaria@iestppisco.edu.pe",activo:true}],
-    tramites:[
-      {id:1,nombre:"Constancia de estudios",area:"SA",dias:3,req:"Solicitud simple y recibo de pago"},
-      {id:2,nombre:"Certificado modular",area:"SA",dias:7,req:"Solicitud, recibo de pago y foto"},
-      {id:3,nombre:"Trámite de titulación",area:"UA",dias:30,req:"Expediente de titulación completo"},
-      {id:4,nombre:"Convalidación de unidades didácticas",area:"UA",dias:15,req:"Sílabos y certificado de estudios"},
-      {id:5,nombre:"Solicitud general",area:"DG",dias:5,req:"Solicitud dirigida al Director General"}],
-    expedientes:[
-      {id:1,num:"EXP-2026-000236",cod:"PX7K-29QD",fecha:ago(9,"09:42"),sol:"Lucía Fernanda Tasayco Uribe",dni:"75236987",correo:"lucia.tu@correo.pe",tel:"956778210",tipoDoc:"Solicitud",tramite:2,asunto:"Certificado del módulo MF3",desc:"Solicito el certificado del módulo formativo MF3 por haberlo culminado en el periodo 2025-II.",area:"SA",estado:"En evaluación",adj:[{n:"solicitud_certificado_MF3.pdf",s:182400}],
-        hist:[[ago(9,"09:42"),"Recibido","MP","Registro por mesa de partes virtual"],[ago(9,"11:05"),"Derivado","SA","Derivado a Secretaría Académica"],[ago(8,"08:30"),"En evaluación","SA","Revisión de actas de evaluación"]]},
-      {id:2,num:"EXP-2026-000238",cod:"M2RB-84TL",fecha:ago(5,"15:10"),sol:"Municipalidad Provincial de Pisco",dni:"20148565421",correo:"mesadepartes@munipisco.gob.pe",tel:"056404040",tipoDoc:"Oficio",tramite:5,asunto:"Convenio de prácticas preprofesionales",desc:"Propuesta de convenio marco para prácticas de estudiantes de APSTI y Contabilidad.",area:"DG",estado:"Derivado",adj:[{n:"oficio_045_2026_MPP.pdf",s:245800}],
-        hist:[[ago(5,"15:10"),"Recibido","MP","Registro por mesa de partes virtual"],[ago(5,"16:20"),"Derivado","DG","Derivado a Dirección General"]]},
-      {id:3,num:"EXP-2026-000233",cod:"Q9WE-11JA",fecha:ago(14,"10:01"),sol:"Jhon Kevin Arones Lévano",dni:"76347198",correo:"jhon.al@correo.pe",tel:"965101202",tipoDoc:"Solicitud",tramite:1,asunto:"Constancia de estudios para beca",desc:"Solicito constancia de estudios para postular a beca.",area:"SA",estado:"Cerrado",adj:[{n:"solicitud_constancia.pdf",s:98100}],
-        hist:[[ago(14,"10:01"),"Recibido","MP","Registro por mesa de partes virtual"],[ago(14,"10:40"),"Derivado","SA","Derivado a Secretaría Académica"],[ago(13,"12:00"),"Atendido","SA","Constancia emitida"],[ago(12,"09:00"),"Cerrado","SA","Notificado por correo electrónico"]]},
-      {id:4,num:"EXP-2026-000240",cod:"T5HN-62VC",fecha:ago(2,"08:15"),sol:"Diego Alonso Martínez Huarcaya",dni:"74125896",correo:"diego.mh@correo.pe",tel:"947555210",tipoDoc:"Solicitud",tramite:4,asunto:"Convalidación de Fundamentos de Programación",desc:"Solicito convalidación por estudios previos en otra institución.",area:"MP",estado:"Recibido",adj:[{n:"silabo.pdf",s:301200},{n:"certificado_estudios.pdf",s:412000}],
-        hist:[[ago(2,"08:15"),"Recibido","MP","Registro por mesa de partes virtual"]]},
-      {id:5,num:"EXP-2026-000221",cod:"L3PZ-07MS",fecha:ago(40,"11:20"),sol:"María José Hernández Ccahua",dni:"72458369",correo:"mariaj.hc@correo.pe",tel:"958300401",tipoDoc:"Solicitud",tramite:3,asunto:"Trámite de titulación – Producción Agropecuaria",desc:"Presento expediente para titulación.",area:"UA",estado:"En evaluación",adj:[{n:"expediente_titulacion.pdf",s:1520000}],
-        hist:[[ago(40,"11:20"),"Recibido","MP","Registro por mesa de partes virtual"],[ago(39,"09:10"),"Derivado","UA","Derivado a Jefatura de Unidad Académica"],[ago(35,"10:00"),"En evaluación","UA","Comisión de titulación revisa expediente"]]}],
-    reclamos:[
-      {id:1,num:"R-2026-0016",fecha:ago(12),nom:"Pedro Ramírez Salas",dni:"40125478",correo:"pedro.rs@correo.pe",tel:"956101010",dom:"Jr. Comercio 220, Pisco",tipo:"Reclamo",area:"SA",hecho:ago(13),desc:"Demora en la entrega de constancia de estudios solicitada hace 15 días.",pedido:"Entrega inmediata de la constancia.",resp:"Gladys Pachas Lévano",respuesta:"",estado:"En atención",adj:[]},
-      {id:2,num:"R-2026-0015",fecha:ago(20),nom:"Sofía Lévano Cueto",dni:"73654120",correo:"sofia.lc@correo.pe",tel:"947202020",dom:"Av. San Martín 115, Pisco",tipo:"Queja",area:"ADM",hecho:ago(21),desc:"Atención en ventanilla de caja fuera del horario publicado.",pedido:"Cumplir el horario de atención.",resp:"Jorge Luis Pachas Cueto",respuesta:"Se reorganizó el turno de caja y se publicó el horario en la entrada. Se ofrecen disculpas por el inconveniente.",estado:"Respondido",fresp:ago(10),adj:[]},
-      {id:3,num:"R-2026-0017",fecha:ago(1),nom:"Raúl Hernández Avalos",dni:"45698712",correo:"raul.ha@correo.pe",tel:"965303030",dom:"Calle Progreso 340, San Andrés",tipo:"Reclamo",area:"DG",hecho:ago(3),desc:"No se publicaron los resultados del examen de admisión en la fecha indicada.",pedido:"Publicación de resultados y comunicación oficial.",resp:"",respuesta:"",estado:"Recibido",adj:[{n:"captura_cronograma.png",s:220000}]}],
-    empresas:[
-      {id:1,ruc:"20601234561",nom:"AgroExport Pisco S.A.C.",sector:"Agroexportación",ubic:"Pisco, Ica",contacto:"Milagros Vera",correo:"rrhh@agroexportpisco.pe",validada:true},
-      {id:2,ruc:"20498765432",nom:"Contadores Asociados del Sur E.I.R.L.",sector:"Servicios contables",ubic:"Pisco",contacto:"Renzo Cabrera",correo:"seleccion@contadoressur.pe",validada:true},
-      {id:3,ruc:"20512398765",nom:"NetPisco Telecom S.A.C.",sector:"Telecomunicaciones",ubic:"Paracas, Pisco",contacto:"Hugo Salas",correo:"talento@netpisco.pe",validada:false}],
-    ofertas:[
-      {id:1,emp:1,puesto:"Asistente de campo – control de calidad",desc:"Supervisión de labores de cosecha y control de calidad de uva de mesa.",req:"Egresado de Producción Agropecuaria. Disponibilidad para trabajo en campo.",modal:"Presencial",prog:3,limite:ago(-15),vac:2,estado:"Publicada",fecha:ago(10)},
-      {id:2,emp:2,puesto:"Practicante contable",desc:"Apoyo en registro de compras, ventas y declaraciones mensuales.",req:"Estudiante de V–VI ciclo de Contabilidad. Manejo de Excel.",modal:"Presencial",prog:2,limite:ago(-10),vac:1,estado:"Publicada",fecha:ago(8)},
-      {id:3,emp:3,puesto:"Técnico de soporte de redes",desc:"Instalación y mantenimiento de enlaces de fibra óptica en la provincia.",req:"Egresado APSTI. Licencia de conducir A-I.",modal:"Híbrido",prog:1,limite:ago(-25),vac:3,estado:"Por validar",fecha:ago(3)},
-      {id:4,emp:1,puesto:"Operario de riego tecnificado",desc:"Operación de cabezal de riego y registro de caudales.",req:"Estudiante o egresado de Producción Agropecuaria.",modal:"Presencial",prog:3,limite:ago(-20),vac:4,estado:"Publicada",fecha:ago(4)}],
-    postulaciones:[
-      {id:1,of:1,est:4,fecha:ago(7),estado:"En revisión"},
-      {id:2,of:2,est:8,fecha:ago(5),estado:"Recibida"},
-      {id:3,of:4,est:6,fecha:ago(2),estado:"Recibida"}],
-    perfilesLab:[
-      {est:2,resumen:"Técnica en APSTI con experiencia en soporte y redes.",competencias:["Cableado estructurado","MySQL","Soporte Windows/Linux","Atención al usuario"],exp:["2025 · Prácticas profesionales, Soporte TI – Municipalidad Provincial de Pisco","2024 · Asistente de cómputo – Cabinas Pisco Net"],cv:{n:"CV_Lucia_Tasayco.pdf",s:210000}},
-      {est:4,resumen:"Profesional técnica en producción agropecuaria, enfocada en cultivos de agroexportación.",competencias:["Riego por goteo","BPA","Control de plagas"],exp:["2025 · Asistente de campo – Fundo Santa Rosa"],cv:{n:"CV_Maria_Hernandez.pdf",s:190000}},
-      {est:6,resumen:"Estudiante de III ciclo con práctica en parcela demostrativa.",competencias:["Riego tecnificado"],exp:[],cv:{n:"CV_Bryan_Cueto.pdf",s:150000}},
-      {est:8,resumen:"Estudiante de Contabilidad con manejo de PLE y Excel.",competencias:["Excel avanzado","PLE SUNAT"],exp:[],cv:{n:"CV_Karen_Uchuya.pdf",s:160000}}],
-    perfilesDoc:[
-      {doc:1,resumen:"Docente e investigadora en bases de datos y seguridad informática.",grados:["Magíster en Gestión Educativa – UNICA (2019)","Ingeniera de Sistemas – UNICA (2008)"],certs:["Oracle Database SQL Certified Associate","Competencias digitales docentes – MINEDU"],exp:["Docente IESTP Pisco (2012 – a la fecha)","Analista de sistemas – Agrícola del Sur (2008 – 2012)"],cursos:["Ciberseguridad para instituciones educativas (2025)"],port:["Proyecto: Sistema de inventario para laboratorios (2024)","Ponencia: Bases de datos en la educación técnica, Pisco (2025)"]},
-      {doc:2,resumen:"Desarrollador web con experiencia en proyectos de transformación digital.",grados:["Ingeniero de Software – UTP (2016)"],certs:["Laravel Certified Developer","Scrum Foundation Professional"],exp:["Docente IESTP Pisco (2021 – a la fecha)","Desarrollador web independiente (2016 – 2021)"],cursos:["Accesibilidad web WCAG 2.2 (2025)"],port:["Proyecto: Portal de egresados – piloto (2025)"]},
-      {doc:3,resumen:"Especialista en redes y telecomunicaciones rurales.",grados:["Ingeniero Electrónico – UNICA (2010)"],certs:["CCNA Routing & Switching"],exp:["Docente IESTP Pisco (2018 – a la fecha)"],cursos:[],port:["Investigación: Conectividad rural en el valle de Pisco (2023)"]},
-      {doc:4,resumen:"Contadora pública con especialización en tributación.",grados:["Contadora Pública Colegiada – UNICA (2005)","Maestría en Tributación – UNICA (2014)"],certs:["Especialización en NIIF"],exp:["Docente IESTP Pisco (2010 – a la fecha)"],cursos:["Facturación electrónica SUNAT (2024)"],port:["Publicación: Guía de costos para pequeños productores (2022)"]},
-      {doc:5,resumen:"Docente de comunicación y empleabilidad.",grados:["Licenciado en Educación – UNICA (2006)"],certs:[],exp:["Docente IESTP Pisco (2009 – a la fecha)"],cursos:[],port:[]},
-      {doc:6,resumen:"Ingeniera agrónoma con experiencia en riego tecnificado.",grados:["Ingeniera Agrónoma – UNICA (2012)"],certs:["Buenas Prácticas Agrícolas – GlobalG.A.P."],exp:["Docente IESTP Pisco (2020 – a la fecha)","Jefa de campo – AgroExport Pisco (2013 – 2019)"],cursos:[],port:["Proyecto: Parcela demostrativa de riego por goteo (2024)"]}],
-    usuarios:[
-      {id:1,u:"admin",nom:"Juan Carlos Medina Moquillaza",rol:"admin",pass:"Pisco2026*",estado:"Activo",dni:"",area:"",vin:"",ult:""},
-      {id:2,u:"direccion",nom:"Pedro Armando Tasayco Díaz",rol:"dir",pass:"Pisco2026*",estado:"Activo",dni:"",area:"DG",vin:"",ult:""},
-      {id:3,u:"rquispe",nom:"Richard Iván Barrios Quispe",rol:"acad",pass:"Pisco2026*",estado:"Activo",dni:"21456789",area:"UA",vin:"doc:1",ult:""},
-      {id:4,u:"atipacti",nom:"Ana María Tipacti Ramos",rol:"adm",pass:"Pisco2026*",estado:"Activo",dni:"",area:"MP",vin:"",ult:""},
-      {id:5,u:"lramos",nom:"Patricia Elena Torres Rivera",rol:"doc",pass:"Pisco2026*",estado:"Activo",dni:"21567890",area:"",vin:"doc:2",ult:""},
-      {id:6,u:"74125896",nom:"Diego Alonso Martínez Huarcaya",rol:"est",pass:"Pisco2026*",estado:"Activo",dni:"74125896",area:"",vin:"est:1",ult:""},
-      {id:7,u:"75236987",nom:"Lucía Fernanda Tasayco Uribe",rol:"egr",pass:"Pisco2026*",estado:"Activo",dni:"75236987",area:"",vin:"est:2",ult:""},
-      {id:8,u:"20601234561",nom:"AgroExport Pisco S.A.C.",rol:"emp",pass:"Pisco2026*",estado:"Activo",dni:"20601234561",area:"",vin:"emp:1",ult:""}],
-    perms:{
-      admin:{inicio:2,horarios:2,certificados:2,titulos:2,reclamos:2,mesa:2,bolsa:2,docentes:2,usuarios:2,bitacora:2,config:2,arquitectura:1},
-      dir:{inicio:1,horarios:1,certificados:1,titulos:1,reclamos:1,mesa:2,bolsa:1,docentes:1,usuarios:0,bitacora:1,config:0,arquitectura:1},
-      acad:{inicio:1,horarios:2,certificados:2,titulos:2,reclamos:0,mesa:2,bolsa:0,docentes:1,usuarios:0,bitacora:0,config:0,arquitectura:1},
-      adm:{inicio:1,horarios:0,certificados:0,titulos:0,reclamos:2,mesa:2,bolsa:2,docentes:1,usuarios:0,bitacora:0,config:0,arquitectura:0},
-      doc:{inicio:1,horarios:1,certificados:0,titulos:0,reclamos:1,mesa:1,bolsa:0,docentes:1,usuarios:0,bitacora:0,config:0,arquitectura:0},
-      est:{inicio:1,horarios:1,certificados:1,titulos:0,reclamos:1,mesa:1,bolsa:1,docentes:1,usuarios:0,bitacora:0,config:0,arquitectura:0},
-      egr:{inicio:1,horarios:0,certificados:1,titulos:1,reclamos:1,mesa:1,bolsa:1,docentes:1,usuarios:0,bitacora:0,config:0,arquitectura:0},
-      emp:{inicio:1,horarios:0,certificados:0,titulos:0,reclamos:1,mesa:1,bolsa:1,docentes:0,usuarios:0,bitacora:0,config:0,arquitectura:0}},
-    docs:[],
-    notifs:[
-      {id:1,to:"r:adm",txt:"Nuevo reclamo R-2026-0017 dirigido a Dirección General",fecha:ago(1,"08:55"),go:"reclamos",leido:[]},
-      {id:2,to:"r:adm",txt:"Expediente EXP-2026-000240 recibido por mesa de partes",fecha:ago(2,"08:15"),go:"mesa",leido:[]},
-      {id:3,to:"r:admin",txt:"La empresa NetPisco Telecom S.A.C. solicita validación",fecha:ago(3,"10:30"),go:"bolsa",leido:[]},
-      {id:4,to:"r:acad",txt:"El horario de CONT III-A tiene cruces por resolver",fecha:ago(1,"17:40"),go:"horarios",leido:[]},
-      {id:5,to:"u:7",txt:"Tu expediente EXP-2026-000236 pasó a evaluación",fecha:ago(8,"08:30"),go:"mesa",leido:[]},
-      {id:6,to:"u:8",txt:"Nueva postulación a “Operario de riego tecnificado”",fecha:ago(2,"12:10"),go:"bolsa",leido:[]}],
-    bitacora:[
-      {f:ago(6,"16:20"),u:"rquispe",a:"Publicar",m:"Horarios",d:"APSTI III-A Mañana 2026-II"},
-      {f:ago(5,"16:20"),u:"atipacti",a:"Derivar",m:"Mesa de partes",d:"EXP-2026-000238 → DG"},
-      {f:ago(2,"08:15"),u:"público",a:"Registrar",m:"Mesa de partes",d:"EXP-2026-000240"},
-      {f:ago(1,"08:55"),u:"público",a:"Registrar",m:"Reclamos",d:"R-2026-0017"}]
-  };
-}
+function seed(){ throw new Error('Los datos académicos se inicializan en PHP y MySQL.'); }
 let DB = HOST.loadAcad();
 if(!DB || DB.v !== 3){ DB = seed(); DB.progMap = {apsti:1, cont:2, pa:3, enf:4}; }
 rebuildSlots();
@@ -2963,7 +2770,7 @@ ENT.usuarios = { col:"usuarios", one:"usuario", title:"Cuentas de usuario", mod:
     {k:"nom",l:"Nombre completo o razón social",req:true,w:1},
     {k:"rol",l:"Rol",t:"select",req:true,opts:() => Object.entries(ROLES)},
     {k:"estado",l:"Estado",t:"select",req:true,opts:() => [["Activo","Activo"],["Inactivo","Inactivo"]]},
-    ...(row ? [] : [{k:"pass",l:"Contraseña inicial",req:true,pat:[/^.{8,}$/,"Mínimo 8 caracteres."],def:"Pisco2026*"}]),
+    ...(row ? [] : [{k:"pass",l:"Contraseña inicial",req:true,pat:[/^.{8,}$/,"Mínimo 8 caracteres."],def:""}]),
     {k:"area",l:"Área (personal administrativo)",t:"select",none:"Sin área",opts:() => DB.areas.map(a => [a.cod,a.nombre])},
     {k:"vin",l:"Vinculado a",t:"select",none:"Sin vínculo",w:1,opts:vinOpts,hint:"Relaciona la cuenta con un docente, estudiante o empresa para que vea su propia información."},
     {k:"dni",l:"DNI / RUC",pat:[/^(\d{8}|\d{11})$/,"8 dígitos (DNI) u 11 (RUC)."]}],
@@ -3720,7 +3527,7 @@ function registroEmpresa(){
   const crit = (window.pzBolsaCfg ? window.pzBolsaCfg() : {criterios:[], responsable:"Unidad de Bienestar y Empleabilidad", correo:""});
   return `<section class="panel"><div><h2>Registro de empresas e instituciones</h2><p class="note">El registro es libre y gratuito. La cuenta queda <b>pendiente de validación</b> hasta que la ${esc(crit.responsable)} verifique los datos; luego podrá publicar convocatorias.</p></div>
   <div class="alert info" style="margin:10px 0"><b>Criterios de validación</b><ul style="margin:6px 0 0;padding-left:18px">${crit.criterios.map(c => `<li>${esc(c)}</li>`).join("")}</ul><span class="note">Responsable de la aprobación: ${esc(crit.responsable)}${crit.correo ? ` · ${esc(crit.correo)}` : ""}</span></div>
-  <form class="f" data-form="regEmp" novalidate>${EMP_REG_FIELDS().map(f => fieldHtml(f,"")).join("")}${fieldHtml({k:"pass",l:"Contraseña para la intranet",t:"password",req:true,pat:[/^.{8,}$/,"Mínimo 8 caracteres."]},"")}
+  <form class="f" data-form="regEmp" novalidate><p>Para registrar tu empresa, comunícate con la Unidad de Bienestar y Empleabilidad del instituto.</p>
   <div class="fld wide"><label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" id="empDecl"> <span>Declaro bajo juramento que la empresa se encuentra con RUC <b>activo y habido</b>, que los datos registrados son verídicos y que las ofertas que publique cumplirán la normativa laboral vigente.</span></label><span class="err" id="empDeclErr"></span></div>
   <div class="fld"><button class="btn" type="submit">Crear cuenta de empresa</button></div></form></section>`;
 }
@@ -4013,7 +3820,7 @@ V.arquitectura = () => {
 ├── storage/                 ← adjuntos, logs, respaldos (fuera de public/)
 ├── install/                 ← verifica PHP 8, crea la base de datos y el administrador
 ├── docs/                    ← arquitectura y manuales
-└── composer.json            ← dependencias de licencia libre</pre>
+└── config.example.php       ← configuración de PHP y MySQL</pre>
 <p class="note">Código completo, editable y sin restricciones, para que terceros puedan mantenerlo y agregar módulos (numeral 7.1 del TDR).</p></section>`;
   if(T.cur === "entregables"){
     const ents = [["7.1","Código fuente completo, editable y sin restricciones","Repositorio y archivo comprimido"],["7.2","Base de datos: estructura, tablas, relaciones y scripts","schema.sql, seed.sql, diccionario"],["7.3","Scripts de instalación y configuración inicial","/install y .env.example"],["7.4","Documentación técnica: arquitectura, módulos, requisitos e instalación","PDF"],["7.5","Manual técnico, manual de administrador y manual básico de operación","PDF"],["IX.5","Capacitación y accesos administrativos (transferencia tecnológica)","Acta de capacitación"],["XI","Certificado SSL para la intranet y respaldo automático","Evidencia de configuración"]];
@@ -4142,7 +3949,7 @@ const ACTIONS = {
   closeDoc(){ S.ui.dsel = null; render() },
   editDoc(id){ editDoc(+id) },
   /* sistema */
-  resetPass(id){ const u = byId(HOST.users(),+id); confirmBox("Restablecer contraseña", `La contraseña de <b>${esc(u.u)}</b> será <span class="mono">Pisco2026*</span>. El usuario deberá cambiarla al ingresar.`, "Restablecer", () => { u.pass = "Pisco2026*"; log("Restablecer clave","Usuarios",u.u); save(); toast("Contraseña restablecida.") }) },
+  resetPass(id){ window.location.assign("/accounts.php"); },
   resetPerms(){ confirmBox("Restaurar permisos","Se restaurará la matriz de permisos por defecto para todos los roles.","Restaurar",() => { DB.perms = seed().perms; log("Restaurar permisos","Usuarios","Matriz por defecto"); save(); toast("Permisos restaurados."); render() }) },
   backup(){ log("Respaldo","Sistema","Descarga de respaldo completo"); save(); saveFile(`respaldo_intranet_${fileStamp()}.json`, JSON.stringify(DB, null, 1)) },
   resetDemo(){ confirmBox("Restablecer datos de demostración","Se borrarán todos los cambios hechos en esta demostración y se cargarán los datos iniciales.","Restablecer",() => { const uid = S.user.id; DB = seed(); rebuildSlots(); applyAp(); save(); S.user = byId(HOST.users(),uid); S.ui = {}; S.tab = {}; S.q = {}; if(!S.user) logout(); else { toast("Datos de demostración restablecidos."); go("inicio") } }) }
@@ -4219,7 +4026,7 @@ const FORMS = {
     HOST.exps().unshift(x); notify("r:adm",`Expediente ${x.num} recibido: ${tram(x.tramite).nombre}`,"mesa"); notify("r:admin",`Expediente ${x.num} recibido`,"mesa");
     log("Registrar","Mesa de partes",x.num); save(); render(); docCargo(x.id); toast(`Documento recibido: ${x.num}. Guarde su código de seguimiento.`);
   },
-  regEmp(form){
+  regEmp(form){ toast("El registro de empresas se coordina con la Unidad de Bienestar y Empleabilidad."); return;
     const fields = [...EMP_REG_FIELDS(), {k:"pass",l:"",req:true,pat:[/^.{8,}$/,"Mínimo 8 caracteres."]}];
     const {vals, errs} = readFields(fields, form, DB.empresas);
     if(vals.ruc && !errs.ruc && !rucValido(vals.ruc)) errs.ruc = "El RUC no es válido (dígito verificador incorrecto).";
@@ -4246,7 +4053,7 @@ const FORMS = {
 };
 
 /* ---------- delegación de eventos ---------- */
-document.addEventListener("click", e => { if(!(e.target && e.target.closest && e.target.closest(".ix"))) return; 
+document.addEventListener("click", e => { if(!(e.target && e.target.closest && e.target.closest(".ix"))) return;
   const t = e.target.closest("button,[data-go],[data-mclose],label[for]");
   if(S.ui.dd && !e.target.closest(".dd") && !(t && (t.dataset.act === "bell" || t.dataset.act === "account"))){ S.ui.dd = null; render(); if(!t) return }
   if(S.ui.menu && !e.target.closest("#side") && !(t && t.dataset.act === "menu")){ S.ui.menu = false; render(); if(!t) return }
@@ -4265,7 +4072,7 @@ document.addEventListener("click", e => { if(!(e.target && e.target.closest && e
 });
 document.addEventListener("input", e => { if(!(e.target && e.target.closest && e.target.closest(".ix"))) return;  const k = e.target.dataset && e.target.dataset.q; if(k !== undefined){ S.q[k] = e.target.value; render() } });
 document.addEventListener("change", e => { if(!(e.target && e.target.closest && e.target.closest(".ix"))) return;  const k = e.target.dataset && e.target.dataset.chg; if(k && CHANGES[k]) CHANGES[k](e.target) });
-document.addEventListener("submit", e => { if(!(e.target && e.target.closest && e.target.closest(".ix"))) return; 
+document.addEventListener("submit", e => { if(!(e.target && e.target.closest && e.target.closest(".ix"))) return;
   e.preventDefault();
   if(e.target.id === "mform"){ if(MODAL && MODAL.onSubmit){ const ok = MODAL.onSubmit(e.target); if(ok){ closeModal(); render() } } return }
   const k = e.target.dataset.form; if(k && FORMS[k]) FORMS[k](e.target);
@@ -4920,333 +4727,8 @@ function parseCSV(text) {
    Nombres de docentes, estudiantes, montos y cifras son ficticios.
    ========================================================= */
 const SEED_VERSION = 13; // v13: Portal Web 2026 del IESTP "Pisco" (plana docente con CV, libro de reclamaciones, bolsa laboral y mesa de partes)
-function seedDB() {
-  const D = {};
-  const T0 = '2026-09-20T10:00:00.000Z';
-  D.__v = SEED_VERSION;
-  D.config = {
-    inst: {
-      nombre: 'Instituto de Educación Superior Tecnológico Público "Pisco"', nombreCorto: 'IESTP PISCO', siglaBanner: 'IESTP PISCO', logoSigla: 'PISCO',
-      slogan: 'Formación técnica para un mejor futuro', lema: 'Educación técnica que transforma vidas',
-      direccion: 'Av. Las Américas, 5.ª cuadra S/N, Pisco - Ica', telefono: '932 375 402', telefonoNota: 'Secretaría de Dirección',
-      correo: 'direcciongeneral@iestppisco.edu.pe', horario: 'Lunes a viernes: 08:00 a.m. - 03:40 p.m.', horarioSab: 'Mesa de Partes Virtual: recibe documentos las 24 horas; fuera del horario se registran con fecha del siguiente día hábil.',
-      ruc: '', codigoModular: '', fechaCreacion: '1984-01-01', normaCreacion: 'R.M. N.º 0806-84-ED / R.M. N.º 675-94-ED', lat: -13.7077, lng: -76.2031,
-      descripcion: 'Institución pública de educación superior tecnológica de la provincia de Pisco, región Ica, creada por R.M. N.º 0806-84-ED y revalidada por R.M. N.º 675-94-ED, que forma profesionales técnicos competentes.',
-      logo: (typeof PISCO_LOGO !== 'undefined' ? PISCO_LOGO : ''), colorPrimario: '#0b1d3f', denominacionAnio: 'Año de la Esperanza y el Fortalecimiento de la Democracia',
-    },
-    redes: { facebook: 'https://www.facebook.com/', youtube: 'https://www.youtube.com/', instagram: 'https://www.instagram.com/', tiktok: '' },
-    whatsapp: { numero: '51932375402', mensaje: 'Hola, deseo información sobre el IESTP Pisco.', activo: true },
-    seo: { titulo: 'IESTP Pisco | Instituto de Educación Superior Tecnológico Público "Pisco"', descripcion: 'Portal Web 2026 del IESTP "Pisco": programas de estudio, admisión, plana docente, libro de reclamaciones, bolsa laboral, mesa de partes virtual y transparencia.', imagen: '' },
-    correoReclamos: 'administracion@iestppisco.edu.pe',
-    correoContacto: 'direcciongeneral@iestppisco.edu.pe',
-    simularFalloCorreo: false,
-    limites: { descripcion: 2000, pedido: 1000 },
-    contadores: { LR: {}, EXP: {}, MPV: {}, DOC: {} },
-    uit: { 2025: 5350, 2026: 5500 },
-    popup: { activo: true, titulo: 'Inscripciones abiertas: Admisión 2026', texto: 'Postula a cualquiera de nuestros 5 programas de estudio. Revisa el prospecto, los requisitos y el cronograma del concurso.', enlace: '#/admision', boton: 'Ver proceso de admisión', imagen: 'ph:topic:grad|adm26|ADMISIÓN 2026', inicio: '2026-10-01', fin: '2026-12-31' },
-    home: {
-      bloques: [
-        { k: 'slider', label: 'Carrusel principal', on: true }, { k: 'accesos', label: 'Accesos rápidos', on: true }, { k: 'bienvenida', label: 'Bienvenida de la Dirección', on: true },
-        { k: 'cifras', label: 'Cifras institucionales', on: true }, { k: 'programas', label: 'Programas de estudio', on: true }, { k: 'noticias', label: 'Noticias recientes', on: true },
-        { k: 'beneficios', label: '¿Por qué estudiar aquí?', on: true }, { k: 'jerarquica', label: 'Plana jerárquica', on: true }, { k: 'testimonios', label: 'Testimonios de egresados', on: true },
-        { k: 'eventos', label: 'Eventos próximos', on: true }, { k: 'enlaces', label: 'Enlaces MINEDU', on: true },
-      ],
-      accesos: [
-        { titulo: 'Mesa de Partes', texto: 'Trámites en línea', icono: 'clipboard', enlace: '#/servicios/mesa-de-partes' },
-        { titulo: 'Biblioteca Virtual', texto: 'Libros y recursos', icono: 'book', enlace: 'ext:biblioteca' },
-        { titulo: 'Correo Institucional', texto: 'Acceso para docentes y estudiantes', icono: 'mail', enlace: 'ext:correo' },
-        { titulo: 'Bolsa Laboral', texto: 'Ofertas laborales', icono: 'briefcase', enlace: '#/servicios/bolsa-laboral' },
-      ],
-      cifras: [
-        { label: 'Años de servicio', valor: 'auto:anios', corte: '2026' },
-        { label: 'Programas de estudio', valor: 'auto:programas', corte: '2026' },
-        { label: 'Estudiantes matriculados', valor: 'auto:matriculados', corte: '2026' },
-        { label: 'Egresados', valor: 'auto:egresados', corte: '2022-2026' },
-      ],
-      beneficios: [
-        { t: 'Título a nombre de la Nación', d: 'Profesional Técnico con validez oficial otorgado según la Ley N.º 30512.', i: 'grad' },
-        { t: 'Docentes calificados', d: 'Plana docente con formación académica y experiencia en el sector productivo.', i: 'users' },
-        { t: 'Laboratorios y talleres', d: 'Ambientes equipados para la práctica en cada programa de estudio.', i: 'flask' },
-        { t: 'Bolsa laboral', d: 'Ofertas de empleo y prácticas validadas por el instituto para estudiantes y egresados.', i: 'briefcase' },
-        { t: 'Certificación modular', d: 'Certificado al concluir cada módulo formativo.', i: 'award' },
-        { t: 'Experiencias formativas (EFSRT)', d: 'Prácticas en empresas e instituciones con convenio.', i: 'building' },
-        { t: 'Alta empleabilidad', d: 'Formación alineada a la demanda laboral de Pisco y la región Ica: agroexportación, turismo, salud y servicios.', i: 'target' },
-        { t: 'Inglés e informática', d: 'Talleres complementarios para fortalecer tu perfil profesional.', i: 'globe' },
-      ],
-    },
-  };
-  D.slides = [
-    { id: 's1', titulo: 'Somos el IESTP Pisco', texto: 'Formamos profesionales técnicos competentes para Pisco, la región Ica y el país.', boton: 'Conócenos', enlace: '#/nosotros/presentacion', imagen: 'ph:campus:1', orden: 1, estado: 'Publicado' },
-    { id: 's2', titulo: 'Admisión 2026', texto: 'Inscríbete en el concurso de admisión y elige entre 5 programas de estudio.', boton: 'Postula aquí', enlace: '#/admision', imagen: 'ph:campus:2', orden: 2, estado: 'Publicado' },
-    { id: 's3', titulo: 'Becas y beneficios', texto: 'Reconocemos tu esfuerzo: exoneraciones por rendimiento académico y situación socioeconómica.', boton: 'Ver becas', enlace: '#/becas', imagen: 'ph:campus:3', orden: 3, estado: 'Publicado' },
-  ];
-  D.enlaces = [
-    { id: 'biblioteca', nombre: 'Biblioteca Virtual', url: 'https://iestpisco.bibliotecalatina.com/login', grupo: 'servicio', estado: 'Activo', verificado: '2026-10-23' },
-    { id: 'correo', nombre: 'Correo Institucional', url: 'https://iestppisco.edu.pe/webmail', grupo: 'servicio', estado: 'Activo', verificado: '2026-10-15' },
-    { id: 'aula', nombre: 'Aula Virtual', url: 'https://iestppisco.iapp.pe/login/index.php', grupo: 'servicio', estado: 'Activo', verificado: '2026-10-23' },
-    { id: 'avanza', nombre: 'Avanza - MINEDU', url: 'https://avanza.minedu.gob.pe/', grupo: 'minedu', estado: 'Activo', verificado: '2026-10-15', color: '#c62828' },
-    { id: 'conecta', nombre: 'Conecta - MINEDU', url: 'https://conecta.minedu.gob.pe/', grupo: 'minedu', estado: 'Activo', verificado: '2026-10-15', color: '#1556b8' },
-    { id: 'registra', nombre: 'Registra - MINEDU', url: 'https://registra.minedu.gob.pe', grupo: 'minedu', estado: 'Activo', verificado: '2026-10-15', color: '#0b5d5b' },
-    { id: 'titula', nombre: 'Titula - MINEDU', url: 'https://titula.minedu.gob.pe/', grupo: 'minedu', estado: 'Activo', verificado: '2026-10-15', color: '#6b2fa3' },
-    { id: 'dre', nombre: 'DRE Ica', url: 'https://dreica.gob.pe/ica', grupo: 'minedu', estado: 'Activo', verificado: '2026-10-15', color: '#9a3b12' },
-    { id: 'minedu', nombre: 'MINEDU', url: 'https://www.gob.pe/minedu', grupo: 'minedu', estado: 'Activo', verificado: '2026-10-15', color: '#7a1f3d' },
-    { id: 'pronabec', nombre: 'PRONABEC', url: 'https://www.gob.pe/pronabec', grupo: 'interes', estado: 'Activo', verificado: '2026-10-15' },
-  ];
-
-  /* ---------- Páginas institucionales (registros únicos) ---------- */
-  const presentacion = `<h2>Bienvenidos al IESTP "Pisco"</h2><p>Es muy grato darles la más cordial bienvenida al Portal Web del Instituto de Educación Superior Tecnológico Público "Pisco", un espacio creado para acercar nuestra institución a nuestros estudiantes, docentes, egresados, comunidad educativa y público en general.</p><p>Nuestra institución, creada mediante R.M. N.º 0806-84-ED y revalidada con R.M. N.º 675-94-ED, ha asumido con responsabilidad el compromiso de formar profesionales técnicos capaces de responder a las necesidades y desafíos de la provincia de Pisco, la región Ica y el país.</p><p>Estamos convencidos de que la educación constituye una de las principales herramientas para transformar la vida de las personas, generar oportunidades y contribuir a su desarrollo personal y profesional. Por ello, promovemos una cultura institucional basada en el trabajo en equipo, el compromiso, la responsabilidad, la innovación y la mejora continua, contando con docentes y profesionales idóneos en cada uno de nuestros Programas de Estudios.</p><p>A través del Portal Web 2026 ponemos a disposición de nuestra comunidad información sobre nuestra organización, Programas de Estudios, plana docente, servicios en línea —Mesa de Partes Virtual, Libro de Reclamaciones Virtual y Bolsa Laboral—, procesos académicos y administrativos, actividades y oportunidades.</p><p>Agradezco sinceramente tu interés en conocernos y visitar nuestro Portal Web. <strong>¡Las puertas del IESTP "Pisco" están abiertas para ti!</strong></p><p>Atentamente,<br><strong>Mg. Pedro Armando Tasayco Díaz</strong><br>Director General del IESTP "Pisco"</p>`;
-  const pg = (clave, titulo, slug, contenido, extra = {}) => Object.assign({ id: 'pg-' + clave, clave, titulo, slug, contenido, imagen: '', mensaje: '', estado: 'Publicada', versiones: [], creadoPor: 'admin', creadoEn: '2026-09-10T09:15:00Z', modPor: 'admin', modEn: '2026-09-20T11:30:00Z' }, extra);
-  D.paginas = [
-    pg('presentacion', 'Presentación', 'presentacion', presentacion, { imagen: 'ph:campus43:5', mensaje: 'Educación técnica de calidad, compromiso con el desarrollo de nuestra sociedad.' }),
-    pg('resena', 'Reseña Histórica', 'resena-historica', `<p>El Instituto de Educación Superior Tecnológico Público "Pisco" fue creado mediante <strong>R.M. N.º 0806-84-ED</strong> y revalidado por <strong>R.M. N.º 675-94-ED</strong>, con el propósito de ofrecer formación técnica a la juventud de la provincia de Pisco y de la región Ica.</p><h2>Nuestra trayectoria</h2><p>Desde su creación, la institución ha acompañado el desarrollo productivo de la provincia —agroexportación, pesca, turismo de Paracas y servicios—, consolidando su oferta formativa en Administración de Servicios de Hostelería y Restaurantes, Arquitectura de Plataformas y Servicios de Tecnologías de Información, Contabilidad, Enfermería Técnica y Producción Agropecuaria.</p><p>En el marco de la Ley N.º 30512, Ley de Institutos y Escuelas de Educación Superior y de la Carrera Pública de sus Docentes, el instituto viene adecuando su gestión a las Condiciones Básicas de Calidad establecidas por el Ministerio de Educación.</p><h2>Autoridades actuales</h2><p>La institución es dirigida por el <strong>Mg. Pedro Armando Tasayco Díaz</strong>, Director General, acompañado por el equipo de la <a href="#/nosotros/plana-jerarquica">plana jerárquica</a>.</p><p><em>Texto referencial: complete la fecha de creación y los hitos históricos desde el panel (Páginas institucionales).</em></p>`, { imagen: 'ph:campus43:6', mensaje: 'Formando profesionales técnicos para Pisco y la región Ica.' }),
-    pg('mision', 'Misión, Visión y Valores', 'mision-vision', `<h2>Misión</h2><p>Formar profesionales técnicos competentes, con valores y capacidad de innovación, mediante una educación superior tecnológica de calidad, pertinente y vinculada con las necesidades del sector productivo de la provincia de Pisco, la región Ica y el país.</p><h2>Visión</h2><p>Ser una institución de educación superior tecnológica licenciada y reconocida en la región Ica por la calidad de sus egresados, su vinculación con el sector productivo y su contribución al desarrollo sostenible de la comunidad.</p><h2>Valores</h2><ul><li><strong>Responsabilidad:</strong> cumplimos nuestros compromisos con la comunidad educativa.</li><li><strong>Honestidad:</strong> actuamos con transparencia e integridad.</li><li><strong>Respeto:</strong> valoramos la diversidad y la dignidad de las personas.</li><li><strong>Trabajo en equipo:</strong> sumamos esfuerzos para lograr objetivos comunes.</li><li><strong>Innovación y mejora continua:</strong> buscamos nuevas y mejores formas de enseñar y aprender.</li></ul><p><em>Textos referenciales; deben coincidir con el Proyecto Educativo Institucional (PEI) vigente publicado en <a href="#/transparencia/documentos-gestion">Documentos de Gestión</a>.</em></p>`),
-    pg('organizacion', 'Organización Institucional', 'organizacion', `<p>La estructura organizativa del instituto responde a lo establecido en la Ley N.º 30512 y su reglamento, y se detalla en el Reglamento Institucional y el Manual de Perfiles de Puestos vigentes.</p>`),
-    pg('reconocimientos', 'Reconocimientos', 'reconocimientos', `<p>Nuestra comunidad educativa ha obtenido logros en concursos académicos, ferias de proyectos de innovación, eventos deportivos y actividades de proyección social. A continuación, presentamos los principales hitos registrados por la institución.</p>`, { mensaje: 'El esfuerzo de nuestra comunidad educativa merece ser reconocido.' }),
-    pg('jerarquica', 'Plana Jerárquica', 'plana-jerarquica', `Conoce al equipo directivo y jerárquico que lidera nuestra institución, comprometido con una gestión eficiente, transparente y orientada a la mejora continua.`, { mensaje: 'Trabajamos con compromiso y vocación de servicio para seguir fortaleciendo una educación técnica de calidad, que forme profesionales competentes y contribuya al desarrollo de nuestra región y del país.' }),
-    pg('docentes', 'Plana Docente', 'plana-docente', `Nuestros docentes son profesionales con sólida formación académica y amplia experiencia, comprometidos con la excelencia educativa y la formación de profesionales técnicos.`),
-    pg('campus', 'Campus e Informes', 'campus-e-informes', `Te brindamos nuestra ubicación, información de contacto y un canal de comunicación directo para consultas, sugerencias o requerimientos.`, { imagen: 'ph:campus43:7' }),
-    pg('privacidad', 'Política de Privacidad', 'politica-de-privacidad', `<p>En cumplimiento de la <strong>Ley N.º 29733, Ley de Protección de Datos Personales</strong>, y su reglamento, el instituto informa que los datos personales registrados a través de los formularios de este portal (Contáctanos, Libro de Reclamaciones, Mesa de Partes Virtual y otros) serán tratados únicamente para atender la solicitud del titular.</p><h2>Finalidad</h2><ul><li>Atender consultas, reclamos, quejas y trámites.</li><li>Enviar constancias y respuestas al correo registrado.</li><li>Elaborar estadísticas internas sin identificar a las personas.</li></ul><h2>Conservación y seguridad</h2><p>Los datos se almacenan en servidores institucionales con acceso restringido por roles y registro de auditoría. No se publican ni se ceden a terceros, salvo mandato legal.</p><h2>Derechos ARCO</h2><p>El titular puede ejercer sus derechos de acceso, rectificación, cancelación y oposición escribiendo al correo institucional publicado en la página de contacto.</p>`),
-    pg('terminos', 'Términos de Uso', 'terminos-de-uso', `<p>El contenido de este portal es de carácter informativo y es administrado por el instituto. Los documentos oficiales publicados en la sección Transparencia prevalecen sobre cualquier otra información.</p><p>Los enlaces a sistemas externos (MINEDU, biblioteca virtual, bolsa de trabajo y otros) se rigen por las condiciones de sus respectivos titulares.</p>`),
-    pg('faq', 'Preguntas Frecuentes', 'preguntas-frecuentes', `<h3>¿Cuándo son las inscripciones de admisión?</h3><p>Las fechas se publican en la página <a href="#/admision">Admisión</a>, junto con el prospecto y el reglamento vigentes.</p><h3>¿Qué título obtengo al egresar?</h3><p>El título de Profesional Técnico a nombre de la Nación en el programa de estudio correspondiente.</p><h3>¿Cómo presento un reclamo?</h3><p>Mediante el <a href="#/servicios/libro-de-reclamaciones">Libro de Reclamaciones virtual</a>. Recibirás un código de seguimiento.</p><h3>¿Cómo hago un trámite sin ir al instituto?</h3><p>Usa la <a href="#/servicios/mesa-de-partes">Mesa de Partes Virtual</a> y consulta el estado con tu número de expediente.</p>`),
-  ];
-  D.reconocimientos = [
-    { id: 'rc1', anio: 2025, titulo: 'Primer lugar en feria regional de proyectos de innovación', descripcion: 'Estudiantes del programa de Arquitectura de Plataformas y Servicios de TI obtuvieron el primer puesto con un sistema de monitoreo de riego para fundos del valle de Pisco.', resolucion: 'R.D. N.º 045-2025 (ejemplo)', foto: 'ph:topic:award|rc1', estado: 'Publicado', orden: 1 },
-    { id: 'rc2', anio: 2024, titulo: 'Reconocimiento por proyección social', descripcion: 'Campaña de salud comunitaria organizada por el programa de Enfermería Técnica en San Andrés.', resolucion: '', foto: 'ph:topic:heart|rc2', estado: 'Publicado', orden: 2 },
-    { id: 'rc3', anio: 2023, titulo: 'Campeones de los juegos deportivos de institutos', descripcion: 'La delegación del instituto obtuvo el primer lugar en fútbol y vóley en el encuentro regional.', resolucion: '', foto: 'ph:topic:star|rc3', estado: 'Publicado', orden: 3 },
-  ];
-
-  /* ---------- Programas de estudio, módulos y unidades didácticas ---------- */
-  const mk = (code, nombre, mods) => mods.map((m, i) => ({ id: `${code}-m${i + 1}`, codigo: 'MP0' + (i + 1), nombre: m[0], efsrt: m[1], uds: m[2].map((u, j) => ({ id: `${code}-m${i + 1}-u${j + 1}`, semestre: u[0], nombre: u[1], creditos: u[2], horas: u[3] })) }));
-  const P = (id, orden, nombre, slug, icon, resumen, turno, horario, mods, campo, perfil) => ({
-    id, orden, nombre, slug, icono: icon, codigo: id.toUpperCase(), resumen, imagen: `ph:topic:${icon}|${id}`, duracion: '3 años (6 semestres)', modalidad: 'Presencial', turno, horario,
-    titulo: 'Profesional Técnico en ' + nombre, perfil, campo, campoItems: campo.split('|'), modulos: mk(id, nombre, mods), coordinadorId: '', coordinadorMsg: '',
-    brochure: genDoc(`Brochure_${id.toUpperCase()}_2026.pdf`, 'Brochure - ' + nombre, ['Programa de estudio: ' + nombre, 'Duracion: 3 anos (6 semestres)', 'Modalidad: presencial', 'Turno: ' + turno, 'Horario: ' + horario]),
-    malla: genDoc(`Malla_Curricular_${id.toUpperCase()}_2026.pdf`, 'Malla curricular - ' + nombre, ['Plan de estudios vigente del programa ' + nombre]),
-    docVersiones: [], convenios: [], estado: 'Publicado', creadoPor: 'admin', creadoEn: T0, modPor: 'admin', modEn: T0,
-  });
-  D.programas = [
-    P('apsti', 2, 'Arquitectura de Plataformas y Servicios de Tecnologías de Información', 'arquitectura-de-plataformas-y-servicios-de-ti', 'cpu', 'Diseña, implementa y gestiona infraestructura tecnológica, plataformas y servicios de TI para organizaciones públicas y privadas.', 'Mañana', 'Lunes a viernes, 08:00 a.m. - 01:35 p.m.',
-      [['Soporte y mantenimiento de equipos de cómputo y redes', 'EFSRT I (128 h)', [[1, 'Arquitectura de computadoras', 3, 64], [1, 'Ofimática', 3, 64], [1, 'Fundamentos de programación', 4, 80], [2, 'Redes y comunicación de datos I', 4, 80], [2, 'Sistemas operativos', 3, 64], [2, 'Comunicación oral', 2, 32]]],
-      ['Implementación de plataformas y servicios de TI', 'EFSRT II (128 h)', [[3, 'Administración de sistemas operativos', 4, 80], [3, 'Base de datos', 4, 80], [4, 'Redes y comunicación de datos II', 4, 80], [4, 'Programación de aplicaciones web', 4, 80], [4, 'Inglés para la comunicación oral', 2, 32]]],
-      ['Gestión de servicios de TI y seguridad de la información', 'EFSRT III (128 h)', [[5, 'Seguridad informática', 4, 80], [5, 'Servicios en la nube', 3, 64], [5, 'Inteligencia artificial aplicada', 3, 64], [6, 'Gestión de servicios de TI', 4, 80], [6, 'Proyecto integrador', 3, 64], [6, 'Emprendimiento e innovación', 2, 32]]]],
-      'Centros de datos y áreas de TI de empresas|Soporte técnico y mesa de ayuda|Administración de redes y servidores|Servicios en la nube|Desarrollo de aplicaciones web|Emprendimiento tecnológico propio',
-      '<p>El egresado del Programa de Estudios de Arquitectura de Plataformas y Servicios de Tecnologías de Información está capacitado para diseñar, implementar, administrar y dar soporte a infraestructuras tecnológicas, plataformas y servicios de TI, aplicando buenas prácticas de seguridad, calidad y gestión, con un enfoque en la innovación y la mejora continua de las organizaciones públicas y privadas.</p>'),
-    P('ashr', 1, 'Administración de Servicios de Hostelería y Restaurantes', 'administracion-de-servicios-de-hosteleria-y-restaurantes', 'food', 'Gestiona servicios de alojamiento, alimentos y bebidas y atención al cliente en hoteles, restaurantes y empresas turísticas de Pisco y Paracas.', 'Mañana', 'Lunes a viernes, 08:00 a.m. - 01:35 p.m.',
-      [['Servicios de alimentos y bebidas', 'EFSRT I (128 h)', [[1, 'Técnicas de cocina básica', 4, 80], [1, 'Higiene y manipulación de alimentos', 3, 64], [2, 'Servicio de restaurante y bar', 4, 80], [2, 'Comunicación oral', 2, 32]]], ['Servicios de alojamiento', 'EFSRT II (128 h)', [[3, 'Recepción y reservas', 4, 80], [3, 'Gestión de pisos (housekeeping)', 3, 64], [4, 'Inglés para hostelería', 3, 64], [4, 'Software hotelero', 3, 64]]], ['Gestión de empresas de hostelería y restaurantes', 'EFSRT III (128 h)', [[5, 'Costos y presupuestos en alimentos y bebidas', 4, 80], [5, 'Marketing turístico', 3, 64], [6, 'Gestión de eventos y banquetes', 3, 64], [6, 'Proyecto integrador', 3, 64]]]],
-      'Hoteles y hostales de Pisco y Paracas|Restaurantes y cafeterías|Agencias de viaje y turismo|Empresas de catering y eventos|Emprendimiento gastronómico propio', '<p>El egresado gestiona y brinda servicios de alojamiento, alimentos y bebidas, aplicando normas de calidad, higiene y atención al cliente, con capacidad para emprender negocios del sector turístico y gastronómico.</p>'),
-    P('cont', 3, 'Contabilidad', 'contabilidad', 'calc', 'Registra y analiza operaciones contables, tributarias y financieras de empresas e instituciones.', 'Mañana y tarde', 'Mañana: 08:00 a.m. - 01:35 p.m. / Tarde: 01:40 p.m. - 07:15 p.m.',
-      [['Procesos contables', 'EFSRT I (128 h)', [[1, 'Contabilidad general', 4, 80], [1, 'Documentación comercial', 3, 64], [2, 'Matemática financiera', 3, 64], [2, 'Ofimática', 3, 64]]], ['Contabilidad empresarial y tributaria', 'EFSRT II (128 h)', [[3, 'Contabilidad de sociedades', 4, 80], [3, 'Tributación I', 4, 80], [4, 'Costos', 4, 80], [4, 'Software contable', 3, 64]]], ['Análisis financiero y auditoría', 'EFSRT III (128 h)', [[5, 'Contabilidad gubernamental', 4, 80], [5, 'Análisis de estados financieros', 4, 80], [6, 'Auditoría', 4, 80], [6, 'Proyecto integrador', 3, 64]]]],
-      'Estudios contables|Áreas de contabilidad y tesorería|Entidades públicas (SIAF)|Asesoría tributaria|Entidades financieras', '<p>El egresado registra, procesa y analiza la información contable, tributaria y financiera de las organizaciones, empleando software especializado y cumpliendo la normativa vigente.</p>'),
-    P('enf', 4, 'Enfermería Técnica', 'enfermeria-tecnica', 'heart', 'Brinda cuidados básicos de salud a la persona, familia y comunidad en establecimientos de salud.', 'Mañana y tarde', 'Mañana: 08:00 a.m. - 01:35 p.m. / Tarde: 01:40 p.m. - 07:15 p.m.',
-      [['Atención básica de salud', 'EFSRT I (128 h)', [[1, 'Anatomía y fisiología', 4, 80], [1, 'Bioseguridad', 3, 64], [2, 'Técnicas básicas de enfermería', 4, 80], [2, 'Primeros auxilios', 3, 64]]], ['Atención en salud del niño y la mujer', 'EFSRT II (128 h)', [[3, 'Salud materno infantil', 4, 80], [3, 'Farmacología básica', 3, 64], [4, 'Atención al niño y adolescente', 4, 80], [4, 'Nutrición', 3, 64]]], ['Salud comunitaria', 'EFSRT III (128 h)', [[5, 'Salud pública', 4, 80], [5, 'Atención al adulto mayor', 3, 64], [6, 'Salud mental', 3, 64], [6, 'Proyecto integrador', 3, 64]]]],
-      'Hospitales y clínicas|Centros y puestos de salud|Consultorios y policlínicos|Programas de salud comunitaria|Atención domiciliaria', '<p>El egresado brinda atención básica y cuidados de enfermería a la persona, familia y comunidad, bajo supervisión profesional y con enfoque intercultural y de derechos.</p>'),
-    P('pa', 5, 'Producción Agropecuaria', 'produccion-agropecuaria', 'leaf', 'Gestiona la producción agrícola y pecuaria sostenible en el valle de Pisco.', 'Mañana', 'Lunes a viernes, 08:00 a.m. - 01:35 p.m.',
-      [['Producción agrícola', 'EFSRT I (128 h)', [[1, 'Edafología', 4, 80], [1, 'Botánica', 3, 64], [2, 'Cultivos de la región', 4, 80], [2, 'Riego tecnificado', 3, 64]]], ['Producción pecuaria', 'EFSRT II (128 h)', [[3, 'Crianza de animales menores', 4, 80], [3, 'Sanidad animal', 3, 64], [4, 'Nutrición animal', 3, 64], [4, 'Crianza de ganado', 4, 80]]], ['Gestión de la producción agropecuaria', 'EFSRT III (128 h)', [[5, 'Manejo integrado de plagas', 4, 80], [5, 'Agroexportación', 3, 64], [6, 'Gestión de empresas agropecuarias', 3, 64], [6, 'Proyecto integrador', 3, 64]]]],
-      'Fundos y empresas agroexportadoras|Asesoría técnica agropecuaria|Programas del Ministerio de Agricultura|Viveros y producción de plantones|Emprendimiento agropecuario', '<p>El egresado gestiona procesos de producción agrícola y pecuaria con enfoque de sostenibilidad, aplicando tecnologías de riego, sanidad y comercialización.</p>'),
-  ];
-
-  /* ---------- Personas (ficha única) ---------- */
-  const per = (id, nombres, apellidos, fem, extra) => Object.assign({ id, nombres, apellidos, fem, dni: String(40000000 + hashStr(id) % 9999999), correo: (nombres.split(' ')[0][0] + apellidos.split(' ')[0]).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') + '@iestppisco.edu.pe', telefono: '', foto: `ph:person:${fem ? 'f' : 'm'}|${nombres} ${apellidos}`, tipo: 'Docente', condicion: 'Contratado', especialidad: '', titulo: '', programas: [], empleabilidad: false, uds: [], academica: [], experiencia: [], otros: [], orden: 1, estado: 'Publicado', creadoPor: 'admin', creadoEn: T0, modPor: 'admin', modEn: T0 }, extra);
-  const A = (nivel, titulo, inst, anio) => ({ id: uid(), nivel, titulo, institucion: inst, anio });
-  D.personas = [
-    per('dir', 'Pedro Armando', 'Tasayco Díaz', false, { titulo: 'Mg.', tipo: 'Administrativo', condicion: 'Nombrado', especialidad: 'Magíster en Educación', correo: 'direcciongeneral@iestppisco.edu.pe', foto: 'ph:person:m|Mg. Pedro Tasayco Díaz', academica: [] }),
-  ];
-  const DOC = [
-    ['d1', 'Richard Iván', 'Barrios Quispe', 0, 'Ing.', 'Ingeniero de Sistemas', 'Nombrado', ['apsti'], [['apsti', 'apsti-m1-u3'], ['apsti', 'apsti-m2-u4'], ['apsti', 'apsti-m3-u6']]],
-    ['d2', 'Rocío del Pilar', 'Echevarría Pérez', 1, 'Lic.', 'Licenciada en Educación - Informática', 'Contratado', ['apsti'], [['apsti', 'apsti-m1-u2'], ['apsti', 'apsti-m1-u6']]],
-    ['d3', 'Carlos Alberto', 'Rojas Valenzuela', 0, 'Ing.', 'Ingeniero de Redes y Comunicaciones', 'Nombrado', ['apsti'], [['apsti', 'apsti-m1-u4'], ['apsti', 'apsti-m2-u3']]],
-    ['d4', 'Patricia Elena', 'Torres Rivera', 1, 'Ing.', 'Ingeniera de Software', 'Contratado', ['apsti'], [['apsti', 'apsti-m2-u2'], ['apsti', 'apsti-m3-u3']]],
-    ['d5', 'Víctor Manuel', 'Palomino Curo', 0, 'Ing.', 'Ingeniero de Sistemas', 'Contratado', ['apsti'], [['apsti', 'apsti-m3-u1'], ['apsti', 'apsti-m3-u2']]],
-    ['d6', 'Javier Antonio', 'Huamán Soto', 0, 'Lic.', 'Licenciado en Administración Hotelera', 'Nombrado', ['ashr'], [['ashr', 'ashr-m2-u1'], ['ashr', 'ashr-m3-u1']]],
-    ['d7', 'Milagros Rosa', 'Cárdenas Lévano', 1, 'Lic.', 'Licenciada en Turismo y Hotelería', 'Contratado', ['ashr'], [['ashr', 'ashr-m1-u3'], ['ashr', 'ashr-m2-u3']]],
-    ['d8', 'Luis Fernando', 'Quispe Ramos', 0, 'CPC.', 'Contador Público', 'Nombrado', ['cont'], [['cont', 'cont-m1-u1'], ['cont', 'cont-m3-u3']]],
-    ['d9', 'Karen Lizbeth', 'Mendoza Huaraca', 1, 'CPC.', 'Contadora Pública', 'Contratado', ['cont'], [['cont', 'cont-m2-u2'], ['cont', 'cont-m3-u1']]],
-    ['d10', 'Pedro Pablo', 'Saravia Yupanqui', 0, 'Ing.', 'Ingeniero de Sistemas', 'Nombrado', ['apsti'], [['apsti', 'apsti-m2-u1'], ['apsti', 'apsti-m1-u5']]],
-    ['d11', 'Héctor Raúl', 'Ventura Pachas', 0, 'Lic.', 'Licenciado en Gastronomía', 'Contratado', ['ashr'], [['ashr', 'ashr-m1-u1'], ['ashr', 'ashr-m3-u3']]],
-    ['d12', 'Ángel Gabriel', 'Tasayco Medina', 0, 'Ing.', 'Ingeniero Electrónico', 'Nombrado', ['apsti'], [['apsti', 'apsti-m1-u1'], ['apsti', 'apsti-m3-u3']]],
-    ['d13', 'Gladys Marina', 'Ormeño Campos', 1, 'Lic.', 'Licenciada en Enfermería', 'Nombrado', ['enf'], [['enf', 'enf-m1-u3'], ['enf', 'enf-m2-u1']]],
-    ['d14', 'Silvia Beatriz', 'Magallanes Díaz', 1, 'Lic.', 'Licenciada en Enfermería', 'Contratado', ['enf'], [['enf', 'enf-m1-u4'], ['enf', 'enf-m3-u1']]],
-    ['d15', 'Jorge Enrique', 'Hernández Uribe', 0, 'Lic.', 'Licenciado en Enfermería', 'Nombrado', ['enf'], [['enf', 'enf-m2-u3'], ['enf', 'enf-m3-u2']]],
-    ['d16', 'Diana Carolina', 'Salazar Gómez', 1, 'Ing.', 'Ingeniera Agrónoma', 'Contratado', ['pa'], [['pa', 'pa-m1-u1'], ['pa', 'pa-m3-u2']]],
-    ['d17', 'Wilfredo César', 'Napa Avalos', 0, 'Ing.', 'Ingeniero Agrónomo', 'Nombrado', ['pa'], [['pa', 'pa-m1-u3'], ['pa', 'pa-m3-u1']]],
-    ['d18', 'Marisol Ivonne', 'Peña Carrasco', 1, 'MV.', 'Médico Veterinario', 'Contratado', ['pa'], [['pa', 'pa-m2-u2'], ['pa', 'pa-m2-u4']]],
-    ['d19', 'Rosario Angélica', 'Mendoza Pérez', 1, 'Lic.', 'Licenciada en Psicología', 'Nombrado', [], []],
-    ['d20', 'Miguel Ángel', 'Huamaní Soto', 0, 'Lic.', 'Licenciado en Administración', 'Contratado', [], []],
-  ];
-  DOC.forEach((d, i) => D.personas.push(per(d[0], d[1], d[2], !!d[3], { titulo: d[4], especialidad: d[5], condicion: d[6], programas: d[7], empleabilidad: !d[7].length || i % 6 === 0, uds: d[8].map(([p, u]) => ({ programaId: p, udId: u })), orden: i + 1, academica: [A('Título profesional', d[5], ['Universidad Nacional San Luis Gonzaga', 'Universidad Nacional de Ingeniería', 'Universidad Nacional Mayor de San Marcos', 'Universidad Privada San Juan Bautista'][i % 4], 2005 + i % 12)].concat(i % 3 === 0 ? [A('Maestría', 'Maestro en Educación con mención en Docencia Universitaria', 'Universidad César Vallejo', 2018 + i % 5)] : []).concat(i % 4 === 1 ? [A('Especialización', 'Especialización en Didáctica de la Educación Superior Tecnológica', 'MINEDU - DIGESUTPA', 2022)] : []), experiencia: [{ id: uid(), institucion: ['Municipalidad Provincial de Pisco', 'Empresa privada del sector', 'Gobierno Regional de Ica', 'Consultoría independiente'][i % 4], cargo: 'Especialista', inicio: '2012', fin: '2018' }] })));
-  D.personas.find(p => p.id === 'd1').estado = 'Publicado';
-  D.personas.push(per('a1', 'Sabina Elizabeth', 'Arones Morales', true, { titulo: 'Mg.', tipo: 'Administrativo', condicion: 'Nombrado', especialidad: 'Magíster en Educación', correo: 'unidadacademica@iestppisco.edu.pe' }));
-  D.personas.push(per('a2', 'Yeny Sofía', 'Laurente Mejía', true, { titulo: 'Mg.', tipo: 'Administrativo', condicion: 'Nombrado', especialidad: 'Magíster en Gestión Pública', correo: 'administracion@iestppisco.edu.pe' }));
-  D.personas.push(per('a3', 'Patricia Carmen', 'Rojas Bendezú', true, { titulo: 'Lic.', tipo: 'Administrativo', condicion: 'Contratado', especialidad: 'Licenciada en Educación', correo: 'secretariaacademica@iestppisco.edu.pe' }));
-  D.personas.push(per('a4', 'Horacio', 'Quispe Huaroto', false, { titulo: 'Mg.', tipo: 'Administrativo', condicion: 'Nombrado', especialidad: 'Responsable del Portal Web Institucional', correo: 'horacio@iestppisco.edu.pe', telefono: '956038797' }));
-  D.programas.forEach((p, i) => { const c = D.personas.find(x => x.programas && x.programas.includes(p.id) && x.condicion === 'Nombrado'); if (c) { p.coordinadorId = c.id; p.coordinadorMsg = 'Te invitamos a formar parte de nuestro programa, donde aprenderás haciendo, con docentes comprometidos y en contacto con el sector productivo.'; } });
-  const J = (id, personaId, cargo, unidad, orden, esDirector = false) => ({ id, personaId, cargo, unidad, orden, esDirector, estado: 'Publicado', creadoPor: 'admin', creadoEn: T0, modPor: 'admin', modEn: T0 });
-  D.jerarquica = [
-    J('j1', 'dir', 'Director General', 'Dirección General', 1, true), J('j2', 'a3', 'Secretaria Académica', 'Secretaría Académica', 4),
-    J('j3', 'a1', 'Jefa de Unidad Académica', 'Unidad Académica', 2), J('j4', 'a2', 'Jefa de Área de Administración', 'Área de Administración', 3),
-    J('j5', 'd20', 'Jefe de la Unidad de Bienestar y Empleabilidad', 'Unidad de Bienestar y Empleabilidad', 5), J('j6', 'd3', 'Jefe de la Unidad de Investigación', 'Unidad de Investigación', 6),
-    J('j7', 'a3', 'Jefa de la Unidad de Formación Continua', 'Unidad de Formación Continua', 7), J('j8', 'd13', 'Coordinadora de Área de Calidad', 'Área de Calidad', 8),
-  ];
-  D.egresados = [
-    { id: 'e1', programaId: 'apsti', nombres: 'Kevin Arturo Huamán Lévano', foto: 'ph:person:m|Kevin Huamán Lévano', anio: 2023, testimonio: 'La formación práctica en redes y servidores me permitió ingresar al área de TI de una agroexportadora apenas egresé.', estado: 'Publicado' },
-    { id: 'e2', programaId: 'apsti', nombres: 'Lucía Fernanda Avalos Pachas', foto: 'ph:person:f|Lucía Avalos Pachas', anio: 2024, testimonio: 'Hoy trabajo como desarrolladora web. Los proyectos integradores fueron clave para armar mi portafolio.', estado: 'Publicado' },
-    { id: 'e3', programaId: 'enf', nombres: 'Milagros Yupanqui Campos', foto: 'ph:person:f|Milagros Yupanqui Campos', anio: 2022, testimonio: 'Las prácticas en el centro de salud me prepararon para atender a pacientes con responsabilidad y calidez.', estado: 'Publicado' },
-    { id: 'e4', programaId: 'cont', nombres: 'Diego Alonso Ramos Tasayco', foto: 'ph:person:m|Diego Ramos Tasayco', anio: 2023, testimonio: 'Aprendí a usar software contable y tributario que hoy aplico en un estudio contable de Pisco.', estado: 'Publicado' },
-    { id: 'e5', programaId: 'ashr', nombres: 'Andrea Sofía Peña Uribe', foto: 'ph:person:f|Andrea Peña Uribe', anio: 2024, testimonio: 'Gracias al programa trabajo en el área de alimentos y bebidas de un hotel en Paracas.', estado: 'Publicado' },
-  ];
-
-  /* ---------- Noticias, eventos ---------- */
-  D.categoriasNoticia = ['Institucionales', 'Académicas', 'Estudiantes', 'Eventos', 'Convocatorias'].map((n, i) => ({ id: 'cat' + (i + 1), nombre: n, estado: 'Activo' }));
-  const N = (id, titulo, cat, fecha, resumen, icon, destacada = false, estado = 'Publicada') => ({ id, titulo, slug: slugify(titulo), categoriaId: cat, fecha, resumen, contenido: `<p>${resumen}</p><p>La actividad se desarrolló con la participación de estudiantes, docentes y personal administrativo de la institución, en el marco del plan de trabajo anual.</p><p>La Dirección General agradeció el compromiso de la comunidad educativa y anunció que este tipo de iniciativas continuarán durante el presente año académico.</p>`, imagen: `ph:topic:${icon}|${id}`, video: '', adjuntos: [], destacada, estado, autor: 'comunicaciones', creadoPor: 'comunicaciones', creadoEn: fecha, modPor: 'comunicaciones', modEn: fecha });
-  D.noticias = [
-    N('n1', 'Ceremonia de graduación 2026', 'cat1', '2026-09-15T10:30:00', 'El IESTP Pisco realizó la ceremonia de graduación de sus egresados de los cinco programas de estudio.', 'grad', true),
-    N('n2', 'Nuevo laboratorio de informática', 'cat2', '2026-09-10T09:00:00', 'Se implementó un moderno laboratorio de informática para fortalecer la formación técnica en tecnologías de la información.', 'monitor'),
-    N('n3', 'Estudiantes destacan en feria de proyectos de innovación', 'cat3', '2026-09-05T16:00:00', 'Nuestros estudiantes presentaron proyectos innovadores en la feria institucional de innovación tecnológica.', 'star'),
-    N('n4', 'Proceso de admisión 2027: fechas preliminares', 'cat5', '2026-10-01T08:00:00', 'Conoce las fechas preliminares, requisitos y modalidades del próximo proceso de admisión.', 'clipboard', true),
-    N('n5', 'Visita técnica a hoteles de Paracas', 'cat2', '2026-08-29T11:00:00', 'Estudiantes del programa de Administración de Servicios de Hostelería y Restaurantes realizaron una visita técnica a establecimientos hoteleros de Paracas.', 'food'),
-    N('n6', 'IESTP Pisco campeón en juegos deportivos regionales', 'cat3', '2026-08-25T15:00:00', 'Nuestra delegación obtuvo el primer lugar en la disciplina de vóley en los juegos deportivos de institutos.', 'award', true),
-    N('n7', 'Campaña de salud en San Andrés', 'cat4', '2026-10-12T09:00:00', 'El programa de Enfermería Técnica realizó una campaña gratuita de tamizaje y orientación en salud.', 'heart'),
-    N('n8', 'Firma de convenio con empresa agroexportadora', 'cat1', '2026-10-18T12:00:00', 'El instituto firmó un convenio para que estudiantes de Producción Agropecuaria realicen sus experiencias formativas.', 'leaf'),
-    N('n9', 'Charla de orientación vocacional (programada)', 'cat4', '2026-11-05T09:00:00', 'Noticia programada: solo se publicará en la fecha indicada.', 'users'),
-    N('n10', 'Borrador: informe de gestión semestral', 'cat1', '2026-10-20T09:00:00', 'Este borrador no es visible en el portal público.', 'chart', false, 'Borrador'),
-  ];
-  D.eventos = [
-    { id: 'ev1', titulo: 'Feria vocacional 2026', fecha: '2026-11-08T09:00', lugar: 'Patio central del IESTP Pisco', descripcion: 'Exposición de los 5 programas de estudio para estudiantes de secundaria.', estado: 'Publicado' },
-    { id: 'ev2', titulo: 'Examen de admisión ordinario', fecha: '2026-11-22T08:00', lugar: 'Aulas del IESTP Pisco', descripcion: 'Evaluación del concurso de admisión 2026 – modalidad ordinaria.', estado: 'Publicado' },
-    { id: 'ev3', titulo: 'Semana de la innovación tecnológica', fecha: '2026-11-25T10:00', lugar: 'Auditorio institucional', descripcion: 'Ponencias, talleres y exhibición de proyectos de investigación aplicada.', estado: 'Publicado' },
-    { id: 'ev4', titulo: 'Ceremonia de clausura del año académico', fecha: '2026-12-18T17:00', lugar: 'Auditorio institucional', descripcion: 'Reconocimiento a estudiantes destacados del año 2026.', estado: 'Publicado' },
-  ];
-
-  /* ---------- Transparencia ---------- */
-  D.tiposDocumento = ['Plan', 'Reglamento', 'Manual', 'Directiva', 'Resolución', 'Informe'].map((n, i) => ({ id: 'td' + (i + 1), nombre: n, estado: 'Activo' }));
-  const DG = (id, grupo, nombre, tipoId, vigencia, version, estado, fecha, orden, extra = {}) => Object.assign({ id, grupo, nombre, tipoId, descripcion: '', vigencia, version, estado, orden, fechaPub: fecha, publicadoPor: 'transparencia', archivo: genDoc(`${slugify(nombre)}_v${version}.pdf`, nombre, ['Version ' + version, 'Vigencia: ' + vigencia]), creadoPor: 'transparencia', creadoEn: fecha, modPor: 'transparencia', modEn: fecha }, extra);
-  D.documentos = [
-    DG('doc1', 'mpp', 'Manual de Perfiles de Puestos (MPP)', 'td3', '2025', '1.0', 'Publicado', '2025-03-15', 1),
-    DG('doc2', 'pei', 'Proyecto Educativo Institucional (PEI) 2024-2028', 'td1', '2024 - 2028', '1.0', 'Publicado', '2024-01-20', 2),
-    DG('doc3a', 'ri', 'Reglamento Institucional (RI)', 'td2', '2023', '1.0', 'Histórico', '2023-02-10', 3),
-    DG('doc3', 'ri', 'Reglamento Institucional (RI)', 'td2', '2025', '2.0', 'Publicado', '2025-02-20', 3),
-    DG('doc4', 'radm', 'Reglamento de Admisión 2026', 'td2', '2026', '1.0', 'Publicado', '2026-03-05', 4, { refModulo: 'admision', archivo: null }),
-    DG('doc5', 'mpa', 'Manual de Procesos Académicos (MPA)', 'td3', '2025', '1.0', 'Publicado', '2025-03-12', 5),
-    DG('doc6', 'pat', 'Plan Anual de Trabajo (PAT) 2026', 'td1', '2026', '1.0', 'Publicado', '2026-02-01', 6),
-    DG('doc7', 'rinv', 'Reglamento de Investigación', 'td2', '2024', '1.1', 'Publicado', '2024-07-18', 7),
-    DG('doc8', 'psst', 'Plan de Seguridad y Salud en el Trabajo', 'td1', '2026', '1.0', 'Borrador', '2026-04-25', 8),
-  ];
-  const TU = (cat, cod, den, monto) => ({ id: uid(), anio: 2026, categoria: cat, codigo: cod, denominacion: den, monto, cuenta: 'Banco de la Nación – Cta. Cte. (ver en ventanilla)', requisitos: '', estado: 'Publicado' });
-  D.tupa = [
-    TU('Admisión', 'A-01', 'Inscripción al concurso de admisión – modalidad ordinaria', 180), TU('Admisión', 'A-02', 'Inscripción al concurso de admisión – modalidad exonerados', 200), TU('Admisión', 'A-03', 'Constancia de ingreso', 30),
-    TU('Matrícula', 'M-01', 'Matrícula de ingresantes', 150), TU('Matrícula', 'M-02', 'Ratificación de matrícula por semestre', 120), TU('Matrícula', 'M-03', 'Reingreso', 80), TU('Matrícula', 'M-04', 'Matrícula extemporánea (recargo)', 40),
-    TU('Certificación', 'C-01', 'Certificado de estudios', 60), TU('Certificación', 'C-02', 'Certificado modular', 70), TU('Certificación', 'C-03', 'Constancia de estudios / egresado', 25),
-    TU('Titulación', 'T-01', 'Derecho de titulación – Profesional Técnico', 450), TU('Titulación', 'T-02', 'Duplicado de diploma', 250),
-    TU('Trámites', 'R-01', 'Convalidación por unidad didáctica', 35), TU('Trámites', 'R-02', 'Evaluación extraordinaria / recuperación', 30), TU('Trámites', 'R-03', 'Traslado interno o externo', 90),
-  ];
-  D.tupaDocs = { resolucion: genDoc('RD_Aprobacion_TUPA_2026.pdf', 'Resolución Directoral de aprobación del TUPA 2026', ['Aprueba el Texto Unico de Procedimientos Administrativos 2026']), tupa: genDoc('TUPA_2026.pdf', 'TUPA vigente 2026', ['Texto Unico de Procedimientos Administrativos - 2026']), anio: 2026 };
-  D.estadisticas = [];
-  [2022, 2023, 2024, 2025, 2026].forEach((y, yi) => D.programas.forEach((p, pi) => { const b = 25 + (hashStr(p.id) % 30) + yi * 3; D.estadisticas.push({ id: `st-${y}-${p.id}`, anio: y, programaId: p.id, postulantes: b * 2 + (hashStr(p.id + y) % 20), ingresantes: b, matriculados: b * 3 - (hashStr(y + p.id) % 15), egresados: Math.round(b * .7), titulados: Math.round(b * .45), becas: 2 + (hashStr('b' + y + p.id) % 4), creditos: hashStr('c' + y + p.id) % 3 }); }));
-  D.licenciamiento = { estado: 'En proceso', etapa: 'Solicitud de licenciamiento presentada al MINEDU – en evaluación de Condiciones Básicas de Calidad', resolucion: '', fechaResolucion: '', vigenciaHasta: '', descripcion: 'El instituto viene adecuándose a las Condiciones Básicas de Calidad (CBC) establecidas por la RM N.º 103-2022-MINEDU, en el marco de la Ley N.º 30512.', hitos: [{ fecha: '2025-06-30', texto: 'Aprobación del plan de adecuación a las CBC' }, { fecha: '2026-03-15', texto: 'Presentación de la solicitud de licenciamiento' }, { fecha: '2026-10-21', texto: 'En evaluación por el MINEDU' }], documentos: [], modPor: 'transparencia', modEn: '2026-10-01T10:00:00Z' };
-  D.inversiones = [
-    { id: 'inv1', titulo: 'Equipamiento del laboratorio de cómputo', tipo: 'Inversión', fuente: 'Recursos Directamente Recaudados (RDR)', monto: 85000, fecha: '2026-06-15', estadoAvance: 'Concluido', descripcion: 'Adquisición de 30 computadoras y equipos de red para el programa de APSTI.', imagen: 'ph:topic:monitor|inv1', documento: genDoc('Informe_inversion_laboratorio.pdf', 'Informe de inversión - laboratorio de cómputo'), estado: 'Publicado' },
-    { id: 'inv2', titulo: 'Mejoramiento de servicios higiénicos', tipo: 'Obra de infraestructura', fuente: 'Gobierno Regional de Ica', monto: 120000, fecha: '2026-08-01', estadoAvance: 'En ejecución (60 %)', descripcion: 'Rehabilitación de los servicios higiénicos del pabellón A.', imagen: 'ph:topic:building|inv2', documento: null, estado: 'Publicado' },
-    { id: 'inv3', titulo: 'Donación de equipos de laboratorio de alimentos', tipo: 'Donación', fuente: 'Empresa privada (convenio)', monto: 18500, fecha: '2026-05-20', estadoAvance: 'Recibido', descripcion: 'Donación de balanzas analíticas y refractómetros.', imagen: 'ph:topic:flask|inv3', documento: genDoc('Acta_donacion_2026.pdf', 'Acta de donacion 2026'), estado: 'Publicado' },
-    { id: 'inv4', titulo: 'Reinversión de ingresos propios en mobiliario', tipo: 'Reinversión', fuente: 'Recursos Directamente Recaudados (RDR)', monto: 22000, fecha: '2026-04-10', estadoAvance: 'Concluido', descripcion: 'Renovación de carpetas y pizarras en 6 aulas.', imagen: 'ph:topic:layers|inv4', documento: null, estado: 'Publicado' },
-  ];
-  D.convocatorias = [
-    { id: 'cv1', titulo: 'Contratación docente 2026-II', tipo: 'Contratación docente', fecha: '2026-06-10', situacion: 'Concluida', descripcion: 'Proceso de contratación de docentes para el semestre 2026-II.', bases: genDoc('Bases_Contratacion_Docente_2026-II.pdf', 'Bases - Contratacion docente 2026-II'), etapas: [{ id: uid(), nombre: 'Publicación de bases', fecha: '2026-06-10', doc: null }, { id: uid(), nombre: 'Resultados de evaluación curricular', fecha: '2026-06-25', doc: genDoc('Resultados_curricular_2026-II.pdf', 'Resultados evaluacion curricular') }, { id: uid(), nombre: 'Resultados finales', fecha: '2026-07-05', doc: genDoc('Resultados_finales_2026-II.pdf', 'Resultados finales') }], estado: 'Publicado' },
-    { id: 'cv2', titulo: 'Encargatura de la Jefatura de Unidad de Investigación', tipo: 'Encargatura', fecha: '2026-10-14', situacion: 'En curso', descripcion: 'Convocatoria interna para encargatura de puesto jerárquico.', bases: genDoc('Bases_Encargatura_2026.pdf', 'Bases - Encargatura 2026'), etapas: [{ id: uid(), nombre: 'Publicación de bases', fecha: '2026-10-14', doc: null }, { id: uid(), nombre: 'Evaluación de expedientes', fecha: '2026-10-28', doc: null }], estado: 'Publicado' },
-  ];
-
-  /* ---------- Admisión, matrícula y becas ---------- */
-  const res = (p, t, y) => genDoc(`Resultados_${p.toUpperCase()}_${t}_${y}.pdf`, `Resultados de admision ${y} - ${p.toUpperCase()} - Turno ${t === 'M' ? 'Manana' : 'Tarde'}`, ['Relacion de ingresantes (documento de demostracion)']);
-  const r26 = { ashr: { M: res('ashr', 'M', 2026) }, apsti: { M: res('apsti', 'M', 2026) }, cont: { M: res('cont', 'M', 2026), T: res('cont', 'T', 2026) }, enf: { M: res('enf', 'M', 2026), T: res('enf', 'T', 2026) }, pa: { M: res('pa', 'M', 2026) } };
-  const vac = {}; D.programas.forEach(p => { vac[p.id] = { M: /Mañana/.test(p.turno) ? 40 : 0, T: /tarde|Tarde/.test(p.turno) ? 40 : 0 }; });
-  D.admisiones = [
-    { id: 'ad2025', anio: 2025, titulo: 'Inscripciones del Concurso de Admisión 2025', subtitulo: 'Proceso concluido', descripcion: '', estado: 'Cerrado', vigente: false, prospecto: genDoc('Prospecto_Admision_2025.pdf', 'Prospecto de Admision 2025'), reglamento: genDoc('Reglamento_Admision_2025.pdf', 'Reglamento de Admision 2025'), resultados: {}, historial: [], cronograma: [], vacantes: vac, requisitos: [], modalidades: [], creadoPor: 'secretaria', creadoEn: '2025-02-01T10:00:00Z', modPor: 'secretaria', modEn: '2025-04-01T10:00:00Z' },
-    { id: 'ad2026', anio: 2026, titulo: 'Inscripciones del Concurso de Admisión 2026', subtitulo: 'Tu talento construye grandes oportunidades', descripcion: 'Bienvenido al proceso de admisión. Revisa el prospecto y el reglamento, elige tu programa de estudio y sigue el cronograma oficial.', estado: 'Publicado', vigente: true,
-      prospecto: genDoc('Prospecto_Admision_2026.pdf', 'Prospecto de Admision 2026', ['Programas de estudio, vacantes, requisitos y cronograma del concurso de admision 2026.'], 2400000), reglamento: genDoc('Reglamento_Admision_2026.pdf', 'Reglamento de Admision 2026', ['Reglamento del proceso de admision 2026.'], 1800000),
-      resultados: r26, historial: [], vacantes: vac,
-      cronograma: [{ actividad: 'Inscripciones', fecha: '01/10/2026 al 15/11/2026' }, { actividad: 'Examen de admisión (ordinario)', fecha: '22/11/2026' }, { actividad: 'Publicación de resultados', fecha: '24/11/2026' }, { actividad: 'Matrícula de ingresantes', fecha: '25/11/2026 al 05/12/2026' }],
-      requisitos: ['Copia simple del DNI', 'Certificado de estudios de educación secundaria (original)', 'Partida de nacimiento (copia)', 'Dos fotografías tamaño carné a color', 'Comprobante de pago por derecho de inscripción'],
-      modalidades: [{ nombre: 'Ordinaria', detalle: 'Examen de conocimientos para egresados de educación secundaria.' }, { nombre: 'Exonerados', detalle: 'Primeros puestos de secundaria, deportistas calificados, personas con discapacidad, víctimas del terrorismo y beneficiarios de programas del Estado, conforme al reglamento.' }],
-      creadoPor: 'secretaria', creadoEn: '2026-03-01T10:00:00Z', modPor: 'secretaria', modEn: '2026-10-01T10:00:00Z' },
-  ];
-  const IT = (s, t, o) => ({ id: uid(), seccion: s, texto: t, orden: o, estado: 'Publicado' });
-  const matItems = () => [
-    IT('costos', 'De acuerdo con las tasas educativas aprobadas por la institución y teniendo en cuenta la Unidad Impositiva Tributaria (UIT) vigente, se establecen los derechos por el pago de matrícula. Revise los montos en el TUPA.', 1),
-    IT('ingresantes', 'Presentar carné de postulante en Secretaría Académica para iniciar matrícula.', 1), IT('ingresantes', 'Recabar ficha y orden de matrícula.', 2), IT('ingresantes', 'Pagar en recaudación por derecho de matrícula en la oficina de recaudación.', 3), IT('ingresantes', 'Entregar en Secretaría Académica: ficha de matrícula (completada correctamente), orden de matrícula y recibo de pago por matrícula.', 4), IT('ingresantes', 'Obligatorio presentar documentos originales: certificado de secundaria, partida de nacimiento, 3 fotos (a color) y copia de DNI.', 5),
-    IT('ratificacion', 'Solicitar récord de notas en Secretaría Académica.', 1), IT('ratificacion', 'Recabar ficha y orden de matrícula.', 2), IT('ratificacion', 'Pagar en recaudación el derecho de ratificación de matrícula o reingreso/reserva de semestre.', 3), IT('ratificacion', 'Entregar en Secretaría Académica: ficha de matrícula, orden de matrícula y recibo de pago.', 4), IT('ratificacion', 'El estudiante recibe constancia de ratificación de matrícula.', 5),
-  ];
-  D.matriculas = [
-    { id: 'mt261', periodo: '2026-I', titulo: 'Matrícula Regular 2026-I', inicioClases: '2026-04-01', descripcion: '<p>Proceso de matrícula del semestre 2026-I.</p>', estado: 'Cerrado', vigente: false, items: matItems(), docTasas: genDoc('Tasas_Matricula_2026-I.pdf', 'Tasas de matricula 2026-I'), cronograma: [], creadoPor: 'secretaria', creadoEn: '2026-02-01T10:00:00Z', modPor: 'secretaria', modEn: '2026-03-01T10:00:00Z' },
-    { id: 'mt262', periodo: '2026-II', titulo: 'Matrícula Regular 2026-II', inicioClases: '2026-08-17', descripcion: '<p>La matrícula es el proceso mediante el cual una persona es registrada en un programa de estudios que oferta el instituto, con lo que adquiere la condición de estudiante, previa presentación de los requisitos establecidos. Puede ser de ingresantes o de ratificación por cada semestre académico.</p><p>La matrícula se realiza por unidades didácticas, verificando que el estudiante cumpla con los requisitos del plan de estudios. El código de matrícula asignado es el número de DNI para peruanos y el número de carné de extranjería o pasaporte para extranjeros.</p>', estado: 'Publicado', vigente: true, items: matItems(), docTasas: genDoc('Tasas_Matricula_2026-II.pdf', 'Tasas y costos de matricula 2026-II'), cronograma: [{ actividad: 'Matrícula regular', fecha: '27/07/2026 al 08/08/2026' }, { actividad: 'Matrícula extemporánea', fecha: '10/08/2026 al 14/08/2026' }, { actividad: 'Inicio de clases', fecha: '17/08/2026' }], creadoPor: 'secretaria', creadoEn: '2026-07-01T10:00:00Z', modPor: 'secretaria', modEn: '2026-07-20T10:00:00Z' },
-  ];
-  D.tiposBeca = [
-    { id: 'tb1', nombre: 'Exoneración 100 %', descripcion: 'Por ocupar el primer puesto en el semestre anterior.', estado: 'Activo' },
-    { id: 'tb2', nombre: 'Exoneración 50 %', descripcion: 'Por ocupar el segundo puesto en el semestre anterior.', estado: 'Activo' },
-    { id: 'tb3', nombre: 'Situación socioeconómica', descripcion: 'Evaluada por la Unidad de Bienestar y Empleabilidad.', estado: 'Activo' },
-    { id: 'tb4', nombre: 'Deportista destacado', descripcion: 'Representación institucional en competencias oficiales.', estado: 'Activo' },
-    { id: 'tb5', nombre: 'Beca PRONABEC', descripcion: 'Beneficiarios de becas del Programa Nacional de Becas y Crédito Educativo.', estado: 'Activo' },
-  ];
-  D.becasPeriodos = [
-    { id: 'bp1', anio: 2025, periodo: 'II', estado: 'Cerrado', vigente: false },
-    { id: 'bp2', anio: 2026, periodo: 'I', estado: 'Cerrado', vigente: false },
-    { id: 'bp3', anio: 2026, periodo: 'II', estado: 'Publicado', vigente: true },
-  ];
-  const NOMS = ['Jonás Alvaro', 'Humberto Jeremías', 'Elisban Dámaso', 'Jhonathan Alexander', 'Jasson Antonio', 'Leonela Paola', 'María Fernanda', 'Carlos Andrés', 'Daniela Lucero', 'Brayan Aldair', 'Sofía Valentina', 'Rodrigo Mateo', 'Camila Andrea', 'Ángel Josué', 'Valeria Nicole', 'Fabricio Joel', 'Ximena Alessandra', 'Piero Sebastián', 'Kiara Milagros', 'Renzo Gabriel'];
-  const APS = ['Rivadeneyra Azañero', 'Hoyccocha Reymundo', 'Chávez Fernández', 'Pachas Huasasquiche', 'Quispe Castilla', 'Castilla Avalos', 'Torres García', 'Mendoza Yataco', 'Ramos Pérez', 'Quispe Palomino', 'Lévano Huamán', 'Tasayco Ormeño', 'Uribe Campos', 'Napa Saravia', 'Avalos Ventura', 'Magallanes Peña', 'Hernández Cárdenas', 'Yupanqui Salazar', 'Carrasco Napa', 'Medina Tasayco'];
-  D.becarios = [];
-  let k = 0;
-  D.becasPeriodos.forEach(bp => { for (let i = 0; i < 16; i++) { const j = (k * 7 + i * 3) % 20; D.becarios.push({ id: 'bc' + (k++), periodoId: bp.id, dni: String(70000000 + hashStr('dni' + k) % 9999999), apellidos: APS[(j + 3) % 20], nombres: NOMS[j], programaId: D.programas[i % D.programas.length].id, tipoId: ['tb1', 'tb1', 'tb2', 'tb3', 'tb4', 'tb5'][i % 6], motivo: ['Por ocupar el primer puesto', 'Por ocupar el primer puesto', 'Por ocupar el segundo puesto', 'Evaluación socioeconómica', 'Seleccionado regional', 'Beca 18'][i % 6], estado: 'Publicado' }); } });
-
-  /* ---------- Atención al ciudadano ---------- */
-  D.reclamos = [
-    { id: 'lr1', codigo: 'LR-2026-000001', fecha: '2026-09-18T10:12:00', tipo: 'Reclamo', nombres: 'Juan Carlos Pérez Gómez', tipoDoc: 'DNI', numDoc: '76543210', correo: 'juan.perez@correo.com', telefono: '956111222', asunto: 'Atención en mesa de partes', descripcion: 'No se me entregó el cargo de recepción de mi solicitud.', pedido: 'Que se me entregue el cargo y se informe el estado del trámite.', adjunto: null, estado: 'Atendido', historial: [{ fecha: '2026-09-18T10:12:00', usuario: 'portal', estado: 'Recibido', nota: 'Registro desde el portal web' }, { fecha: '2026-09-19T09:00:00', usuario: 'atencion', estado: 'En atención', nota: '' }, { fecha: '2026-09-22T15:00:00', usuario: 'atencion', estado: 'Atendido', nota: 'Se envió respuesta al correo del reclamante.' }], notas: [{ fecha: '2026-09-19T09:05:00', usuario: 'atencion', texto: 'Coordinar con mesa de partes.' }], respuesta: 'Se le remitió el cargo digital y el estado de su trámite.', notifInst: 'Enviado', notifUser: 'Enviado', anulado: false },
-    { id: 'lr2', codigo: 'LR-2026-000002', fecha: '2026-10-02T16:40:00', tipo: 'Queja', nombres: 'María Fernanda Torres Rojas', tipoDoc: 'DNI', numDoc: '73216580', correo: 'mftorres@correo.com', telefono: '', asunto: 'Trato del personal administrativo', descripcion: 'Durante mi visita para solicitar una constancia no recibí una orientación adecuada.', pedido: 'Mejorar la atención al público.', adjunto: null, estado: 'En atención', historial: [{ fecha: '2026-10-02T16:40:00', usuario: 'portal', estado: 'Recibido', nota: 'Registro desde el portal web' }, { fecha: '2026-10-03T08:30:00', usuario: 'atencion', estado: 'En atención', nota: '' }], notas: [], respuesta: '', notifInst: 'Enviado', notifUser: 'Enviado', anulado: false },
-    { id: 'lr3', codigo: 'LR-2026-000003', fecha: '2026-10-15T11:05:00', tipo: 'Reclamo', nombres: 'Luis Alberto Quispe Napa', tipoDoc: 'DNI', numDoc: '70114567', correo: 'lquispe@correo.com', telefono: '987654321', asunto: 'Demora en emisión de certificados', descripcion: 'Solicité mi certificado de estudios hace más de 15 días hábiles y aún no se emite.', pedido: 'Emisión del certificado.', adjunto: null, estado: 'Recibido', historial: [{ fecha: '2026-10-15T11:05:00', usuario: 'portal', estado: 'Recibido', nota: 'Registro desde el portal web' }], notas: [], respuesta: '', notifInst: 'Error', notifUser: 'Enviado', anulado: false },
-  ];
-  D.config.contadores.LR['2026'] = 3;
-  D.mensajes = [
-    { id: 'm1', fecha: '2026-10-20T10:15:00', nombres: 'María Torres Quispe', correo: 'maria.torres@gmail.com', telefono: '956789123', asunto: 'Consulta sobre proceso de admisión', programa: 'apsti', mensaje: '¿Hasta qué fecha puedo inscribirme al examen de admisión?', estado: 'Nuevo', historial: [] },
-    { id: 'm2', fecha: '2026-10-19T16:42:00', nombres: 'Carlos Rojas Huamán', correo: 'carlos.rojas@outlook.com', telefono: '', asunto: 'Información de carreras', programa: 'ashr', mensaje: 'Quisiera saber el horario del programa de Hostelería y Restaurantes.', estado: 'Leído', historial: [] },
-    { id: 'm3', fecha: '2026-10-18T11:08:00', nombres: 'Ana Lucía Medina', correo: 'ana.medina@gmail.com', telefono: '945112233', asunto: 'Solicitud de certificado', programa: '', mensaje: 'Egresé en 2019, ¿cómo solicito mi certificado de estudios?', estado: 'Atendido', historial: [{ fecha: '2026-10-18T15:00:00', usuario: 'atencion', estado: 'Atendido' }] },
-    { id: 'm4', fecha: '2026-10-17T09:27:00', nombres: 'Luis Fernández', correo: 'luis_fz@gmail.com', telefono: '', asunto: 'Consulta sobre convalidación', programa: 'cont', mensaje: 'Tengo estudios en otro instituto, ¿puedo convalidar unidades didácticas?', estado: 'Leído', historial: [] },
-  ];
-  D.expedientes = [
-    { id: 'x1', numero: 'EXP-2026-000041', fecha: '2026-10-16T09:40:00', nombres: 'Rosa Elena Campos Lévano', tipoDoc: 'DNI', numDoc: '45678912', correo: 'rcampos@correo.com', telefono: '999888777', tipoTramite: 'Certificado de estudios', asunto: 'Solicito certificado de estudios del programa de Contabilidad', folios: 2, archivo: null, estado: 'En proceso', historial: [{ fecha: '2026-10-16T09:40:00', usuario: 'portal', estado: 'Recibido', nota: 'Registro virtual' }, { fecha: '2026-10-17T10:00:00', usuario: 'atencion', estado: 'En proceso', nota: 'Derivado a Secretaría Académica' }] },
-  ];
-  D.config.contadores.EXP['2026'] = 41;
-  D.certificados = [
-    { id: 'ce1', codigo: 'CERT-2025-000123', dni: '72345678', nombres: 'Kevin Arturo Huamán Lévano', programaId: 'apsti', tipo: 'Título de Profesional Técnico', fecha: '2025-03-14', estado: 'Válido' },
-    { id: 'ce2', codigo: 'CERT-2025-000124', dni: '71122334', nombres: 'Lucía Fernanda Avalos Pachas', programaId: 'apsti', tipo: 'Certificado de estudios', fecha: '2025-04-02', estado: 'Válido' },
-    { id: 'ce3', codigo: 'CERT-2024-000087', dni: '70998877', nombres: 'Milagros Yupanqui Campos', programaId: 'enf', tipo: 'Certificado modular – MP01', fecha: '2024-08-20', estado: 'Válido' },
-  ];
-  D.locales = [{ id: 'l1', nombre: 'Sede principal', direccion: 'Av. Las Américas, 5.ª cuadra S/N, Pisco - Ica', telefono: '932 375 402', correo: 'direcciongeneral@iestppisco.edu.pe', horario: 'Lunes a viernes: 08:00 a.m. - 03:40 p.m.', lat: -13.7077, lng: -76.2031, foto: 'ph:campus43:8', estado: 'Publicado', orden: 1 }];
-  D.servicios = [
-    { id: 'sv1', nombre: 'Tópico de salud', descripcion: 'Atención de primeros auxilios y orientación en salud para estudiantes y personal.', ubicacion: 'Pabellón B, primer piso', horario: 'Lunes a viernes, 8:00 a.m. - 1:00 p.m.', costo: 'Gratuito', responsable: 'Lic. Gladys Ormeño Campos', icono: 'heart', estado: 'Publicado', orden: 1 },
-    { id: 'sv2', nombre: 'Bienestar y orientación psicopedagógica', descripcion: 'Acompañamiento psicológico, tutoría y orientación vocacional.', ubicacion: 'Oficina de Bienestar y Empleabilidad', horario: 'Lunes a viernes, 8:00 a.m. - 5:00 p.m.', costo: 'Gratuito', responsable: 'Lic. Rosario Mendoza Pérez', icono: 'users', estado: 'Publicado', orden: 2 },
-    { id: 'sv3', nombre: 'Empleabilidad y seguimiento de egresados', descripcion: 'Vinculación con empresas, bolsa de trabajo y seguimiento de egresados.', ubicacion: 'Oficina de Bienestar y Empleabilidad', horario: 'Lunes a viernes, 8:00 a.m. - 5:00 p.m.', costo: 'Gratuito', responsable: 'Lic. Miguel Huamaní Soto', icono: 'briefcase', estado: 'Publicado', orden: 3 },
-    { id: 'sv4', nombre: 'Biblioteca física', descripcion: 'Sala de lectura con colección bibliográfica especializada por programa de estudio.', ubicacion: 'Pabellón A, segundo piso', horario: 'Lunes a viernes, 8:00 a.m. - 7:00 p.m.', costo: 'Gratuito', responsable: 'Biblioteca', icono: 'book', estado: 'Publicado', orden: 4 },
-  ];
-  const U = (id, usuario, nombre, rol, pass, extra = {}) => Object.assign({ id, usuario, nombre, rol, passHash: hashPass(usuario, pass), estado: 'Activo', intentos: 0, bloqueadoHasta: 0, ultimoAcceso: '' }, extra);
-  D.usuarios = [
-    U('u1', 'admin', 'Administrador del sistema', 'admin', 'Admin2026*', { ixId: 1 }),
-    U('u2', 'comunicaciones', 'Área de Imagen Institucional', 'imagen', 'Imagen2026*', { ixId: 10 }),
-    U('u3', 'secretaria', 'Secretaría Académica', 'secretaria', 'Secret2026*', { ixId: 3, area: 'SA' }),
-    U('u4', 'coord.apsti', 'Coordinador APSTI', 'coordinador', 'Coord2026*', { programaId: 'apsti', ixId: 9, area: 'CAPSTI' }),
-    U('u5', 'transparencia', 'Responsable de Transparencia', 'transparencia', 'Transp2026*', { ixId: 11 }),
-    U('u6', 'atencion', 'Atención al Ciudadano', 'atencion', 'Atenc2026*', { ixId: 4, area: 'MP' }),
-    U('u7', 'direccion', 'Pedro Armando Tasayco Díaz', 'directivo', 'Direc2026*', { ixId: 2, area: 'DG' }),
-    U('u8', 'docente', 'Patricia Elena Torres Rivera', 'docente', 'Docente2026*', { ixId: 5, vin: 'doc:2', personaId: 'd4', dni: (D.personas.find(p => p.id === 'd4') || {}).dni || '' }),
-    U('u9', '74125896', 'Diego Alonso Martínez Huarcaya', 'estudiante', 'Estud2026*', { ixId: 6, vin: 'est:1', dni: '74125896' }),
-    U('u10', '75236987', 'Lucía Fernanda Tasayco Uribe', 'egresado', 'Egres2026*', { ixId: 7, vin: 'est:2', dni: '75236987' }),
-    U('u11', '20601234561', 'AgroExport Pisco S.A.C.', 'empresa', 'Empresa2026*', { ixId: 8, vin: 'emp:1', dni: '20601234561' }),
-    U('u12', 'hquispe', 'Horacio Quispe Huaroto', 'admin', 'Pisco2026*', { ixId: 12, personaId: 'a4', correo: 'horacio@iestppisco.edu.pe', cargo: 'Responsable del Portal Web Institucional' }),
-    U('u13', 'bienestar', 'Unidad de Bienestar y Empleabilidad', 'atencion', 'Bienes2026*', { ixId: 13, area: 'UBE' }),
-  ];
-  D.auditoria = [{ id: uid(), fecha: nowISO(), usuario: 'sistema', rol: 'Sistema', accion: 'Instalación', entidad: 'Base de datos', registro: 'Datos de demostración cargados', detalle: '' }];
-  D.config.tema = 'pisco';
-  if (typeof piscoSeed === 'function') piscoSeed(D);
-  return D;
-}
-const DEMO_USERS = [['hquispe', 'Pisco2026*', 'Responsable del portal (administrador)'], ['admin', 'Admin2026*', 'Administrador (todo)'], ['comunicaciones', 'Imagen2026*', 'Imagen institucional'], ['secretaria', 'Secret2026*', 'Secretaría académica'], ['coord.apsti', 'Coord2026*', 'Coordinador de APSTI'], ['transparencia', 'Transp2026*', 'Transparencia'], ['atencion', 'Atenc2026*', 'Atención al ciudadano'], ['direccion', 'Direc2026*', 'Directivo'], ['docente', 'Docente2026*', 'Docente'], ['74125896', 'Estud2026*', 'Estudiante'], ['75236987', 'Egres2026*', 'Egresado'], ['20601234561', 'Empresa2026*', 'Empresa'], ['bienestar', 'Bienes2026*', 'Bienestar y empleabilidad']];
+function seedDB() { throw new Error('Los datos se inicializan en PHP y MySQL.'); }
+const DEMO_USERS = [];
 
 /* ==== public.js ==== */
 /* =========================================================
@@ -5726,7 +5208,8 @@ function bindReclamo() {
     const codigo = `LR-${y}-${pad(C[y], 6)}`; const fecha = nowISO();
     const r = { id: uid(), codigo, fecha, tipo: v.tipo, nombres: v.nombres.trim(), tipoDoc: v.tipoDoc, numDoc: v.numDoc.trim(), correo: v.correo.trim(), telefono: v.telefono.trim(), asunto: v.asunto.trim(), descripcion: v.descripcion.trim(), pedido: v.pedido.trim(), adjunto: adj, estado: 'Recibido', historial: [{ fecha, usuario: 'portal', estado: 'Recibido', nota: 'Registro desde el portal web' }], notas: [], respuesta: '', notifInst: 'Pendiente', notifUser: 'Pendiente', anulado: false };
     coll('reclamos').unshift(r);
-    if (!saveDB()) { C[y]--; DB.reclamos.shift(); return; } // se guarda antes de confirmar
+    if (!saveDB()) { C[y]--; DB.reclamos.shift(); return; }
+      codigo = r.codigo; // se guarda antes de confirmar
     r.notifInst = mailOut(DB.config.correoReclamos, `[${codigo}] Nuevo ${v.tipo.toLowerCase()} registrado`, `${r.nombres} - ${r.asunto}: ${r.descripcion}`);
     r.notifUser = mailOut(r.correo, `Constancia de registro ${codigo}`, `Su ${v.tipo.toLowerCase()} fue registrado el ${fshort(fecha, true)} con el código ${codigo}.`);
     audit('Registro', 'Libro de reclamaciones', codigo, `${v.tipo} registrado desde el portal. Notificación institucional: ${r.notifInst}`); saveDB();
@@ -5833,11 +5316,11 @@ R('servicios/mesa-de-partes', (path, q0) => {
         const x = { id: uid(), numero, fecha, nombres: v.nombres.trim(), tipoDoc: v.tipoDoc, numDoc: v.numDoc.trim(), correo: v.correo.trim(), telefono: v.telefono, tipoTramite: v.tipoTramite, asunto: v.asunto.trim(), folios: +v.folios, archivo: { nombre: safeName(file.name, 'exp'), original: file.name, size: file.size, data: await readAsDataURL(file) }, area: 'MP', estado: 'Recibido', historial: [{ fecha, usuario: 'portal', estado: 'Recibido', nota: 'Registro virtual' }] };
         x.archivo.sha256 = await sha256Of(x.archivo.data); coll('expedientes').unshift(x); expCargoCod(x); if (!saveDB()) { C[y]--; DB.expedientes.shift(); return; }
         mailOut(x.correo, 'Cargo de recepción ' + numero, 'Su trámite fue registrado.'); audit('Registro', 'Mesa de partes', numero, x.tipoTramite); saveDB(); f.reset();
-        const mReg = modal({ title: 'Trámite registrado', body: `<div class="notice ok">Tu trámite fue recibido el ${fdate(fecha, true)}.</div><p>Número de expediente:</p><div class="code-box">${numero}</div><p style="margin-top:10px">Código de verificación: <b class="mono">${esc(x.cargoCod || '—')}</b> · Plazo de atención: ${EXP_PLAZOS[x.tipoTramite] || 10} días hábiles.</p>${expEfectiva(fecha) ? '<div class="notice warn">Registrado fuera del horario de recepción: se considera recibido el ' + fdate(expEfectiva(fecha), true) + '.</div>' : ''}<p>Descarga y conserva tu cargo de recepción. También enviamos una copia a <b>${esc(x.correo)}</b>.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${cargoBtn(x)}<a class="btn ghost" href="${esc('#/servicios/mesa-de-partes?exp=' + numero + '&c=' + (x.cargoCod || ''))}" data-close-modal>Ver seguimiento</a></div>` }); $('[data-close-modal]', mReg.el).onclick = () => mReg.close();
+        const mReg = modal({ title: 'Trámite registrado', body: `<div class="notice ok">Tu trámite fue recibido el ${fdate(fecha, true)}.</div><p>Número de expediente:</p><div class="code-box">${numero}</div><p style="margin-top:10px">Código de verificación: <b class="mono">${esc(x.cargoCod || '—')}</b> · Plazo de atención: ${EXP_PLAZOS[x.tipoTramite] || 10} días hábiles.</p>${expEfectiva(fecha) ? '<div class="notice warn">Registrado fuera del horario de recepción: se considera recibido el ' + fdate(expEfectiva(fecha), true) + '.</div>' : ''}<p>Descarga y conserva tu cargo de recepción. Correo de contacto: <b>${esc(x.correo)}</b>.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${cargoBtn(x)}<a class="btn ghost" href="${esc('#/servicios/mesa-de-partes?exp=' + numero + '&c=' + (x.cargoCod || ''))}" data-close-modal>Ver seguimiento</a></div>` }); $('[data-close-modal]', mReg.el).onclick = () => mReg.close();
       };
       const q = $('[data-mpq]');
       const showExp = x => { $('#mq-r').innerHTML = x ? `<div class="notice" role="status" style="margin-top:14px"><b>${esc(x.numero)}</b> · ${esc(x.tipoTramite)}<br>Estado: <b>${esc(x.estado)}</b> · Área: ${esc(x.area ? areaName(x.area) : 'Mesa de partes')} · Plazo: ${expSem(x)}<ul style="margin:6px 0 0">${x.historial.map(h => `<li>${fshort(h.fecha, true)} — ${esc(h.estado)}${h.nota ? ': ' + esc(h.nota) : ''}</li>`).join('')}</ul><div style="margin-top:10px">${cargoBtn(x, 'btn sm')}</div></div>` : '<div class="notice warn" role="status" style="margin-top:14px">No se encontró el expediente con esos datos.</div>'; };
-      const findExp = (n, d) => { n = String(n || '').trim().toUpperCase(); d = String(d || '').trim(); return d ? coll('expedientes').find(r => r.numero === n && (r.numDoc === d || (r.cargoCod && r.cargoCod === d.toUpperCase()))) : null; };
+      const findExp = (n, d) => portalLookup('expedientes', String(n || '').trim().toUpperCase(), String(d || '').trim());
       q.onsubmit = e => { e.preventDefault(); showExp(findExp(q.numero.value, q.doc.value)); };
       if (q0 && q0.get && q0.get('exp')) { $$('[data-tab]').find(b => b.dataset.tab === 'c').click(); q.numero.value = q0.get('exp'); if (q0.get('c')) { q.doc.value = q0.get('c'); showExp(findExp(q0.get('exp'), q0.get('c'))); } }
     }
@@ -5845,7 +5328,7 @@ R('servicios/mesa-de-partes', (path, q0) => {
 });
 R('servicios/consulta-certificados', (path, q) => {
   const pre = (q.get('codigo') || '').trim().toUpperCase();
-  const body = `<h1>Consulta y verificación de documentos</h1><p class="lead">Verifica la autenticidad de un título, certificado, constancia de certificación modular u otro documento emitido por el instituto, con su código de verificación (también se abre al escanear el código QR) o con el DNI del titular.</p><form class="card cb" data-cq style="padding:20px" novalidate><div class="form-grid"><div class="field"><label for="cq-t">Buscar por</label><select id="cq-t" name="t"><option value="codigo">Código de verificación</option><option value="dni">DNI del titular</option></select></div><div class="field"><label for="cq-v">Valor</label><input id="cq-v" name="v" placeholder="CERT-2025-000123 o ABCD-1234" value="${esc(pre)}"></div><div class="full">${captchaHTML('cap-cq')}</div><div class="full"><button class="btn">Verificar</button></div></div></form><div id="cq-r" style="margin-top:14px"></div>`;
+  const body = `<h1>Consulta y verificación de documentos</h1><p class="lead">Verifica la autenticidad de un título, certificado, constancia de certificación modular u otro documento emitido por el instituto, con su código de verificación (también se abre al escanear el código QR) o con el DNI del titular.</p><form class="card cb" data-cq style="padding:20px" novalidate><div class="form-grid"><div class="field"><label for="cq-t">Buscar por</label><select id="cq-t" name="t"><option value="codigo">Código de verificación</option></select></div><div class="field"><label for="cq-v">Valor</label><input id="cq-v" name="v" placeholder="CERT-2025-000123 o ABCD-1234" value="${esc(pre)}"></div><div class="full">${captchaHTML('cap-cq')}</div><div class="full"><button class="btn">Verificar</button></div></div></form><div id="cq-r" style="margin-top:14px"></div>`;
   const html = shell(path, { title: 'Consulta y verificación de documentos', crumbs: [['Servicios', '#/servicios/complementarios'], ['Consulta y verificación de documentos']], banner: { kicker: 'Servicios', title: 'Consulta de Documentos', text: 'Validación en línea' }, side: servSide('consulta-certificados'), body });
   const show = (t, v) => {
     const rs = coll('certificados').filter(c => t === 'codigo' ? c.codigo === v : c.dni === v);
@@ -5854,7 +5337,7 @@ R('servicios/consulta-certificados', (path, q) => {
       : extra ? `<div class="notice ${extra.valido ? 'ok' : 'err'}" role="status"><b>Documento ${extra.valido ? 'válido' : 'anulado'}</b><br>${esc(extra.tipo)} · ${esc(extra.cod)}<br>${extra.persona ? 'A nombre de: ' + esc(extra.persona) + '<br>' : ''}Emitido el ${esc(extra.fecha)}</div>`
       : '<div class="notice err" role="status">No se encontró ningún documento con los datos ingresados.</div>';
   };
-  return { html, after: () => { const f = $('[data-cq]'); if (pre) show('codigo', pre); f.onsubmit = e => { e.preventDefault(); const cap = checkCaptcha(f, 'cap-cq'); if (cap) return showErrors(f, { captcha: cap }); show(f.t.value, f.v.value.trim().toUpperCase()); }; } };
+  return { html, after: () => { const f = $('[data-cq]'); if (pre) { portalLookup('certificados', pre, ''); show('codigo', pre); } f.onsubmit = e => { e.preventDefault(); const cap = checkCaptcha(f, 'cap-cq'); if (cap) return showErrors(f, { captcha: cap }); show(f.t.value, f.v.value.trim().toUpperCase()); }; } };
 });
 R('servicios/bolsa-laboral', path => {
   const body = `<h1>Bolsa laboral</h1><p class="lead">Ofertas de empleo y prácticas validadas por el instituto para estudiantes y egresados. Las empresas e instituciones pueden registrarse para publicar sus ofertas.</p>${ixWrap(IX.view('pub:bolsa'))}`;
@@ -5917,7 +5400,7 @@ R('mapa-del-sitio', path => {
 function downloadSitemap() {
   const base = 'https://iestppisco.edu.pe';
   const urls = ['/', '/programas', '/admision', '/matricula', '/becas', '/noticias', '/eventos', '/contacto', '/preguntas-frecuentes', '/mapa-del-sitio', '/servicios/mesa-de-partes', '/servicios/bolsa-laboral', '/servicios/consulta-certificados', '/servicios/complementarios'].concat(['presentacion', 'resena-historica', 'mision-vision', 'organizacion', 'reconocimientos', 'plana-jerarquica', 'plana-docente', 'campus-e-informes'].map(s => '/nosotros/' + s)).concat(['documentos-gestion', 'inversiones', 'libro-de-reclamaciones', 'licenciamiento', 'tupa', 'estadisticas', 'convocatorias'].map(s => '/transparencia/' + s)).concat(progs().map(p => '/programas/' + p.slug)).concat(pubNews().map(n => '/noticias/' + n.slug));
-  downloadText(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `  <url><loc>${base}${u}</loc></url>`).join('\n')}\n</urlset>`, 'sitemap.xml', 'application/xml');
+  downloadText(`\x3c?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `  <url><loc>${base}${u}</loc></url>`).join('\n')}\n</urlset>`, 'sitemap.xml', 'application/xml');
 }
 R('buscar', (path, q) => {
   const s = (q.get('q') || '').trim(); const t = normTitle(s); let res = [];
@@ -5948,7 +5431,7 @@ function bindPublicChrome() {
   });
   document.addEventListener('click', e => { if (!e.target.closest('.mainnav li')) $$('.mainnav li.open').forEach(x => x.classList.remove('open')); }, { once: true });
   $$('[data-search]').forEach(f => f.onsubmit = e => { e.preventDefault(); go('#/buscar?q=' + encodeURIComponent(f.q.value.trim())); });
-  const nl = $('[data-newsletter]'); if (nl) nl.onsubmit = e => { e.preventDefault(); const em = $('#nl').value; if (!reEmail.test(em)) return toast('Correo no válido', 'err'); coll('suscriptores').push({ correo: em, fecha: nowISO() }); saveDB(); nl.reset(); toast('¡Gracias! Te suscribiste al boletín informativo.', 'ok'); };
+  const nl = $('[data-newsletter]'); if (nl) nl.onsubmit = e => { e.preventDefault(); const em = $('#nl').value; if (!reEmail.test(em)) return toast('Correo no válido', 'err'); coll('suscriptores').push({ correo: em, fecha: nowISO() }); if (!saveDB()) return; nl.reset(); toast('¡Gracias! Te suscribiste al boletín informativo.', 'ok'); };
   // carrusel
   const slides = $$('.slide');
   if (slides.length > 1) {
@@ -7652,7 +7135,7 @@ function bindMpv(q0) {
       const archivos = []; for (const x of files) archivos.push(await storeFile(x, 'mpv'));
       const fecha = nowISO(); const rec = recepcionDe(fecha); const y = String(new Date(fecha).getFullYear());
       const C = DB.config.contadores; C.MPV[y] = (C.MPV[y] || 0) + 1; C.DOC[y] = (C.DOC[y] || 0) + 1;
-      const numero = `${c.prefijo}-${y}-${pad(C.MPV[y], 6)}`, numDocumento = `DOC-${y}-${pad(C.DOC[y], 6)}`;
+      let numero = `${c.prefijo}-${y}-${pad(C.MPV[y], 6)}`, numDocumento = `DOC-${y}-${pad(C.DOC[y], 6)}`;
       const u = currentUser(); const nombres = jur ? v.razon.trim() : `${v.nombresP.trim()} ${v.apellidos.trim()}`;
       const x = { id: uid(), numero, numDocumento, fecha, fechaRecepcion: rec.fecha.toISOString(), enHorario: rec.enHorario, usuarioRegistro: u ? `${u.usuario} (${u.nombre})` : `Ciudadano – portal web (${v.tipoDoc} ${v.numDoc.trim()})`, canal: 'Mesa de Partes Virtual',
         tipoPersona: v.tipoPersona, nombres, nombresP: jur ? '' : v.nombresP.trim(), apellidos: jur ? '' : v.apellidos.trim(), tipoDoc: v.tipoDoc, numDoc: v.numDoc.trim(), correo: v.correo.trim(), telefono: v.telefono.trim(), direccion: (v.direccion || '').trim(),
@@ -7660,6 +7143,7 @@ function bindMpv(q0) {
         historial: [{ fecha, usuario: 'portal', estado: 'Recibido', nota: `Presentado por la Mesa de Partes Virtual. Recepción administrativa: ${fshort(rec.fecha, true)}${rec.enHorario ? '' : ' (fuera del horario de atención)'}. Área de destino: ${areaName(v.areaDestino)}.` }] };
       expCargoCod(x); coll('expedientes').unshift(x);
       if (!saveDB()) { C.MPV[y]--; C.DOC[y]--; DB.expedientes.shift(); return; }
+      numero = x.numero; numDocumento = x.numDocumento;
       mailOut(x.correo, `Cargo de recepción ${numero}`, `Su documento ${numDocumento} (${x.tipoTramite}) fue registrado el ${fshort(fecha, true)}; recepción administrativa: ${fshort(rec.fecha, true)}. Código de verificación: ${x.cargoCod}.`);
       mailOut(c.correo, `[${numero}] Nuevo documento: ${x.tipoTramite}`, `${x.nombres} · ${x.asunto} · Destino: ${areaName(x.areaDestino)}`);
       audit('Registro', 'Mesa de partes', numero, `${x.tipoTramite} · destino ${x.areaDestino} · ${archivos.length} archivo(s)`); saveDB();
@@ -7667,13 +7151,13 @@ function bindMpv(q0) {
       const m = modal({ title: 'Documento registrado', size: 'lg', body: `<div class="notice ok">Tu documento fue <b>recibido por la Mesa de Partes Virtual</b>.</div>
         <div class="pz-codes"><div><span>N.º de expediente</span><b class="mono">${esc(numero)}</b></div><div><span>N.º de documento</span><b class="mono">${esc(numDocumento)}</b></div><div><span>Código de verificación</span><b class="mono">${esc(x.cargoCod || '—')}</b></div></div>
         <dl class="kv"><dt>Fecha y hora de presentación</dt><dd>${fdate(fecha, true)}</dd><dt>Fecha y hora de recepción</dt><dd>${fdate(rec.fecha, true)}${rec.enHorario ? '' : ' <span class="badge warn">Fuera de horario: siguiente día hábil</span>'}</dd><dt>Área de destino</dt><dd>${esc(areaName(x.areaDestino))}</dd><dt>Plazo referencial</dt><dd>${c.plazos[x.tipoTramite] || 10} días hábiles</dd></dl>
-        <p>Descarga y conserva tu cargo. También enviamos una copia a <b>${esc(x.correo)}</b>.</p>`, foot: `<a class="btn ghost" href="${esc('#/servicios/mesa-de-partes?exp=' + numero + '&c=' + (x.cargoCod || ''))}" data-seg>Ver seguimiento</a>${cargoBtn(x)}` });
+        <p>Descarga y conserva tu cargo. Correo de contacto: <b>${esc(x.correo)}</b>.</p>`, foot: `<a class="btn ghost" href="${esc('#/servicios/mesa-de-partes?exp=' + numero + '&c=' + (x.cargoCod || ''))}" data-seg>Ver seguimiento</a>${cargoBtn(x)}` });
       $('[data-seg]', m.el).onclick = () => m.close();
     } catch (err) { console.error(err); toast('No se pudo registrar el documento. Intente nuevamente.', 'err'); }
     finally { btn.disabled = false; btn.innerHTML = `${S16('send')} Registrar y obtener cargo`; }
   };
   const q = $('[data-mpvq]');
-  const findExp = (n, d) => { n = String(n || '').trim().toUpperCase(); d = String(d || '').trim(); return d ? coll('expedientes').find(r => r.numero === n && (r.numDoc === d || (r.cargoCod && r.cargoCod === d.toUpperCase()))) : null; };
+  const findExp = (n, d) => portalLookup('expedientes', String(n || '').trim().toUpperCase(), String(d || '').trim());
   const showExp = x => {
     $('#mq-r').innerHTML = x ? `<div class="pz-track" role="status"><div class="pz-track-h"><div><b class="mono">${esc(x.numero)}</b>${x.numDocumento ? ` · <span class="mono">${esc(x.numDocumento)}</span>` : ''}<br><small>${esc(x.tipoTramite)} · ${esc(clamp(x.asunto, 90))}</small></div>${stBadge(x.estado)}</div>
       ${svTrack(['Recibido', 'Derivado', 'En atención', 'Atendido'], x.estado, { Recibido: 0, Derivado: 1, 'En proceso': 2, Observado: 2, Atendido: 3, Archivado: 3 })}<dl class="kv"><dt>Presentado</dt><dd>${fdate(x.fecha, true)}</dd><dt>Recibido</dt><dd>${fdate(x.fechaRecepcion || x.fecha, true)}</dd><dt>Situación</dt><dd>${esc(MPV_ESTADOS_PUB[x.estado] || x.estado)}</dd><dt>Área actual</dt><dd>${esc(areaName(x.area || 'MP'))}</dd>${x.areaDestino ? `<dt>Área de destino</dt><dd>${esc(areaName(x.areaDestino))}</dd>` : ''}<dt>Plazo</dt><dd>${expSem(x)}</dd></dl>
@@ -7905,25 +7389,26 @@ function bindLr2(q0) {
     try {
       const adj = file ? await storeFile(file, 'rcl') : null;
       const fecha = nowISO(); const y = String(new Date(fecha).getFullYear()); const C = DB.config.contadores.RCL; C[y] = (C[y] || 0) + 1;
-      const codigo = `RCL-${y}-${pad(C[y], 5)}`; const plazoDias = v.tipo === 'Queja' ? c.plazoQueja : c.plazoReclamo; const nombres = `${v.nombresP.trim()} ${v.apellidos.trim()}`;
+      let codigo = `RCL-${y}-${pad(C[y], 5)}`; const plazoDias = v.tipo === 'Queja' ? c.plazoQueja : c.plazoReclamo; const nombres = `${v.nombresP.trim()} ${v.apellidos.trim()}`;
       const r = { id: uid(), codigo, fecha, tipo: v.tipo, nombres, nombresP: v.nombresP.trim(), apellidos: v.apellidos.trim(), tipoDoc: v.tipoDoc, numDoc: v.numDoc.trim(), correo: v.correo.trim(), telefono: (v.telefono || '').trim(), condicion: v.condicion, programaId: v.programaId === 'ninguno' ? '' : v.programaId, fechaHecho: v.fechaHecho, areaHecho: v.areaHecho || '',
         asunto: clamp(v.descripcion.trim().replace(/\s+/g, ' '), 80), descripcion: v.descripcion.trim(), pedido: v.pedido.trim(), adjunto: adj, estado: 'Recibido', plazoDias, vence: diasHabiles(fecha, plazoDias).due.toISOString(), responsable: { nombre: c.responsable, cargo: c.cargo, correo: c.correo }, area: '',
         historial: [{ fecha, usuario: 'portal', estado: 'Recibido', nota: `Registro desde el Libro de Reclamaciones Virtual. Responsable: ${c.responsable} (${c.cargo}).` }], notas: [], respuesta: '', notifInst: 'Pendiente', notifUser: 'Pendiente', anulado: false };
       coll('reclamos').unshift(r);
       if (!saveDB()) { C[y]--; DB.reclamos.shift(); return; }
+      codigo = r.codigo;
       r.notifInst = mailOut(c.correo, `[${codigo}] Nuevo ${v.tipo.toLowerCase()} registrado`, `${r.nombres} (${r.condicion}) - ${r.descripcion}`);
       if (DB.config.correoReclamos && DB.config.correoReclamos !== c.correo) mailOut(DB.config.correoReclamos, `[${codigo}] Copia: nuevo ${v.tipo.toLowerCase()}`, r.asunto);
       r.notifUser = mailOut(r.correo, `Constancia de registro ${codigo}`, `Su ${v.tipo.toLowerCase()} fue registrado el ${fshort(fecha, true)} con el código ${codigo}. Plazo máximo de respuesta: ${plazoDias} días hábiles (hasta el ${fshort(r.vence)}).`);
       audit('Registro', 'Libro de reclamaciones', codigo, `${v.tipo} registrado desde el portal. Notificación institucional: ${r.notifInst}`); saveDB();
       f.reset();
-      const m = modal({ title: `${v.tipo} registrado`, body: `<div class="notice ok">Tu ${esc(v.tipo.toLowerCase())} fue registrado correctamente el ${fdate(fecha, true)}.</div><p>Tu código de seguimiento es:</p><div class="code-box">${codigo}</div><dl class="kv" style="margin-top:12px"><dt>Responsable</dt><dd>${esc(c.responsable)} · ${esc(c.cargo)}</dd><dt>Plazo de respuesta</dt><dd>${plazoDias} días hábiles (hasta el ${fdate(r.vence)})</dd></dl><p>Enviamos la constancia a <b>${esc(r.correo)}</b>. Guarda tu código para consultar el estado.</p>`, foot: `<button class="btn sec" data-print>${S16('print')} Descargar constancia (PDF)</button><button class="btn" data-ok>Aceptar</button>` });
+      const m = modal({ title: `${v.tipo} registrado`, body: `<div class="notice ok">Tu ${esc(v.tipo.toLowerCase())} fue registrado correctamente el ${fdate(fecha, true)}.</div><p>Tu código de seguimiento es:</p><div class="code-box">${codigo}</div><dl class="kv" style="margin-top:12px"><dt>Responsable</dt><dd>${esc(c.responsable)} · ${esc(c.cargo)}</dd><dt>Plazo de respuesta</dt><dd>${plazoDias} días hábiles (hasta el ${fdate(r.vence)})</dd></dl><p>Puedes descargar tu constancia. Correo de contacto: <b>${esc(r.correo)}</b>. Guarda tu código para consultar el estado.</p>`, foot: `<button class="btn sec" data-print>${S16('print')} Descargar constancia (PDF)</button><button class="btn" data-ok>Aceptar</button>` });
       $('[data-ok]', m.el).onclick = m.close; $('[data-print]', m.el).onclick = () => lrPdf(r, 'constancia');
     } catch (err) { console.error(err); toast('No se pudo registrar. Intente nuevamente.', 'err'); }
     finally { btn.disabled = false; }
   };
   const q = $('[data-lrq2]');
   const show = r => { $('#lq2-r').innerHTML = r ? `<div class="pz-track" role="status"><div class="pz-track-h"><div><b class="mono">${esc(r.codigo)}</b> · ${esc(r.tipo)}<br><small>Registrado el ${fdate(r.fecha, true)}</small></div>${stBadge(r.anulado ? 'Anulado' : r.estado)}</div>${svTrack(['Recibido', 'Derivado', 'En atención', 'Atendido'], r.anulado ? 'Anulado' : r.estado, { Recibido: 0, Derivado: 1, 'En atención': 2, Atendido: 3, Cerrado: 3, Anulado: 0 })}<dl class="kv"><dt>Plazo</dt><dd>${lrSem(r)} · vence ${fdate(lrPlazo(r).due)}</dd>${r.area ? `<dt>Área que atiende</dt><dd>${esc(areaName(r.area))}</dd>` : ''}${r.respuesta ? `<dt>Respuesta</dt><dd style="white-space:pre-wrap">${esc(r.respuesta)}</dd>` : ''}</dl><ol class="pz-tl">${(r.historial || []).map(h => `<li><span>${fshort(h.fecha, true)}</span><b>${esc(h.estado)}</b></li>`).join('')}</ol><div style="margin-top:12px"><button type="button" class="btn sm sec" data-lrpdf>${S16('download')} Descargar constancia (PDF)</button></div></div>` : `<div class="notice warn" role="status">No se encontró un registro con ese código y documento. Verifique los datos de su constancia.</div>`; const b = $('[data-lrpdf]'); if (b && r) b.onclick = () => lrPdf(r, 'constancia'); };
-  q.onsubmit = e => { e.preventDefault(); const cod = q.codigo.value.trim().toUpperCase(); const d = q.doc.value.trim(); show(coll('reclamos').find(x => x.codigo === cod && x.numDoc === d)); };
+  q.onsubmit = e => { e.preventDefault(); const cod = q.codigo.value.trim().toUpperCase(); const d = q.doc.value.trim(); show(portalLookup('reclamos', cod, d)); };
   if (q0 && q0.get && q0.get('rcl')) { showTab('c'); q.codigo.value = q0.get('rcl'); }
 }
 /* Constancia (ciudadano) y hoja de reclamación (panel) en PDF con membrete */
@@ -8587,7 +8072,7 @@ R('servicios/consulta-certificados', (path, q) => {
   const nCert = coll('certificados').length;
   const body = `${svNav('consulta-certificados')}${svHead('cert', [['zap', 'Resultado inmediato'], ['shield', 'Datos personales protegidos'], ['table', 'Código QR en cada documento']])}
    <div class="pz-cq-wrap"><form class="card cb pz-cq" data-cq novalidate><h2>${sic('search', 20)} Verificar un documento</h2>
-     <div class="pz-seg" role="radiogroup" aria-label="Buscar por"><label><input type="radio" name="t" value="codigo" checked><span>${sic('key', 15)} Código de verificación</span></label><label><input type="radio" name="t" value="dni"><span>${sic('user', 15)} DNI del titular</span></label></div>
+     <div class="pz-seg" role="radiogroup" aria-label="Buscar por"><label><input type="radio" name="t" value="codigo" checked><span>${sic('key', 15)} Código de verificación</span></label></div>
      <div class="field"><label for="cq-v" data-cql>Código de verificación</label><input id="cq-v" name="v" autocomplete="off" placeholder="Ej.: CERT-2025-000123" value="${esc(pre)}"><div class="hint" data-cqh>Figura en la parte inferior del documento, junto al código QR.</div></div>
      ${captchaHTML('cap-cq')}
      <button class="btn pz-cq-b">${sic('shield', 17)} Verificar autenticidad</button></form>
@@ -8623,8 +8108,8 @@ R('servicios/consulta-certificados', (path, q) => {
     const f = $('[data-cq]');
     const sync = () => { const dni = f.t.value === 'dni'; $('[data-cql]', f).textContent = dni ? 'DNI del titular' : 'Código de verificación'; f.v.placeholder = dni ? 'Ej.: 72345678' : 'Ej.: CERT-2025-000123'; f.v.inputMode = dni ? 'numeric' : 'text'; $('[data-cqh]', f).textContent = dni ? 'Se listan todos los documentos emitidos a nombre del titular.' : 'Figura en la parte inferior del documento, junto al código QR.'; };
     $$('[name=t]', f).forEach(x => x.onchange = sync);
-    if (pre) show('codigo', pre);
-    f.onsubmit = e => { e.preventDefault(); const v = f.v.value.trim().toUpperCase(); const er = {}; if (!v) er.v = f.t.value === 'dni' ? 'Ingrese el DNI del titular.' : 'Ingrese el código de verificación.'; else if (f.t.value === 'dni' && !/^\d{8}$/.test(v)) er.v = 'El DNI debe tener 8 dígitos.'; const cap = checkCaptcha(f, 'cap-cq'); if (cap) er.captcha = cap; if (!showErrors(f, er)) return; show(f.t.value, v); };
+    if (pre) { portalLookup('certificados', pre, ''); show('codigo', pre); }
+    f.onsubmit = e => { e.preventDefault(); const v = f.v.value.trim().toUpperCase(); const er = {}; if (!v) er.v = f.t.value === 'dni' ? 'Ingrese el DNI del titular.' : 'Ingrese el código de verificación.'; else if (f.t.value === 'dni' && !/^\d{8}$/.test(v)) er.v = 'El DNI debe tener 8 dígitos.'; const cap = checkCaptcha(f, 'cap-cq'); if (cap) er.captcha = cap; if (!showErrors(f, er)) return; if (f.t.value !== 'codigo') return toast('Consulta por código de verificación.', 'warn'); portalLookup('certificados', v, ''); show('codigo', v); };
   } };
 });
 
@@ -8874,135 +8359,13 @@ const OF_NEWS = [
   ['n7', 'Ceremonia de entrega de títulos del programa de estudios de Producción Agropecuaria', 'cat2', '2025-08-21T11:00:00', 'Los egresados del programa de Producción Agropecuaria participaron en la ceremonia de entrega de títulos.', 'not1.jpg', 33],
 ];
 
-window.piscoOficial = function (D) {
-  const c = D.config, T0 = '2026-10-23T08:00:00.000Z';
-  /* Institución y contacto (/vista/inicio y /vista/contactenos) */
-  Object.assign(c.inst, {
-    slogan: '¡Con educación tu mundo crece!', lema: 'El mundo necesita de tu talento',
-    direccion: 'Av. Las Américas S/N, 5.ª cuadra, Pisco - Ica', telefono: '056 632122', telefonoNota: 'Central telefónica',
-    correo: 'iestp@iestppisco.edu.pe', horario: 'Lunes a viernes: 08:00 a.m. - 03:45 p.m.',
-    fechaCreacion: '1984-07-17', normaCreacion: 'R.M. N.º 0806-84-ED / R.M. N.º 675-94-ED',
-    descripcion: 'Institución pública de educación superior tecnológica de la provincia de Pisco, región Ica, independizada como Instituto Superior Tecnológico Estatal "Pisco" por R.M. N.º 806-84-ED del 17 de julio de 1984. Más de 40 años de excelencia académica.',
-  });
-  c.redes = { facebook: 'https://www.facebook.com/IESTPPISC0', youtube: 'https://www.youtube.com/channel/UCGoM4C5FeCAefUuUL5A1x6Q', instagram: 'https://www.instagram.com/iestp.se/', tiktok: '', twitter: 'https://twitter.com/IestPisco' };
-  c.correoContacto = 'iestp@iestppisco.edu.pe';
-  c.seo.imagen = OF_IMG + 'logo1.png';
-  (D.locales || []).forEach(l => { if (l.id === 'l1') Object.assign(l, { direccion: c.inst.direccion, telefono: c.inst.telefono, correo: c.inst.correo, horario: c.inst.horario }); });
-  if (c.home) {
-    c.home.beneficios.unshift({ t: 'Prestigio y experiencia', d: 'Más de 40 años formando profesionales técnicos en Pisco y la región Ica.', i: 'star' });
-    c.home.beneficios = c.home.beneficios.map(b => b.t === 'Experiencias formativas (EFSRT)' ? Object.assign({}, b, { t: 'Convenios de prácticas', d: 'Convenios con empresas públicas y privadas para las experiencias formativas en situaciones reales de trabajo (EFSRT).' }) : b);
-  }
-  /* Carrusel con los banners oficiales */
-  const SL = [['¡Con educación tu mundo crece!', 'Formamos profesionales técnicos competentes para Pisco, la región Ica y el país.', 'Conócenos', '#/nosotros/presentacion'],
-    ['El mundo necesita de tu talento', 'Elige entre nuestros 5 programas de estudio y postula al concurso de admisión.', 'Postula aquí', '#/admision'],
-    ['42 años de excelencia académica', 'Prestigio, experiencia y convenios de prácticas con empresas públicas y privadas.', 'Programas de estudio', '#/programas'],
-    ['Becas y beneficios', 'Reconocemos tu esfuerzo: exoneraciones por rendimiento académico y situación socioeconómica.', 'Ver becas', '#/becas']];
-  D.slides = SL.map((s, i) => ({ id: 's' + (i + 1), titulo: s[0], texto: s[1], boton: s[2], enlace: s[3], imagen: OF_IMG + 'banner/carousel-' + (i + 1) + '.jpg', orden: i + 1, estado: 'Publicado' }));
-  /* Páginas institucionales (/vista/Presentacion y /vista/mision_vision) */
-  const pg = k => (D.paginas || []).find(p => p.clave === k) || {};
-  pg('presentacion').imagen = OF_IMG + 'presentacion/iest.jpg';
-  Object.assign(pg('resena'), { imagen: OF_IMG + 'presentacion/iestp.jpg', modEn: T0, contenido:
-    '<p>El Instituto inició sus actividades en <strong>1981</strong> en la ciudad de Pisco como filial de la ESEP de Chincha. En <strong>1984</strong> se independizó como <strong>Instituto Superior Tecnológico Estatal "Pisco"</strong>, mediante la <strong>R.M. N.º 806-84-ED del 17 de julio de 1984</strong>.</p>'
-    + '<h2>Nuestra trayectoria</h2><ul><li><strong>R.D. N.º 1013-86-ED:</strong> fusión de las carreras de Producción Agrícola y Producción Pecuaria en <strong>Producción Agropecuaria</strong>.</li>'
-    + '<li><strong>R.M. N.º 1184-1989-ED:</strong> oficialización de la carrera de <strong>Enfermería Técnica</strong> (creada en 1988).</li>'
-    + '<li><strong>R.D. N.º 311-1999-ED:</strong> creación de la carrera de <strong>Computación e Informática</strong>, hoy Arquitectura de Plataformas y Servicios de Tecnologías de la Información.</li>'
-    + '<li><strong>R.D. N.º 1072-2001-ED (12/09/2001):</strong> autorización de <strong>Administración de Empresas Turísticas y Hoteleras</strong>; su denominación se modificó por R.D. N.º 2483-2009-ED (29/10/2009), hoy Administración de Servicios de Hostelería y Restaurantes.</li>'
-    + '<li><strong>R.D. N.º 0033-2008-ED y R.D. N.º 0336-2009-ED:</strong> autorización de la experimentación del nuevo Diseño Curricular Básico Nacional, iniciada en Producción Agropecuaria y Computación e Informática.</li>'
-    + '<li><strong>Ley N.º 30960:</strong> declara de necesidad pública la expropiación de un inmueble para el funcionamiento del instituto, lograda con el apoyo de autoridades locales y regionales.</li></ul>'
-    + '<h2>Autoridades actuales</h2><p>La institución es dirigida por el <strong>Mg. Pedro Armando Tasayco Díaz</strong>, Director General, acompañado por el <a href="#/nosotros/plana-jerarquica">equipo directivo</a>.</p>'
-    + '<p class="pz-src">Fuente: <a href="' + OF_URL + '/vista/Presentacion" target="_blank" rel="noopener">iestppisco.edu.pe – Presentación</a>.</p>' });
-  Object.assign(pg('mision'), { modEn: T0, contenido:
-    '<div class="pz-mv"><div class="pz-mvc pz-mis"><h2>Misión</h2><p>Somos una Institución de Educación Superior Tecnológica Pública que forma profesionales técnicos competitivos, sustentados en la ciencia, la tecnología y la innovación, con principios éticos y humanistas y responsabilidad ambiental, para promover el desarrollo sostenible de la región y del país.</p></div>'
-    + '<div class="pz-mvc pz-vis"><h2>Visión</h2><p>Al 2031, ser una IEST Pública líder en calidad educativa, que emplea la investigación aplicada para la innovación y el emprendimiento, con sólida formación humanista y responsabilidad ambiental, que responde a las demandas laborales del sector productivo y contribuye al desarrollo sostenible de la región y del país.</p></div></div>'
-    + '<h2 class="pz-vh">Valores y actitudes</h2><p class="pz-vlead">Fomentamos una cultura basada en principios y buenas prácticas.</p><div class="pz-vals">'
-    + [['Identificación institucional', 'Compromiso con la institución en todas las acciones internas y externas.'], ['Solidaridad', 'Reconocer las situaciones difíciles de los demás y actuar para atender sus necesidades.'], ['Trabajo colaborativo', 'Conocimiento, esfuerzo y dedicación al servicio de metas comunes.'], ['Respeto', 'Valorar a cada persona y tratar a los demás con consideración.'], ['Puntualidad', 'Cumplir los horarios y los plazos establecidos.'], ['Honestidad', 'Actuar con transparencia, sinceridad e integridad.']].map((v, k) => `<div class="pz-val"><span class="pz-vn">${String(k + 1).padStart(2, '0')}</span><h3>${v[0]}</h3><p>${v[1]}</p></div>`).join('')
-    + '</div><p class="pz-src">Fuente: <a href="' + OF_URL + '/vista/mision_vision" target="_blank" rel="noopener">iestppisco.edu.pe – Misión y visión</a>.</p>' });
-  /* Programas de estudio */
-  (D.programas || []).forEach(p => { const o = OF_PROGS[p.id]; if (!o) return;
-    if (o.nombre) { p.nombre = o.nombre; p.titulo = 'Profesional Técnico en ' + o.nombre; }
-    p.imagen = OF_IMG + o.img; p.duracion = '3 años (6 semestres)';
-    p.perfil = '<p>' + o.perfil + '</p>'; p.campo = o.campo; p.campoItems = o.campo.split('|');
-    (p.modulos || []).forEach((m, i) => { if (o.mods[i]) m.nombre = o.mods[i]; });
-    const co = OF_COORD[p.id]; if (co) { p.coordinadorId = co[0]; p.coordinadorMsg = p.coordinadorMsg || 'Te invitamos a formar parte de nuestro programa, donde aprenderás haciendo, con docentes comprometidos y en contacto con el sector productivo.'; }
-  });
-  /* Personas: plana docente y equipo directivo oficiales. Solo se registran los datos que el portal oficial publica
-     (nombre, programa, cargo y fotografía); el resto del CV lo completa cada docente. */
-  const demo = (D.personas || []).find(p => p.id === 'd4');
-  const cargoDe = id => { const j = OF_JER.find(x => x[0] === id); if (j) return j[1]; const pr = Object.keys(OF_COORD).find(k => OF_COORD[k][0] === id); return pr ? 'Coordinador(a) del Programa de ' + OF_PROG[pr] : ''; };
-  const correoDe = id => { const j = OF_JER.find(x => x[0] === id); if (j) return j[3]; const pr = Object.keys(OF_COORD).find(k => OF_COORD[k][0] === id); return pr ? OF_COORD[pr][1] : ''; };
-  D.personas = OF_DOC.map((d, i) => {
-    const [id, nombres, apellidos, titulo, progsIds, foto] = d; const emp = progsIds.includes('emp'); const progsReal = progsIds.filter(x => x !== 'emp');
-    const cargo = cargoDe(id); const area = 'Docente de ' + progsIds.map(x => OF_PROG[x]).join(' y ');
-    const p = { id, nombres, apellidos, fem: null, dni: '', correo: id === 'a4' ? 'horacio@iestppisco.edu.pe' : correoDe(id), telefono: id === 'a4' ? '956038797' : '', foto: ofFoto(foto),
-      tipo: 'Docente', condicion: '', especialidad: cargo || area, titulo, programas: progsReal, empleabilidad: emp, uds: [], academica: [], experiencia: [], otros: [],
-      orden: i + 1, estado: 'Publicado', fuente: OF_URL + '/vista/docente', creadoPor: 'hquispe', creadoEn: T0, modPor: 'hquispe', modEn: T0 };
-    if (id === 'a4') p.especialidad = 'Docente de APSTI · Responsable del Portal Web Institucional';
-    p.cv = { perfil: `${cargo ? cargo + '. ' : ''}${area} del Instituto de Educación Superior Tecnológico Público "Pisco".`, cargo: cargo || 'Docente de Educación Superior', fnac: '', sexo: '', direccion: '', correoPersonal: '',
-      pregrado: [], posgrado: [], continua: [], ofimatica: [], idiomas: [], expProf: [],
-      expDocP: [{ id: uid(), institucion: 'IESTP "Pisco"', cargo: cargo || 'Docente', descripcion: area + '.', periodo: 'Actualidad', tiempo: '' }], expDocS: [],
-      competencias: [], enfoques: [], innovacion: [], huella: '', docs: [], cvPdf: null,
-      autoriza: { ok: true, fecha: T0, por: 'hquispe (datos publicados en iestppisco.edu.pe)' }, actualizado: T0 };
-    return p;
-  });
-  /* Docente ficticio para demostrar el módulo de CV (usuario «docente»); no se publica en el portal */
-  if (demo) { demo.estado = 'Borrador'; demo.especialidad = demo.especialidad + ' (cuenta de demostración)'; demo.orden = 999; D.personas.push(demo); }
-  D.jerarquica = OF_JER.map((j, i) => ({ id: 'j' + (i + 1), personaId: j[0], cargo: j[1], unidad: j[2], orden: i + 1, esDirector: i === 0, estado: 'Publicado', creadoPor: 'hquispe', creadoEn: T0, modPor: 'hquispe', modEn: T0 }));
-  (D.usuarios || []).forEach(u => { if (u.personaId && !D.personas.some(p => p.id === u.personaId)) delete u.personaId; });
-  /* Noticias oficiales (/noticias/noticias.php); se conservan las de demostración «programada» y «borrador» */
-  const keep = (D.noticias || []).filter(n => n.id === 'n9' || n.id === 'n10');
-  D.noticias = OF_NEWS.map(([id, titulo, cat, fecha, resumen, im, nid, dest]) => ({ id, titulo, slug: slugify(titulo), categoriaId: cat, fecha, resumen,
-    contenido: `<p>${resumen}</p><p>Más información en la <a href="${OF_URL}/noticias/detalle_noticia.php?id=${nid}" target="_blank" rel="noopener">publicación original del portal institucional</a>.</p>`,
-    imagen: OF_URL + '/noticias/dashboard/dashboard/images/' + im, video: '', adjuntos: [], destacada: !!dest, estado: 'Publicada', autor: 'comunicaciones', creadoPor: 'comunicaciones', creadoEn: fecha, modPor: 'comunicaciones', modEn: fecha })).concat(keep);
-  /* Eventos oficiales (ya realizados) */
-  const EV = [['evo1', 'Capacitación: Uso de la Inteligencia Artificial', '2026-09-21T09:00', 'Capacitación dirigida a la comunidad educativa sobre el uso de la inteligencia artificial.', 16],
-    ['evo2', 'Jornada integral de salud y oportunidades laborales', '2026-09-22T09:00', 'Jornada de atención en salud y ferias de oportunidades laborales para estudiantes y egresados.', 18],
-    ['evo3', 'Capacitación: Testing en el sistema', '2026-09-22T15:00', 'Capacitación sobre pruebas de software (testing) en el sistema.', 20]];
-  D.eventos = EV.map(e => ({ id: e[0], titulo: e[1], fecha: e[2], lugar: 'IESTP "Pisco"', descripcion: e[3], enlace: `${OF_URL}/eventos/detalle_eventos.php?id=${e[4]}`, estado: 'Publicado' })).concat(D.eventos || []);
-};
+window.piscoOficial = function (D) {};
 
 
 /* =========================================================
    DATOS DE DEMOSTRACIÓN 2026 (se cargan al crear la base) e integración final
    ========================================================= */
-window.piscoSeed = function (D) {
-  const c = D.config; c.contadores = c.contadores || {}; ['MPV', 'DOC', 'RCL'].forEach(k => c.contadores[k] = c.contadores[k] || {});
-  c.mpv = { horaIni: '08:00', horaFin: '15:40', dias: 'Lunes a viernes', maxMB: 40, maxArchivos: 5, tipos: MPV_TIPOS.slice(), formatos: MPV_FORMATOS.map(f => f[0]), feriados: FERIADOS_2026.slice(), plazos: Object.assign({}, MPV_PLAZOS), correo: 'mesadepartes.iestpisco@gmail.com', telefono: '932 375 402', prefijo: 'MPV-IESTP-PISCO' };
-  c.lr = Object.assign({}, LR_DEF); c.bolsa = JSON.parse(JSON.stringify(BOLSA_DEF)); c.correoReclamos = LR_DEF.correo;
-  c.limites = Object.assign({}, c.limites, { descripcion: 2000, pedido: Math.max(1000, (c.limites || {}).pedido || 0) });
-  const demoPdf = (t, l) => ({ nombre: 'demo.pdf', original: t.replace(/\s+/g, '_') + '.pdf', size: 160000 + t.length * 997, titulo: t, lineas: l, sha256: '' });
-  /* Mesa de partes: 3 expedientes con la nueva numeración */
-  D.expedientes = [
-    { id: 'x3', numero: 'MPV-IESTP-PISCO-2026-000003', numDocumento: 'DOC-2026-000003', fecha: '2026-10-22T09:05:00', fechaRecepcion: '2026-10-22T09:05:00', enHorario: true, usuarioRegistro: 'Ciudadano – portal web (DNI 72458813)', canal: 'Mesa de Partes Virtual', tipoPersona: 'Persona natural', nombres: 'Kiara Milagros Yataco Pachas', tipoDoc: 'DNI', numDoc: '72458813', correo: 'kiara.yataco@correo.com', telefono: '956223311', direccion: 'Calle San Juan 210, San Andrés', tipoTramite: 'FUT (Formulario Único de Trámite)', docRef: 'FUT N.º 145', asunto: 'Solicito constancia de egresada del programa de Enfermería Técnica, promoción 2025.', folios: 2, observaciones: '', archivos: [demoPdf('FUT constancia de egresada', ['Formulario Unico de Tramite', 'Solicitante: Kiara Milagros Yataco Pachas', 'Solicito constancia de egresada.'])], areaDestino: 'UA', area: 'UA', estado: 'Derivado', historial: [{ fecha: '2026-10-22T09:05:00', usuario: 'portal', estado: 'Recibido', nota: 'Presentado por la Mesa de Partes Virtual. Recepción administrativa: 22/10/2026 09:05. Área de destino: Unidad Académica.' }, { fecha: '2026-10-22T10:40:00', usuario: 'atencion', estado: 'Derivado', nota: 'Derivado a Unidad Académica: Para su atención.' }] },
-    { id: 'x2', numero: 'MPV-IESTP-PISCO-2026-000002', numDocumento: 'DOC-2026-000002', fecha: '2026-10-21T16:55:00', fechaRecepcion: '2026-10-22T08:00:00', enHorario: false, usuarioRegistro: 'Ciudadano – portal web (RUC 20148420180)', canal: 'Mesa de Partes Virtual', tipoPersona: 'Persona jurídica / entidad', nombres: 'Municipalidad Provincial de Pisco', tipoDoc: 'RUC', numDoc: '20148420180', correo: 'tramite@munipisco.gob.pe', telefono: '056532525', direccion: 'Plaza de Armas de Pisco', tipoTramite: 'Oficio', docRef: 'Oficio N.º 412-2026-MPP/GDS', asunto: 'Invitación a participar en la Feria Provincial de Emprendimiento Juvenil 2026 con proyectos de los programas de estudio.', folios: 3, observaciones: '', archivos: [demoPdf('Oficio 412-2026-MPP', ['Oficio N 412-2026-MPP/GDS', 'Invitacion a la Feria Provincial de Emprendimiento Juvenil 2026.'])], areaDestino: 'DG', area: 'MP', estado: 'Recibido', historial: [{ fecha: '2026-10-21T16:55:00', usuario: 'portal', estado: 'Recibido', nota: 'Presentado por la Mesa de Partes Virtual. Recepción administrativa: 22/10/2026 08:00 (fuera del horario de atención). Área de destino: Dirección General.' }] },
-    { id: 'x1', numero: 'MPV-IESTP-PISCO-2026-000001', numDocumento: 'DOC-2026-000001', fecha: '2026-10-19T10:20:00', fechaRecepcion: '2026-10-19T10:20:00', enHorario: true, usuarioRegistro: 'Ciudadano – portal web (DNI 45678912)', canal: 'Mesa de Partes Virtual', tipoPersona: 'Persona natural', nombres: 'Rosa Elena Campos Lévano', tipoDoc: 'DNI', numDoc: '45678912', correo: 'rcampos@correo.com', telefono: '999888777', direccion: '', tipoTramite: 'Solicitud', docRef: '', asunto: 'Solicito certificado de estudios del programa de Contabilidad (2019-2021).', folios: 2, observaciones: 'Adjunto voucher de pago.', archivos: [demoPdf('Solicitud de certificado', ['Solicitud de certificado de estudios', 'Rosa Elena Campos Levano']), demoPdf('Voucher de pago', ['Voucher de pago - Banco de la Nacion'])], areaDestino: 'SA', area: 'SA', estado: 'En proceso', historial: [{ fecha: '2026-10-19T10:20:00', usuario: 'portal', estado: 'Recibido', nota: 'Presentado por la Mesa de Partes Virtual. Área de destino: Secretaría Académica.' }, { fecha: '2026-10-19T11:30:00', usuario: 'atencion', estado: 'Derivado', nota: 'Derivado a Secretaría Académica.' }, { fecha: '2026-10-20T09:15:00', usuario: 'secretaria', estado: 'En proceso', nota: 'En elaboración del certificado.' }] },
-  ];
-  c.contadores.MPV['2026'] = 3; c.contadores.DOC['2026'] = 3;
-  /* Libro de reclamaciones: códigos RCL-AAAA-NNNNN, responsable y plazos */
-  const cond = ['Egresado', 'Estudiante', 'Público en general'];
-  (D.reclamos || []).forEach((r, i) => { const n = i + 1; r.codigo = `RCL-2026-${pad(n, 5)}`; const sp = r.nombres.split(' '); r.nombresP = sp.slice(0, 2).join(' '); r.apellidos = sp.slice(2).join(' '); r.condicion = cond[i % 3]; r.programaId = i === 1 ? 'apsti' : i === 0 ? 'cont' : ''; r.fechaHecho = String(r.fecha).slice(0, 10); r.plazoDias = 15; r.responsable = { nombre: LR_DEF.responsable, cargo: LR_DEF.cargo, correo: LR_DEF.correo }; r.area = i === 0 ? 'SA' : i === 1 ? 'ADM' : '';
-    if (i < 2) r.historial.splice(1, 0, { fecha: r.historial[0].fecha.replace(/T(\d\d)/, (m, h) => 'T' + pad(Math.min(16, +h + 1))), usuario: 'atencion', estado: 'Derivado', nota: `Derivado a ${i === 0 ? 'Secretaría Académica' : 'Área de Administración'}` }); });
-  c.contadores.RCL['2026'] = (D.reclamos || []).length;
-  /* CV docente con autorización de publicación (Ley N.º 29733) */
-  const CURSOS = [['Programa de Formación Docente en Educación Superior', 'MINEDU – DIGESUTPA', 'Metodologías activas para la enseñanza', '10/03/2024 - 30/04/2024', '120'], ['Evaluación por competencias', 'Universidad Nacional San Luis Gonzaga', 'Evaluación del aprendizaje', '05/06/2023 - 20/07/2023', '80'], ['Herramientas digitales para la docencia', 'PerúEduca', 'Aulas virtuales y recursos digitales', '01/08/2025 - 30/09/2025', '90']];
-  const INNOV = [['Proyecto de innovación educativa institucional', 'Participante', '2024'], ['Implementación de herramientas digitales en el aula', 'Responsable', '2025'], ['Feria de proyectos productivos y de emprendimiento', 'Asesor', '2025']];
-  (D.personas || []).forEach((p, i) => {
-    const ac = p.academica || []; const pre = ac.filter(a => /t[ií]tulo|bachiller|licenc/i.test(a.nivel)), pos = ac.filter(a => !/t[ií]tulo|bachiller|licenc/i.test(a.nivel));
-    const doc = p.tipo === 'Docente'; const y0 = 2000 + (i % 10);
-    p.cv = { perfil: doc ? `${p.especialidad} con experiencia en educación superior tecnológica, formación por competencias y vinculación con el sector productivo de Pisco. Comprometid${p.fem ? 'a' : 'o'} con la formación integral de los estudiantes y la innovación educativa.` : `${p.especialidad}, con experiencia en gestión institucional y educación superior tecnológica. Comprometid${p.fem ? 'a' : 'o'} con la calidad del servicio educativo del IESTP "Pisco".`,
-      cargo: doc ? 'Docente de Educación Superior' : (p.id === 'dir' ? 'Director General' : 'Personal directivo'), fnac: `${1968 + (i * 3) % 25}-${pad(1 + i % 12)}-${pad(3 + (i * 7) % 25)}`, sexo: p.fem ? 'Femenino' : 'Masculino', direccion: ['Pisco, Ica', 'San Andrés, Pisco', 'Túpac Amaru Inca, Pisco', 'San Clemente, Pisco', 'Paracas, Pisco'][i % 5], correoPersonal: '',
-      pregrado: (pre.length ? pre : [{ titulo: p.especialidad, institucion: 'Universidad Nacional San Luis Gonzaga', anio: y0 }]).map(a => ({ id: uid(), anio: `${(+a.anio || y0) - 5} - ${+a.anio || y0}`, nivel: 'Título profesional', especialidad: a.titulo || p.especialidad, institucion: a.institucion, lugar: 'Ica' })),
-      posgrado: pos.map(a => ({ id: uid(), anio: `${(+a.anio || 2020) - 2} - ${+a.anio || 2020}`, nivel: a.nivel, especialidad: a.titulo, institucion: a.institucion, lugar: /MINEDU/.test(a.institucion) ? 'Lima' : 'Ica' })).concat(p.id === 'dir' || /^a[12]$/.test(p.id) ? [{ id: uid(), anio: '2014 - 2016', nivel: 'Maestría', especialidad: p.especialidad.replace(/^Mag[ií]ster en /, ''), institucion: 'Universidad César Vallejo', lugar: 'Ica' }] : []),
-      continua: CURSOS.slice(0, 2 + i % 2).map(x => ({ id: uid(), curso: x[0], institucion: x[1], tema: x[2], periodo: x[3], horas: x[4] })),
-      ofimatica: ['Microsoft Word', i % 2 ? 'Microsoft Excel - Nivel avanzado' : 'Microsoft Excel - Nivel intermedio', 'Microsoft PowerPoint'], idiomas: [i % 3 ? 'Inglés - Intermedio' : 'Inglés - Básico'],
-      expProf: (p.experiencia || []).map(e => ({ id: uid(), institucion: e.institucion, cargo: e.cargo, descripcion: 'Funciones propias del cargo vinculadas a su especialidad.', periodo: `${e.inicio || ''} - ${e.fin || 'Actualidad'}`, tiempo: e.inicio ? `${Math.max(1, (+String(e.fin || '').slice(0, 4) || 2026) - +String(e.inicio).slice(0, 4))} años` : '' })),
-      expDocP: [{ id: uid(), institucion: 'IESTP "Pisco"', cargo: doc ? 'Docente' : 'Directivo / docente', descripcion: 'Desarrollo de unidades didácticas, sesiones de aprendizaje y evaluación de estudiantes.', periodo: `${2012 + i % 10} - Actualidad`, tiempo: `${14 - i % 10} años` }],
-      expDocS: i % 3 === 0 ? [{ id: uid(), institucion: 'Instituto de Educación Superior (modalidad semipresencial)', cargo: 'Docente', descripcion: 'Desarrollo de actividades académicas mediante plataformas virtuales.', periodo: '2020 - 2022', tiempo: '2 años' }] : [],
-      competencias: CV_COMP.slice(i % 4, i % 4 + 4 + i % 2), enfoques: CV_ENF.slice(i % 3, i % 3 + 3), innovacion: INNOV.slice(0, 1 + i % 2).map(x => ({ id: uid(), evento: x[0], participacion: x[1], fecha: x[2] })),
-      huella: '', docs: [], cvPdf: null, autoriza: ['d19', 'd20', 'd5'].includes(p.id) ? { ok: false, fecha: '', por: '' } : { ok: true, fecha: '2026-03-' + pad(2 + i % 20) + 'T09:00:00', por: 'hquispe' }, actualizado: '2026-10-' + pad(1 + i % 20) + 'T10:00:00' };
-  });
-
-  if (window.piscoOficial) window.piscoOficial(D);
-};
+window.piscoSeed = function (D) {};
 /* Integración al terminar de cargar la aplicación */
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -9036,5 +8399,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   label();
 })();
 </script>
+<script src="/portal-server.js"></script>
 </body>
 </html>

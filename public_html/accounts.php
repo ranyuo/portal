@@ -1,0 +1,49 @@
+<?php
+declare(strict_types=1);
+require dirname(__DIR__).'/portal-private/bootstrap.php';
+portal_headers();
+$error = ''; $notice = '';
+try {
+    $app = portal_app();
+    $app->requireAdmin();
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+        $app->checkCsrf(is_string($_POST['_csrf'] ?? null) ? $_POST['_csrf'] : '');
+        if (($_POST['action'] ?? '') === 'password') {
+            $app->changePassword($_POST);
+            $_SESSION['account_notice'] = 'Contraseña actualizada.';
+        } else {
+            $app->createAccount($_POST);
+            $_SESSION['account_notice'] = 'Cuenta administradora creada.';
+        }
+        header('Location: /accounts.php', true, 303); exit;
+    }
+    $notice = $_SESSION['account_notice'] ?? '';
+    unset($_SESSION['account_notice']);
+    $users = $app->accounts();
+} catch (Throwable $exception) {
+    if (!$exception instanceof PortalError || in_array($exception->status, [403, 419], true)) portal_error($exception);
+    $error = $exception->getMessage();
+    http_response_code($exception->status);
+    $users = $app->accounts();
+}
+function e(string $value): string { return htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); }
+?><!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cuentas | Portal Pisco</title><link rel="stylesheet" href="/forms.css"></head>
+<body><main><a href="/#/admin/dashboard">← Volver al panel</a><h1>Cuentas del portal</h1>
+<?php if ($notice): ?><p class="notice success" role="status"><?= e($notice) ?></p><?php endif ?>
+<?php if ($error): ?><p class="notice" role="alert"><?= e($error) ?></p><?php endif ?>
+<section><h2>Administradores</h2><p>Estas cuentas pueden gestionar todo el contenido del portal.</p><ul><?php foreach ($users as $user): ?><li><?= e($user['name']) ?> — <?= e($user['username']) ?></li><?php endforeach ?></ul></section>
+<section><h2>Crear administrador</h2><form method="post">
+<input type="hidden" name="_csrf" value="<?= e($_SESSION['csrf']) ?>"><input type="hidden" name="action" value="create">
+<label>Nombre<input name="name" required maxlength="150" autocomplete="name"></label>
+<label>Usuario<input name="username" required pattern="[a-z0-9._-]{3,80}" autocomplete="off"></label>
+<label>Correo<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
+<label>Contraseña nueva<input type="password" name="password" required minlength="12" maxlength="72" autocomplete="new-password"></label>
+<label>Repetir contraseña<input type="password" name="password_confirmation" required minlength="12" maxlength="72" autocomplete="new-password"></label><button>Crear cuenta</button>
+</form></section>
+<section><h2>Cambiar mi contraseña</h2><form method="post">
+<input type="hidden" name="_csrf" value="<?= e($_SESSION['csrf']) ?>"><input type="hidden" name="action" value="password">
+<label>Contraseña actual<input type="password" name="current_password" required maxlength="72" autocomplete="current-password"></label>
+<label>Contraseña nueva<input type="password" name="password" required minlength="12" maxlength="72" autocomplete="new-password"></label>
+<label>Repetir contraseña<input type="password" name="password_confirmation" required minlength="12" maxlength="72" autocomplete="new-password"></label><button>Cambiar contraseña</button>
+</form></section></main></body></html>
