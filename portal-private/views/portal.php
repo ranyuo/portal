@@ -7113,7 +7113,11 @@ cargoExp = async function (id) {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(90); doc.text('N.° DE EXPEDIENTE', M + 5, y + 6.5);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(16.5); doc.setTextColor(...NAVY); doc.text(x.numero, M + 5, y + 14);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(90); doc.text('N.° DE DOCUMENTO', M + 5, y + 20); doc.text('CÓDIGO DE VERIFICACIÓN', M + 52, y + 20);
-  doc.setFont('courier', 'bold'); doc.setFontSize(10.5); doc.setTextColor(25); doc.text(x.numDocumento || '—', M + 5, y + 25.5); doc.text(x.cargoCod || '—', M + 52, y + 25.5);
+  doc.setFont('courier', 'bold'); doc.setFontSize(10.5); doc.setTextColor(25); doc.text(x.numDocumento || '—', M + 5, y + 25.5);
+  // Conserva completo el código de cargos anteriores y reserva el espacio del sello.
+  const verificationCode = x.cargoCod || '—', verificationWidth = W - M - 66 - 4 - (M + 52);
+  const verificationSize = Math.min(10.5, 10.5 * verificationWidth / Math.max(doc.getTextWidth(verificationCode), 1));
+  doc.setFontSize(verificationSize); doc.text(verificationCode, M + 52, y + 25.5);
   const sx = W - M - 66, sy = y + 2.5; doc.setDrawColor(...NAVY); doc.setLineWidth(.9); doc.rect(sx, sy, 62, 25); doc.setLineWidth(.25); doc.rect(sx + 1.2, sy + 1.2, 59.6, 22.6);
   doc.setTextColor(...NAVY); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.text('IESTP "PISCO"', sx + 31, sy + 5, { align: 'center' });
   doc.setFontSize(10.5); doc.text('MESA DE PARTES VIRTUAL', sx + 31, sy + 10, { align: 'center' });
