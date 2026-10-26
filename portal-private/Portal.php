@@ -460,7 +460,8 @@ final class PortalApp
                 $cfg = $data['config']['mpv'];
                 $record['numero'] = sprintf('%s-%s-%06d', $cfg['prefijo'], $year, $data['config']['contadores']['MPV'][$year]);
                 $record['numDocumento'] = sprintf('DOC-%s-%06d', $year, $data['config']['contadores']['DOC'][$year]);
-                $record['cargoCod'] = strtoupper(bin2hex(random_bytes(16)));
+                do { $record['cargoCod'] = strtoupper(bin2hex(random_bytes(8))); }
+                while (PortalPolicy::find($data['expedientes'], 'cargoCod', $record['cargoCod']) !== null);
                 $received = new DateTimeImmutable();
                 $business = fn ($date) => (int)$date->format('N') < 6 && !in_array($date->format('Y-m-d'), $cfg['feriados'] ?? [], true);
                 $inHours = $business($received) && $received->format('H:i') >= $cfg['horaIni'] && $received->format('H:i') <= $cfg['horaFin'];
