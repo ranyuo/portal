@@ -18,6 +18,7 @@ Se cubren los once perfiles del modelo, los veinticinco editores administrativos
 | migration.php | 138 comprobaciones adicionales: CRUD de contenido, concurrencia por registro, programación de noticias, histórico, pruebas de formularios, respaldo y restauración con integridad |
 | academic-crud.php | 42 operaciones de maestros académicos, horarios y títulos, incluidas dependencias |
 | regressions.php | 11 comprobaciones de aprobación, inmutabilidad, fechas, avisos y permisos |
+| quality-lookups.php | 8 comprobaciones de detalle, anulación, privacidad, DNI y exclusión de certificados en papelera |
 | browser-crud.cjs | 50 operaciones reales de creación y edición desde los 25 editores, confirmadas contra el servidor |
 | browser-parity.cjs | 115 comprobaciones de navegación, 39 patrones de rutas públicas, perfiles, publicación entre ventanas y franja móvil solo en Inicio |
 | browser-profiles.cjs | Guardar y recargar CV docente y adjunto CV de alumno |
@@ -35,3 +36,7 @@ Las pruebas destructivas rechazan configuraciones que no sean de pruebas y una b
 La batería comprueba los flujos descritos con datos controlados; no garantiza ausencia de cualquier fallo ni sustituye la revisión de datos institucionales reales. La configuración de PHP, los permisos de archivos, el cron y los límites de Hostinger deben comprobarse al desplegar allí. Las imágenes y mapas externos dependen de sus proveedores. Los archivos del antiguo prototipo que solo existían en el navegador requieren volver a adjuntarse.
 
 El correo saliente y la recuperación por correo quedan pendientes por indicación del usuario. Las respuestas, constancias y avisos internos se guardan realmente; no se simula el envío de correo. Consulta `INSTRUCCIONES.md` para actualizar conservando tu base, configuración y usuarios.
+
+## Control de calidad ampliado
+
+Consulta `CONTROL-CALIDAD.md` para el recorrido de enlaces, adaptación a pantallas pequeñas, fallos corregidos y pruebas adicionales de importación Excel, postulación laboral, formularios académicos, consultas y reintento de envíos. Los nuevos scripts se llaman `browser-quality*.cjs`.

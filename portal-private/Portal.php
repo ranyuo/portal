@@ -487,22 +487,25 @@ final class PortalApp
         $this->rate('lookups', 10, 60);
         $input = self::validate($input, ['reference' => 'required|string|max:150', 'document' => (in_array($type,['certificados','becarios'],true) ? 'nullable' : 'required').'|string|max:50', 'mode' => 'nullable|string|max:10']);
         $data = json_decode($this->state()['data'], true, flags: JSON_THROW_ON_ERROR);
+        if (!in_array($input['mode'] ?? '', ['', 'codigo', 'dni'], true)) throw new PortalError(422, 'Modo de consulta no válido.');
+        if ($type === 'certificados' && ($input['mode'] ?? '') === 'dni' && !preg_match('/^[0-9]{8}$/', $input['reference'])) throw new PortalError(422, 'El DNI debe tener ocho dígitos.');
         if ($type === 'becarios') {
             if(!preg_match('/^[0-9]{8}$/',$input['reference']))throw new PortalError(422,'DNI no válido.');
             $matches=[];foreach($data['becarios']??[] as $r)if(!($r['deleted']??false)&&($r['estado']??'')==='Publicado'&&($r['dni']??'')===$input['reference']){$r=array_intersect_key($r,array_flip(['id','periodoId','apellidos','nombres','programaId','tipoId','motivo','estado','dni']));$r['dni']='****'.substr($r['dni'],-4);$matches[]=$r;}return ['records'=>$matches];
         }
         if ($type === 'certificados' && ($input['mode'] ?? '') === 'dni') {
-            $matches=[]; foreach ($data['certificados']??[] as $r) if (($r['dni']??'')===$input['reference']) $matches[]=array_intersect_key($r,array_flip(['id','codigo','nombres','programaId','tipo','detalle','fecha','estado','origen','motivo']));
+            $matches=[]; foreach ($data['certificados']??[] as $r) if (!($r['deleted']??false) && ($r['dni']??'')===$input['reference']) $matches[]=array_intersect_key($r,array_flip(['id','codigo','nombres','programaId','tipo','detalle','fecha','estado','origen','motivo']));
             return ['records'=>$matches];
         }
         $field = $type === 'expedientes' ? 'numero' : 'codigo';
         foreach ($data[$type] ?? [] as $record) {
+            if ($record['deleted'] ?? false) continue;
             if (strtoupper($record[$field] ?? '') !== strtoupper($input['reference'])) continue;
             if ($type !== 'certificados' && !hash_equals((string)($record['numDoc'] ?? ''), $input['document'])
                 && (empty($record['cargoCod']) || !hash_equals($record['cargoCod'], strtoupper($input['document'])))) continue;
             foreach (['archivos', 'archivo', 'adjunto', 'notas', 'notaInterna', 'correo', 'telefono', 'direccion', 'usuarioRegistro'] as $key) unset($record[$key]);
             if ($type === 'certificados') {
-                $record = array_intersect_key($record, array_flip(['id', 'codigo', 'nombres', 'programaId', 'tipo', 'fecha', 'estado', 'origen']));
+                $record = array_intersect_key($record, array_flip(['id', 'codigo', 'nombres', 'programaId', 'tipo', 'detalle', 'fecha', 'estado', 'origen', 'motivo']));
             } else {
                 $record['historial'] = array_map(fn ($item) => array_intersect_key($item, array_flip(['fecha', 'estado'])), $record['historial'] ?? []);
             }

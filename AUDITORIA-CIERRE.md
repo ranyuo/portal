@@ -25,3 +25,5 @@ Pendiente: configurar correo real y recuperación por correo cuando se autorice.
 La subida de esta versión a Hostinger y la ejecución de `actualizar.php` corresponden al despliegue, todavía no realizado desde este entorno. Conserva `config.php`, los respaldos privados y tu base existente. No reinstales. La programación automática requiere dar de alta el cron indicado en hPanel.
 
 La evidencia y los scripts están en `VERIFICACION.md` y `tests/`. Los datos y documentos de ejemplo heredados deben ser revisados por la institución; no se presentan como documentos oficiales nuevos.
+
+La revisión funcional posterior está documentada en `CONTROL-CALIDAD.md`, con los hallazgos adicionales corregidos y sus pruebas reproducibles.

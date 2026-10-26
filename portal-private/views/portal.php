@@ -2021,9 +2021,10 @@ tr.pz-bad td{background:var(--errbg)}
 .pz-bl-reg{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .pz-bl-e2h{display:flex;gap:12px;align-items:flex-start;padding:16px 18px;background:var(--sky);border-bottom:1px solid var(--line)}
 .pz-bl-e2h>svg{flex:none;color:var(--link);margin-top:2px}.pz-bl-e2h b{display:block;font-size:16px}.pz-bl-e2h span{font-size:13.5px;color:var(--muted)}
+.pz-bl-ix{min-width:0;overflow-wrap:anywhere}
 .pz-bl-ix .ix .tabs{display:none}
 .pz-bl-ix .ix .panel{border:0;box-shadow:none;margin:0}
-.pz-bl-side{display:grid;gap:12px}
+.pz-bl-side{display:grid;gap:12px;min-width:0;overflow-wrap:anywhere}
 .pz-bl-side section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
 .pz-bl-side h3{display:flex;gap:8px;align-items:center;font-size:15px;margin:0 0 8px}.pz-bl-side h3::after{display:none}.pz-bl-side h3 svg{color:var(--link)}
 .pz-bl-side p{font-size:13.5px;margin:0 0 10px;text-align:left}
@@ -2398,7 +2399,7 @@ function openModal({title, body, wide, submit, onSubmit, foot, danger, onOpen}){
   if(onOpen) onOpen($("#mform"));
 }
 function closeModal(){ const m = $("#ixmodal"); if(m) m.innerHTML = ""; MODAL = null }
-function confirmBox(title, msg, label, fn){ openModal({title, body:`<p>${msg}</p>`, submit:label || "Confirmar", danger:true, onSubmit:() => { fn(); return true }}) }
+function confirmBox(title, msg, label, fn){ openModal({title, body:`<p>${msg}</p>`, submit:label || "Confirmar", danger:true, onSubmit:() => fn() !== false}) }
 
 /* ---------- CRUD genérico ---------- */
 const ENT = {};
@@ -2450,7 +2451,7 @@ let _dl;
 function dlCap(){ if(_dl === undefined || _dl === null) _dl = (window.claude && window.claude.use) ? Promise.resolve(window.claude.use("downloads")).catch(() => null).then(d => { if(!d) _dl = null; return d }) : Promise.resolve(null); return _dl || Promise.resolve(null) }
 function dlHelp(name, data){ const prev = "";
   openModal({title:"No se pudo descargar en esta vista", wide:!!prev, body:`<p>El archivo <b class="mono">${esc(name)}</b> se generó correctamente, pero esta ventana no permite descargas.</p>${prev}
-  <div class="alert info"><div><b>Cómo descargar:</b><ol style="margin:6px 0 0;padding-left:18px"><li>Abra la intranet desde su enlace de claude.ai, con la sesión iniciada (no desde una vista previa ni desde una copia del archivo).</li><li>Vuelva a pulsar el botón PDF o Excel.</li><li>Acepte el aviso de descarga que aparece. Si lo rechazó antes, recargue la página.</li></ol></div></div>`}) }
+  <div class="alert info"><div><b>Cómo descargar:</b><ol style="margin:6px 0 0;padding-left:18px"><li>Abra la intranet del instituto en su navegador e inicie sesión.</li><li>Vuelva a pulsar el botón PDF o Excel.</li><li>Acepte el aviso de descarga que aparece. Si lo rechazó antes, recargue la página.</li></ol></div></div>`}) }
 function browserSave(name, data){
   try{ const blob = data instanceof Blob ? data : new Blob([data], {type: /\.json$/.test(name) ? "application/json" : "application/octet-stream"});
     const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = name; a.style.display = "none";
@@ -2549,7 +2550,6 @@ function emitDoc(tipo, ref, persona){
   try{ if(tipo === "cert" || tipo === "titulo"){ const e = tipo === "cert" ? est(ref) : est((byId(DB.titulos, ref) || {}).est); HOST.registerDoc({cod:d.cod, tipo:DOC_T[tipo], dni:e.dni, nombres:e.nom, prog:prog(e.prog).pid || "", fecha:d.fecha}) } }catch(err){}
   if(!save())return false; return d;
 }
-const VERIF_URL = "https://claude.ai/artifact/GU7Awx4CHYcL6PWxvyD5Vt";
 const b64u = o => { const b = new TextEncoder().encode(JSON.stringify(o)); let bin = ""; b.forEach(x => bin += String.fromCharCode(x)); return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"") };
 const unb64u = t => { const bin = atob(t.replace(/-/g,"+").replace(/_/g,"/")); return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)))) };
 /* el QR abre la verificación pública con el código y los datos del documento */
@@ -4616,10 +4616,11 @@ function checkCaptcha(form, id) {
   return '';
 }
 const RATE = {};
-function rateLimited(key, secs = 20) { const t = Date.now(); if (RATE[key] && t - RATE[key] < secs * 1000) return true; RATE[key] = t; return false; }
+function rateLimited(key, secs = 20) { return !!(RATE[key] && Date.now() - RATE[key] < secs * 1000); }
 
 /* ---------- Validación de formularios ---------- */
 function showErrors(form, errs) {
+  $$('[aria-invalid="true"]', form).forEach(el => el.removeAttribute('aria-invalid'));
   $$('.field.invalid', form).forEach(f => { f.classList.remove('invalid'); const m = $('.errmsg', f); m && m.remove(); });
   let first = null;
   Object.entries(errs).forEach(([name, msg]) => {
@@ -5404,7 +5405,7 @@ function bindPublicChrome() {
     b.onclick = () => { const li = b.parentNode; const o = !li.classList.contains('open'); $$('.mainnav li.open').forEach(x => { x.classList.remove('open'); $('button', x).setAttribute('aria-expanded', 'false'); }); if (o) { li.classList.add('open'); b.setAttribute('aria-expanded', 'true'); } };
     b.parentNode.addEventListener('keydown', e => { if (e.key === 'Escape') { b.parentNode.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); b.focus(); } });
   });
-  document.addEventListener('click', e => { if (!e.target.closest('.mainnav li')) $$('.mainnav li.open').forEach(x => x.classList.remove('open')); }, { once: true });
+  if(!window.__publicNavOutside){window.__publicNavOutside=true;document.addEventListener('click', e => { if(!e.target.closest('.mainnav li'))$$('.mainnav li.open').forEach(x => {x.classList.remove('open');$('button.top',x)?.setAttribute('aria-expanded','false');}); });}
   $$('[data-search]').forEach(f => f.onsubmit = e => { e.preventDefault(); go('#/buscar?q=' + encodeURIComponent(f.q.value.trim())); });
   const nl = $('[data-newsletter]'); if (nl) nl.onsubmit = e => { e.preventDefault(); const cap=checkCaptcha(nl,'cap-nl');if(cap)return toast(cap,'err'); const em = $('#nl').value; if (!reEmail.test(em)) return toast('Correo no válido', 'err'); coll('suscriptores').push({ correo: em, fecha: nowISO() }); if (!saveDB()) return; nl.reset(); toast('Tu suscripción quedó registrada. El envío por correo está pendiente de habilitación.', 'ok'); };
   // carrusel
@@ -5904,7 +5905,7 @@ function bindProgUd(w, box, rer) {
 }
 SPECS.locales = {
   key: 'locales', mod: 'locales', coll: 'locales', title: 'Campus y locales', singular: 'local', icon: 'map', states: ESTADOS, label: r => r.nombre, order: true, preview: () => '#/nosotros/campus-e-informes',
-  extraActs: () => `<a class="btn sec" href="#/admin/paginas/pg-campus">Editar página Campus e Informes</a><a class="btn sec" href="#/admin/mensajes">Mensajes de contacto</a>`,
+  extraActs: () => `${can('paginas') ? '<a class="btn sec" href="#/admin/paginas/pg-campus">Editar página Campus e Informes</a>' : ''}${can('mensajes') ? '<a class="btn sec" href="#/admin/mensajes">Mensajes de contacto</a>' : ''}`,
   cols: [{ l: 'Foto', f: r => thumb(r.foto) }, { l: 'Local', f: r => `<b>${esc(r.nombre)}</b><br><small>${esc(r.direccion)}</small>` }, { l: 'Coordenadas', f: r => `${r.lat}, ${r.lng}` }, { l: 'Estado', f: r => stBadge(r.estado) }],
   fields: [{ n: 'nombre', l: 'Nombre del local', req: true }, { n: 'telefono', l: 'Teléfono', req: true }, { n: 'direccion', l: 'Dirección (según partida registral)', req: true, full: true }, { n: 'correo', l: 'Correo', t: 'email' }, { n: 'horario', l: 'Horario de atención' }, { n: 'lat', l: 'Latitud', t: 'number', step: 'any', req: true }, { n: 'lng', l: 'Longitud', t: 'number', step: 'any', req: true }, { n: 'mapa', l: 'Vista previa de la ubicación', t: 'custom', render: w => `<iframe class="map" style="height:220px" title="Vista previa del mapa" src="https://www.openstreetmap.org/export/embed.html?bbox=${w.lng - .005},${w.lat - .005},${+w.lng + .005},${+w.lat + .005}&layer=mapnik&marker=${w.lat},${w.lng}"></iframe><button type="button" class="btn xs sec" data-mapr style="margin-top:6px">Actualizar vista previa con las coordenadas ingresadas</button>`, bind: (w, box, rer) => { $('[data-mapr]', box).onclick = () => rer(); } }, { n: 'foto', l: 'Foto del acceso principal', t: 'image', full: true }, { n: 'orden', l: 'Orden', t: 'number', side: true, min: 1 }],
   validate: w => (w.lat < -18.5 || w.lat > 0 || w.lng < -82 || w.lng > -68) ? { lat: 'Coordenadas fuera del territorio peruano.' } : {},
@@ -6331,8 +6332,8 @@ CUSTOM.dashboard = (parts, q) => {
   const CM = [['noticias', 'Noticias', alive('noticias').filter(n => n.estado === 'Publicada').length, '#/admin/noticias'], ['documentos', 'Documentos de gestión', alive('documentos').filter(d => d.estado === 'Publicado').length, '#/admin/documentos'], ['docentes', 'Docentes', alive('personas').filter(p => p.tipo === 'Docente' && p.estado === 'Publicado').length, '#/admin/docentes'], ['becas', 'Becarios', alive('becarios').length, '#/admin/becas'], ['tupa', 'Conceptos TUPA', alive('tupa').length, '#/admin/tupa'], ['eventos', 'Eventos', alive('eventos').filter(e => e.estado === 'Publicado').length, '#/admin/eventos'], ['convocatorias', 'Convocatorias', alive('convocatorias').length, '#/admin/convocatorias'], ['egresados', 'Egresados destacados', alive('egresados').length, '#/admin/egresados'], ['programas', 'Programas de estudio', alive('programas').filter(p => p.estado === 'Publicado').length, '#/admin/programas'], ['slides', 'Diapositivas del carrusel', alive('slides').filter(x => x.estado === 'Publicado').length, '#/admin/slides'], ['paginas', 'Páginas institucionales', alive('paginas').filter(x => x.estado === 'Publicada').length, '#/admin/paginas']].filter(x => can(x[0] === 'slides' ? 'portada' : x[0])).map(([, k, v, h]) => ({ k, v, h })).sort((a, b) => b.v - a.v);
   const cmCard = CM.length ? `<div class="panel db-card"><h2><span>Contenido publicado</span><small class="db-h2s">registros por módulo</small></h2><div class="pb">${hbars(CM)}</div></div>` : '';
   // agenda
-  const ag = alive('eventos').filter(e => e.estado === 'Publicado' && e.fecha.slice(0, 10) >= today).map(e => ({ f: e.fecha.slice(0, 10), t: e.titulo, k: 'Evento', h: '#/admin/eventos/' + e.id }));
-  const adv = coll('admisiones').find(a => a.vigente); if (adv) (adv.cronograma || []).forEach(c => { const f = parseDMY(c.fecha); if (f >= today && !ag.some(a => a.f === f && a.k === 'Evento')) ag.push({ f, t: c.actividad, k: 'Admisión', h: '#/admin/admision/' + adv.id }); });
+  const ag = alive('eventos').filter(e => e.estado === 'Publicado' && e.fecha.slice(0, 10) >= today).map(e => ({ f: e.fecha.slice(0, 10), t: e.titulo, k: 'Evento', h: can('eventos') ? '#/admin/eventos/' + e.id : '#/eventos' }));
+  const adv = coll('admisiones').find(a => a.vigente); if (adv) (adv.cronograma || []).forEach(c => { const f = parseDMY(c.fecha); if (f >= today && !ag.some(a => a.f === f && a.k === 'Evento')) ag.push({ f, t: c.actividad, k: 'Admisión', h: can('admision') ? '#/admin/admision/' + adv.id : '#/admision' }); });
   const mv = coll('matriculas').find(m => m.vigente); if (mv) (mv.cronograma || []).forEach(c => { const f = parseDMY(c.fecha); if (f >= today) ag.push({ f, t: c.actividad, k: 'Matrícula', h: '#/admin/matricula/' + mv.id }); });
   ag.sort((a, b) => a.f.localeCompare(b.f));
   const agCard = `<div class="panel db-card"><h2><span>Próximas fechas</span><small class="db-h2s">eventos y cronogramas</small></h2><ul class="db-agenda">${ag.slice(0, 6).map(a => { const d = new Date(a.f + 'T12:00:00'); const dd = Math.round((d - new Date(today + 'T12:00:00')) / 864e5); return `<li><span class="db-date"><b>${d.getDate()}</b><small>${MES3[d.getMonth()]}</small></span><a href="${a.h}">${esc(a.t)}</a><span class="db-tag">${a.k}</span><small class="db-in">${dd === 0 ? 'Hoy' : dd === 1 ? 'Mañana' : 'En ' + dd + ' días'}</small></li>`; }).join('') || '<li class="db-empty">No hay fechas próximas registradas.</li>'}</ul></div>`;
@@ -6911,7 +6912,7 @@ async function fileBlob(meta) {
   if (meta.lineas || meta.titulo) return docBlob(meta);
   return null;
 }
-async function downloadMeta(meta) { const b = await fileBlob(meta); if (!b) return toast('El archivo no está disponible en este navegador (se guardó en otro equipo o se borraron los datos del sitio).', 'err'); downloadBlob(b, meta.original || meta.nombre); }
+async function downloadMeta(meta) { try { const b = await fileBlob(meta); if (!b) return toast('El archivo adjunto no está disponible. Solicita que vuelva a adjuntarse al registro.', 'err'); downloadBlob(b, meta.original || meta.nombre); } catch(error) { toast(error.message || 'No se pudo descargar el archivo. Revisa tu sesión y tus permisos.', 'err'); } }
 function checkUpload(file, exts, maxMB) {
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   if (!exts.includes(ext)) return `“${file.name}”: formato .${ext} no permitido. Formatos: ${exts.map(e => e.toUpperCase()).join(', ')}.`;
@@ -7435,6 +7436,7 @@ const empEstado = e => e.validada ? 'Aprobada' : (e.estadoVal === 'Rechazada' ? 
 const empBadge = e => { const s = empEstado(e); return `<span class="badge ${s === 'Aprobada' ? 'ok' : s === 'Rechazada' ? 'err' : 'warn'}">${s}</span>`; };
 const rucOk = r => { r = String(r || ''); if (!/^(10|15|17|20)\d{9}$/.test(r)) return false; const w = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]; const s = w.reduce((a, x, i) => a + x * +r[i], 0); let d = 11 - s % 11; if (d === 10) d = 0; if (d === 11) d = 1; return d === +r[10]; };
 const fdx = d => d ? fshort(String(d).length === 10 ? d + 'T12:00:00' : d) : '—';
+function canWriteAcademic(module) { const u=currentUser(); if(!u)return false; if(u.rol==='admin')return true; const key={alumnos:'ix-alumnos',bolsa:'ix-bolsa'}[module]; return !!key&&can(key)&&Number(XD().perms?.[IX_ROLE[u.rol]]?.[module]||0)>=2; }
 const bTabs = a => tabsBar([['p', 'Panel', '#/admin/ix-bolsa'], ['g', 'Convocatorias y postulaciones', '#/admin/ix-bolsa/gestion'], ['e', 'Validación de empresas', '#/admin/ix-bolsa/empresas'], ['r', 'Padrón de estudiantes y egresados', '#/admin/ix-bolsa/padron'], ['s', 'Seguimiento de egresados', '#/admin/ix-bolsa/egresados']], a);
 const bHead = (sub, crumb) => admHead('Bolsa laboral', sub, `<a class="btn ghost" href="#/servicios/bolsa-laboral" target="_blank">${sic('globe')} Ver bolsa pública</a>`, 'briefcase', [['Servicios'], ['Bolsa laboral', '#/admin/ix-bolsa']].concat(crumb ? [[crumb]] : []));
 const baseBolsa = CUSTOM['ix-bolsa'];
@@ -7459,12 +7461,12 @@ function bolsaPanel() {
   const posts = D.postulaciones.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))).slice(0, 5);
   const html = bHead('Gestión de la Bolsa Laboral del IESTP Pisco') + bTabs('p')
     + `<div class="pz-welcome"><div><h2>Bienvenido al panel de la Bolsa Laboral</h2><p>Conecta a estudiantes y egresados con empresas validadas por la ${esc(window.pzBolsaCfg().responsable)}.</p></div><a class="btn gold" href="#/admin/ix-bolsa/gestion">${sic('plus')} Nueva convocatoria</a></div>
-    <div class="pz-kpis">${K('users', 'var(--sky);color:var(--link)', est, 'Estudiantes', '#/admin/ix-alumnos', 'Regulares en el maestro')}${K('grad', 'var(--sky);color:var(--link)', egr, 'Egresados', '#/admin/ix-bolsa/egresados', 'Egresados y titulados')}${K('building', 'var(--sky);color:var(--link)', empA, 'Empresas', '#/admin/ix-bolsa/empresas', 'Aprobadas')}${K('briefcase', 'var(--sky);color:var(--link)', conv, 'Convocatorias', '#/admin/ix-bolsa/gestion', 'Vigentes')}
+    <div class="pz-kpis">${K('users', 'var(--sky);color:var(--link)', est, 'Estudiantes', can('ix-alumnos') ? '#/admin/ix-alumnos' : '#/admin/ix-bolsa/padron', 'Regulares en el maestro')}${K('grad', 'var(--sky);color:var(--link)', egr, 'Egresados', '#/admin/ix-bolsa/egresados', 'Egresados y titulados')}${K('building', 'var(--sky);color:var(--link)', empA, 'Empresas', '#/admin/ix-bolsa/empresas', 'Aprobadas')}${K('briefcase', 'var(--sky);color:var(--link)', conv, 'Convocatorias', '#/admin/ix-bolsa/gestion', 'Vigentes')}
       ${K('file', 'var(--sky);color:var(--link)', post, 'Postulaciones', '#/admin/ix-bolsa/gestion')}${K('clock', 'var(--sky);color:var(--link)', rev, 'En revisión', '#/admin/ix-bolsa/gestion')}${K('check', 'var(--sky);color:var(--link)', sel, 'Seleccionados', '#/admin/ix-bolsa/gestion')}${K('alert', 'var(--sky);color:var(--link)', empP, 'Empresas pendientes', '#/admin/ix-bolsa/empresas', 'Por validar')}</div>
     <div class="pz-dash"><div class="panel"><h2><span>Convocatorias recientes</span><a class="btn xs ghost" href="#/admin/ix-bolsa/gestion">Ver todas</a></h2><div class="tbl-wrap" style="border:0"><table class="tbl light"><thead><tr><th>Convocatoria</th><th>Empresa</th><th>Modalidad</th><th class="c">Estado</th><th class="num">Postulaciones</th></tr></thead><tbody>${ofs.map(o => `<tr><td><b>${esc(o.puesto)}</b><br><small style="color:var(--muted)">Publicado ${fdx(o.fecha)}</small></td><td>${esc(xemp(o.emp).nom)}</td><td>${esc(o.modal)}</td><td class="c">${stBadge(o.estado === 'Publicada' && o.limite < hoy ? 'Cerrada' : o.estado)}</td><td class="num">${D.postulaciones.filter(p => p.of === o.id).length}</td></tr>`).join('') || '<tr><td colspan="5"><div class="empty">Sin convocatorias.</div></td></tr>'}</tbody></table></div></div>
       <div class="panel"><h2><span>Empresas recientes</span><a class="btn xs ghost" href="#/admin/ix-bolsa/empresas">Ver</a></h2><div class="pb pz-emps">${emps.map(e => `<div>${ic('building')}<span><b>${esc(e.nom)}</b><small>RUC ${esc(e.ruc)}</small>${empBadge(e)}</span></div>`).join('') || '<p class="note">Sin empresas.</p>'}<a class="btn ghost sm" href="#/servicios/bolsa-laboral?registro=1" target="_blank" style="justify-self:stretch;text-align:center">${sic('plus')} Registrar empresa</a></div></div></div>
     <div class="panel" style="margin-top:16px"><h2><span>Últimas postulaciones</span><a class="btn xs ghost" href="#/admin/ix-bolsa/gestion">Ver todas</a></h2><div class="tbl-wrap" style="border:0"><table class="tbl light"><thead><tr><th>Postulante</th><th>Convocatoria</th><th>Fecha</th><th class="c">Estado</th></tr></thead><tbody>${posts.map(p => { const s = xest(p.est), o = D.ofertas.find(x => x.id === p.of) || {}; return `<tr><td><span class="pz-av">${esc(String(s.nom).split(' ').slice(0, 2).map(w => w[0]).join(''))}</span> <b>${esc(s.nom)}</b><br><small style="color:var(--muted);margin-left:36px">${s.estado === 'Regular' ? 'Estudiante' : esc(s.estado)}</small></td><td>${esc(o.puesto || '—')}</td><td>${fdx(p.fecha)}</td><td class="c">${stBadge(p.estado === 'Recibida' ? 'Recibido' : p.estado)}</td></tr>`; }).join('') || '<tr><td colspan="4"><div class="empty">Sin postulaciones.</div></td></tr>'}</tbody></table></div></div>
-    <h2 class="pz-h2">Acciones rápidas</h2><div class="pz-qa"><a href="#/admin/ix-alumnos">${ic('users')}<span>Registrar estudiante</span></a><a href="#/admin/ix-bolsa/padron">${ic('grad')}<span>Registrar egresados (padrón Excel)</span></a><a href="#/servicios/bolsa-laboral?registro=1" target="_blank">${ic('building')}<span>Registrar empresa</span></a><a href="#/admin/ix-bolsa/gestion">${ic('briefcase')}<span>Publicar convocatoria</span></a></div>`;
+    <h2 class="pz-h2">Acciones rápidas</h2><div class="pz-qa">${can('ix-alumnos') ? '<a href="#/admin/ix-alumnos">' + ic('users') + '<span>Registrar estudiante</span></a>' : ''}<a href="#/admin/ix-bolsa/padron">${ic('grad')}<span>Registrar egresados (padrón Excel)</span></a><a href="#/servicios/bolsa-laboral?registro=1" target="_blank">${ic('building')}<span>Registrar empresa</span></a><a href="#/admin/ix-bolsa/gestion">${ic('briefcase')}<span>Publicar convocatoria</span></a></div>`;
   return { html };
 }
 /* ---------- Validación de empresas ---------- */
@@ -7477,6 +7479,7 @@ function bolsaEmpresas() {
       <div class="tbl-wrap" style="border:0"><table class="tbl light"><thead><tr><th>Empresa</th><th>RUC</th><th>Contacto</th><th>Registro</th><th class="c">Estado</th><th class="c">Acciones</th></tr></thead><tbody>${rows.map(e => `<tr data-eid="${e.id}"><td><b>${esc(e.nom)}</b><br><small>${esc(e.sector)} · ${esc(e.ubic)}</small>${e.dir ? `<br><small>${esc(e.dir)}</small>` : ''}</td><td class="mono">${esc(e.ruc)}<br>${rucOk(e.ruc) ? '<span class="badge ok">Dígito verificador válido</span>' : '<span class="badge err">RUC no válido</span>'}</td><td>${esc(e.contacto)}${e.cargoC ? `<br><small>${esc(e.cargoC)}</small>` : ''}<br><small><a href="mailto:${esc(e.correo)}">${esc(e.correo)}</a>${e.tel ? ' · ' + esc(e.tel) : ''}</small></td><td>${fdx(e.fechaReg)}</td><td class="c">${empBadge(e)}${e.motivoRech ? `<br><small>${esc(clamp(e.motivoRech, 60))}</small>` : ''}${e.valPor ? `<br><small>por ${esc(e.valPor)}</small>` : ''}</td><td class="c" style="white-space:nowrap">${empEstado(e) !== 'Aprobada' ? `<button class="btn xs ok" data-eap>${sic('check', 13)} Aprobar</button>` : ''} ${empEstado(e) !== 'Rechazada' ? `<button class="btn xs danger" data-erj>${sic('x', 13)} ${empEstado(e) === 'Aprobada' ? 'Suspender' : 'Rechazar'}</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6"><div class="empty">No hay empresas en esta categoría.</div></td></tr>'}</tbody></table></div></div>
       <form class="panel" data-bcfg><h2>Criterios y responsable</h2><div class="pb" style="display:grid;gap:10px"><div class="field"><label for="bc-r">Responsable de la aprobación</label><input id="bc-r" name="responsable" value="${esc(c.responsable)}"></div><div class="field"><label for="bc-j">Cargo</label><input id="bc-j" name="jefe" value="${esc(c.jefe)}"></div><div class="field"><label for="bc-c">Correo</label><input id="bc-c" name="correo" type="email" value="${esc(c.correo)}"></div><div class="field"><label for="bc-k">Criterios de validación (uno por línea)</label><textarea id="bc-k" name="criterios" rows="8">${esc(c.criterios.join('\n'))}</textarea></div><button class="btn sec">Guardar criterios</button><p class="note">Los criterios se muestran en el formulario público de registro de empresas.</p></div></form></div>`;
   const act = async (e, ok) => {
+    if(!canWriteAcademic('bolsa'))return toast('Tu perfil dispone de consulta de empresas.', 'warn');
     const me = currentUser(); const u = coll('usuarios').find(x => x.vin === 'emp:' + e.id);
     let motivo = '';
     if (!ok) { motivo = await promptBox(`Motivo ${empEstado(e) === 'Aprobada' ? 'de la suspensión' : 'del rechazo'} de ${e.nom} (se enviará a la empresa):`, { title: 'Rechazar empresa', ok: 'Confirmar', textarea: true }); if (motivo == null) return; if (motivo.trim().length < 5) return toast('Indique el motivo.', 'err'); }
@@ -7488,7 +7491,8 @@ function bolsaEmpresas() {
   return { html, after: () => {
     $$('[data-ef]').forEach(b => b.onclick = () => { st.f = b.dataset.ef; route(); });
     $$('[data-eid]').forEach(tr => { const e = D.empresas.find(x => String(x.id) === tr.dataset.eid); const a = $('[data-eap]', tr), r = $('[data-erj]', tr); if (a) a.onclick = () => { if (!rucOk(e.ruc)) toast('Atención: el RUC no supera la validación del dígito verificador.', 'err'); act(e, true); }; if (r) r.onclick = () => act(e, false); });
-    const f = $('[data-bcfg]'); f.onsubmit = ev => { ev.preventDefault(); if (!reEmail.test(f.correo.value)) return toast('Correo no válido.', 'err'); Object.assign(c, { responsable: f.responsable.value.trim(), jefe: f.jefe.value.trim(), correo: f.correo.value.trim(), criterios: f.criterios.value.split('\n').map(s => s.trim()).filter(Boolean) }); audit('Configuración', 'Bolsa laboral', 'Criterios de validación de empresas'); if (saveDB()) { toast('Criterios guardados.', 'ok'); route(); } };
+    if(!canWriteAcademic('bolsa'))$$('[data-eap],[data-erj]').forEach(b=>b.disabled=true);
+    const f = $('[data-bcfg]'); const cfgEdit=['admin','atencion'].includes(currentUser()?.rol); if(!cfgEdit)$$('input,textarea,button',f).forEach(el=>el.disabled=true); f.onsubmit = ev => { ev.preventDefault(); if(!cfgEdit)return; if (!reEmail.test(f.correo.value)) return toast('Correo no válido.', 'err'); Object.assign(c, { responsable: f.responsable.value.trim(), jefe: f.jefe.value.trim(), correo: f.correo.value.trim(), criterios: f.criterios.value.split('\n').map(s => s.trim()).filter(Boolean) }); audit('Configuración', 'Bolsa laboral', 'Criterios de validación de empresas'); if (saveDB()) { toast('Criterios guardados.', 'ok'); route(); } };
   } };
 }
 /* ---------- Padrón Excel de estudiantes y egresados ---------- */
@@ -7544,10 +7548,12 @@ function bolsaPadron() {
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-pdx>Descartar</button><button class="btn" data-pdi ${ok.length ? '' : 'disabled'}>${sic('upload')} Importar ${ok.length} registro(s) válidos</button></div>` : ''}` : ''}</div></div>`;
   return { html, after: () => {
     $('[data-tpl]').onclick = padronTemplate;
-    $('#pd-f').onchange = async ev => { const file = ev.target.files[0]; if (!file) return; const e0 = checkUpload(file, ['xlsx', 'xls', 'csv'], 10); if (e0) { $('#pd-msg').innerHTML = `<div class="notice err">${esc(e0)}</div>`; return; }
+    $('#pd-f').disabled=!canWriteAcademic('alumnos'); if(!canWriteAcademic('alumnos'))$('#pd-msg').textContent='Tu perfil dispone de consulta. La importación requiere permiso de edición del maestro de alumnos.';
+    $('#pd-f').onchange = async ev => { if(!canWriteAcademic('alumnos'))return; const file = ev.target.files[0]; if (!file) return; const e0 = checkUpload(file, ['xlsx', 'xls', 'csv'], 10); if (e0) { $('#pd-msg').innerHTML = `<div class="notice err">${esc(e0)}</div>`; return; }
       try { const rows = await readSheet(file); const r = parsePadron(rows); PADRON_PREV = Object.assign({ nombre: file.name }, r); } catch (err) { PADRON_PREV = { nombre: file.name, items: [], error: 'No se pudo leer el archivo: ' + (err.message || err) }; } route(); };
     const x = $('[data-pdx]'); if (x) x.onclick = () => { PADRON_PREV = null; route(); };
-    const im = $('[data-pdi]'); if (im) im.onclick = async () => {
+    const im = $('[data-pdi]'); if(im&&!canWriteAcademic('alumnos'))im.disabled=true; if (im) im.onclick = async () => {
+      if(!canWriteAcademic('alumnos'))return;
       if (!await confirmBox(`Se importarán ${ok.length} registro(s): ${ok.filter(i => !i.existe).length} nuevos y ${ok.filter(i => i.existe).length} actualizaciones. ¿Continuar?`, { ok: 'Importar', danger: false, title: 'Importar padrón' })) return;
       let nN = 0, nU = 0; const per = D.cfg.periodo;
       ok.forEach(i => { const progId = D.progMap[i.pid]; const data = { nom: i.nom, prog: progId, estado: i.estado, fnac: i.fnac, dom: i.dom, anioEgreso: i.anio, labora: i.labora, areaLab: i.areaLab, origen: 'Padrón Excel', actualizado: new Date().toISOString().slice(0, 10) }; if (i.correo) data.correo = i.correo; if (i.tel) data.tel = i.tel;
@@ -7974,7 +7980,7 @@ function pzSyncCerts(A) {
   return ch;
 }
 window.pzSyncCerts = pzSyncCerts;
-if (typeof IXHOST === 'object' && IXHOST.saveAcad) { const _sv = IXHOST.saveAcad; IXHOST.saveAcad = a => { try { pzSyncCerts(a); } catch (e) { console.error(e); } _sv(a); }; }
+if (typeof IXHOST === 'object' && IXHOST.saveAcad) { const _sv = IXHOST.saveAcad; IXHOST.saveAcad = a => { try { pzSyncCerts(a); } catch (e) { console.error(e); } return _sv(a); }; }
 if (typeof SPECS === 'object' && SPECS.certificados) { const S0 = SPECS.certificados;
   S0.sub = 'Registro único que alimenta la consulta pública de autenticidad (por código o DNI). Las certificaciones modulares, los títulos y las constancias emitidas en el módulo académico se agregan y actualizan automáticamente; desde aquí se pueden anular.';
   const tf = S0.fields.find(f => f.n === 'tipo'); if (tf && Array.isArray(tf.opts)) { const base = tf.opts.slice(); tf.opts = () => [...new Set([...base, 'Certificado modular', ...coll('certificados').map(c => c.tipo).filter(Boolean)])]; }
@@ -8002,12 +8008,12 @@ R('servicios/consulta-certificados', (path, q) => {
      <dl><dt>Tipo de documento</dt><dd>${esc(d.tipo)}</dd>${d.det ? `<dt>${/T[ií]tulo/.test(d.tipo) ? 'Resolución' : 'Detalle'}</dt><dd>${esc(d.det)}</dd>` : ''}<dt>Código</dt><dd class="mono">${esc(d.cod)}</dd>${d.titular ? `<dt>Titular</dt><dd><b>${esc(d.titular)}</b></dd>` : ''}${d.dni ? `<dt>DNI</dt><dd class="mono">${esc(maskDni(d.dni))}</dd>` : ''}${d.prog ? `<dt>Programa de estudios</dt><dd>${esc(d.prog)}</dd>` : ''}<dt>Fecha de emisión</dt><dd>${esc(d.fecha)}</dd>${d.motivo ? `<dt>Motivo de anulación</dt><dd>${esc(d.motivo)}</dd>` : ''}${d.origen ? `<dt>Registro</dt><dd>${esc(d.origen)}</dd>` : ''}<dt>Verificado el</dt><dd>${fdate(new Date().toISOString(), true)}</dd></dl></article>`;
   const DOCT = { cert: 'Constancia de certificación modular', titulo: 'Reporte de validación de título', cargo: 'Cargo de recepción de documento', reclamo: 'Hoja de reclamación', horario: 'Horario académico' };
   const fx = x => x ? fdate(String(x).slice(0, 10) + 'T12:00:00') : '—';
-  const show = (t, v) => {
+  const show = (t, v, records = []) => {
     try { if (pzSyncCerts()) saveDB(); } catch (e) { }
     const pn = id => id ? (progById(id) || {}).nombre || '' : '';
-    let rs = alive('certificados').filter(c => t === 'codigo' ? String(c.codigo).toUpperCase() === v : c.dni === v)
+    let rs = records.filter(c => t === 'codigo' ? String(c.codigo).toUpperCase() === v : c.dni === v)
       .map(c => ({ ok: c.estado === 'Válido', tipo: c.tipo, det: c.detalle || '', cod: c.codigo, titular: c.nombres, dni: c.dni, prog: pn(c.programaId), f: c.fecha, fecha: fx(c.fecha), motivo: c.estado !== 'Válido' ? c.motivo || '' : '', origen: c.origen || '' }));
-    if (!rs.length && t === 'codigo' && IX && IX.db) { const d = (XD().docs || []).find(x => String(x.cod).toUpperCase() === v); if (d) rs.push({ ok: d.valido !== false, tipo: DOCT[d.tipo] || d.tipo, det: '', cod: d.cod, titular: d.persona, dni: '', prog: '', f: d.fecha, fecha: fx(d.fecha), origen: 'Módulo académico' }); }
+    if (!rs.length && records.length && t === 'codigo' && IX && IX.db) { const d = (XD().docs || []).find(x => String(x.cod).toUpperCase() === v); if (d) rs.push({ ok: d.valido !== false, tipo: DOCT[d.tipo] || d.tipo, det: '', cod: d.cod, titular: d.persona, dni: '', prog: '', f: d.fecha, fecha: fx(d.fecha), origen: 'Módulo académico' }); }
     const ord = x => /T[ií]tulo/.test(x.tipo) ? 0 : /^Certificado/.test(x.tipo) ? 1 : 2;
     rs.sort((a, b) => ord(a) - ord(b) || String(b.f).localeCompare(String(a.f)));
     /* solicitudes de certificados o constancias en trámite por la Mesa de Partes Virtual (solo para DNI) */
@@ -8026,8 +8032,9 @@ R('servicios/consulta-certificados', (path, q) => {
     const f = $('[data-cq]');
     const sync = () => { const dni = f.t.value === 'dni'; $('[data-cql]', f).textContent = dni ? 'DNI del titular' : 'Código de verificación'; f.v.placeholder = dni ? 'Ej.: 72345678' : 'Ej.: CERT-2025-000123'; f.v.inputMode = dni ? 'numeric' : 'text'; $('[data-cqh]', f).textContent = dni ? 'Se listan todos los documentos emitidos a nombre del titular.' : 'Figura en la parte inferior del documento, junto al código QR.'; };
     $$('[name=t]', f).forEach(x => x.onchange = sync);
-    if (pre) { portalLookup('certificados', pre, ''); show('codigo', pre); }
-    f.onsubmit = e => { e.preventDefault(); const v = f.v.value.trim().toUpperCase(); const er = {}; if (!v) er.v = f.t.value === 'dni' ? 'Ingrese el DNI del titular.' : 'Ingrese el código de verificación.'; else if (f.t.value === 'dni' && !/^\d{8}$/.test(v)) er.v = 'El DNI debe tener 8 dígitos.'; const cap = checkCaptcha(f, 'cap-cq'); if (cap) er.captcha = cap; if (!showErrors(f, er)) return; portalLookup('certificados', v, '', f.t.value); show(f.t.value, v); };
+    const lookup = (t, v) => { const result = portalLookup('certificados', v, '', t); show(t, v, result ? (Array.isArray(result) ? result : [result]) : []); };
+    if (pre) lookup('codigo', pre);
+    f.onsubmit = e => { e.preventDefault(); const v = f.v.value.trim().toUpperCase(); const er = {}; if (!v) er.v = f.t.value === 'dni' ? 'Ingrese el DNI del titular.' : 'Ingrese el código de verificación.'; else if (f.t.value === 'dni' && !/^\d{8}$/.test(v)) er.v = 'El DNI debe tener 8 dígitos.'; const cap = checkCaptcha(f, 'cap-cq'); if (cap) er.captcha = cap; if (!showErrors(f, er)) return; lookup(f.t.value, v); };
   } };
 });
 

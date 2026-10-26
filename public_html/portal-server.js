@@ -33,6 +33,9 @@ function portalLookup(type,reference,document,mode='codigo'){
   try{
     const result=portalRequest('POST','/api/consultas/'+type,{reference,document,mode});
     const records=result.records||[result.record];
+    if(mode==='dni')for(const record of records)if(record)record.dni=reference;
+    // Una consulta pública no reemplaza registros completos de una sesión administrativa por proyecciones sin adjuntos o datos privados.
+    if(currentUser())return result.record||records;
     if(mode==='dni')DB[type]=DB[type].filter(r=>r.dni!==reference);
     for(const record of records){if(!record)continue;if(mode==='dni')record.dni=reference;Object.defineProperty(record,'__serverSaved',{value:true});
       const i=DB[type].findIndex(r=>r.id===record.id);if(i<0)DB[type].push(record);else DB[type][i]=record;}
@@ -84,6 +87,7 @@ saveDB=function(){
         if(record.__serverSaved||portalKnown.has(type+':'+record.id))continue;
         if(!portalSent.has(record))portalSent.set(record,crypto.randomUUID());
         const result=portalRequest('POST','/api/solicitudes/'+type,{record,idempotency_key:portalSent.get(record),proof:portalProofs[type]});
+        for(const key of ({mensajes:['contact'],reclamos:['lr','lr2'],expedientes:['mp','mpv']}[type]||[]))RATE[key]=Date.now();
         Object.assign(record,result.record);Object.defineProperty(record,'__serverSaved',{value:true});portalKnown.add(type+':'+record.id);portalBaseline[type].unshift(structuredClone(result.record));if(currentUser()){portalRevision=result.revision;if(result.counters){DB.config.contadores=structuredClone(result.counters);portalBaseline.config.contadores=structuredClone(result.counters);}}
       }
     }

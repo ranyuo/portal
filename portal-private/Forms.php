@@ -16,7 +16,8 @@ trait PortalForms
     private function submissionProof(string $purpose,array $input): void
     {
         $proof=$input['proof']??[];$id=$proof['challenge_id']??'';$c=is_string($id)?($_SESSION['challenges'][$id]??null):null;
-        if(!$c||$c['purpose']!==$purpose||$c['expires']<time()||!hash_equals($c['answer'],trim((string)($proof['answer']??''))))throw new PortalError(422,'La verificación anti-spam es incorrecta o ha caducado. Recarga el formulario.');
+        if(!$c||$c['purpose']!==$purpose||$c['expires']<time())throw new PortalError(422,'La verificación anti-spam ha caducado. Recarga el formulario.');
+        if(!hash_equals($c['answer'],trim((string)($proof['answer']??''))))throw new PortalError(422,'La suma no es correcta. Corrige el resultado e inténtalo nuevamente.');
         if(!empty($proof['website']))throw new PortalError(422,'Envío bloqueado por el filtro anti-spam.');
         if(($c['used_key']??null)!==null&&$c['used_key']!==($input['idempotency_key']??''))throw new PortalError(422,'La verificación ya fue utilizada. Recarga el formulario.');
         if(in_array($purpose,['mensajes','expedientes','reclamos','suscriptores'],true)&&($proof['accept']??false)!==true)throw new PortalError(422,'Debes aceptar el tratamiento de datos y la política de privacidad.');
