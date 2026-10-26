@@ -40,3 +40,7 @@ El correo saliente y la recuperación por correo quedan pendientes por indicaci�
 ## Control de calidad ampliado
 
 Consulta `CONTROL-CALIDAD.md` para el recorrido de enlaces, adaptación a pantallas pequeñas, fallos corregidos y pruebas adicionales de importación Excel, postulación laboral, formularios académicos, consultas y reintento de envíos. Los nuevos scripts se llaman `browser-quality*.cjs`.
+
+## Segunda revisión funcional
+
+Consulta `REVISION-PROFUNDA.md` para las correcciones posteriores, la matriz de los 38 módulos y las nuevas pruebas `deep-*.php` y `browser-deep-*.cjs`.

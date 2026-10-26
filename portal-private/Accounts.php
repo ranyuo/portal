@@ -103,7 +103,7 @@ trait PortalAccounts
         $hash=$data['password']!==''?password_hash($data['password'],PASSWORD_DEFAULT):$old['password'];
         try{$this->db()->prepare('UPDATE pisco_users SET name=?,email=?,password=?,role=?,profile=?,active=?,auth_version=auth_version+?,login_failures=0,locked_until=NULL WHERE id=?')->execute([$data['name'],$data['email'],$hash,$data['role'],json_encode($data['profile'],JSON_THROW_ON_ERROR),$active,(int)$revoke,$id]);}
         catch(PDOException $e){if($e->getCode()==='23000')throw new PortalError(422,'El correo ya está registrado.');throw $e;}
-        PortalAudit::write($this,'Actualizar cuenta','Cuentas',(string)$id,['rol_anterior'=>$old['role'],'rol_actual'=>$data['role'],'activo'=>$active,'cambio_clave'=>$data['password']!==''?'sí':'no']);
+        PortalAudit::write($this,'Actualizar cuenta','Cuentas',(string)$id,['rol_anterior'=>$old['role'],'rol_actual'=>$data['role'],'activo'=>$active,'cambio_clave'=>$data['password']!==''?'sí':'no'],$actor);
         if((int)$actor['server_id']===$id&&$revoke)$_SESSION['auth_version']=(int)$old['auth_version']+1;
         return ['ok'=>true];
     }
@@ -115,7 +115,7 @@ trait PortalAccounts
         $stmt=$this->db()->prepare('SELECT password,auth_version FROM pisco_users WHERE id=?');$stmt->execute([$user['server_id']]);$old=$stmt->fetch();
         if(!password_verify($data['current_password'],$old['password']))throw new PortalError(422,'La contraseña actual no es correcta.');
         $this->db()->prepare('UPDATE pisco_users SET password=?,auth_version=auth_version+1,login_failures=0,locked_until=NULL WHERE id=?')->execute([password_hash($data['password'],PASSWORD_DEFAULT),$user['server_id']]);
-        PortalAudit::write($this,'Cambiar contraseña','Cuentas',(string)$user['server_id']);
+        PortalAudit::write($this,'Cambiar contraseña','Cuentas',(string)$user['server_id'],[],$user);
         $_SESSION['auth_version']=(int)$old['auth_version']+1;session_regenerate_id(true);
     }
 }

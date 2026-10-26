@@ -109,14 +109,15 @@ final class PortalDomain
         foreach(['programas'=>['estudiantes'=>'prog','uds'=>'prog','modulos'=>'prog','ambientes'=>'prog','sesiones'=>'prog','ofertas'=>'prog'],'estudiantes'=>['certs'=>'est','titulos'=>'est','notas'=>'est','perfilesLab'=>'est','postulaciones'=>'est'],'modulos'=>['certs'=>'mod'],'uds'=>['sesiones'=>'ud'],'docentes'=>['sesiones'=>'doc'],'ambientes'=>['sesiones'=>'amb'],'empresas'=>['ofertas'=>'emp'],'ofertas'=>['postulaciones'=>'of']] as $collection=>$refs){
             foreach($o[$collection] as $r)if(!PortalPolicy::find($a[$collection],'id',$r['id']))foreach($refs as $related=>$field)if(PortalPolicy::find($a[$related],$field,$r['id']))throw new PortalError(422,'No se puede eliminar '.$collection.' porque tiene registros relacionados.');
         }
-        foreach(['certs'=>'cert','titulos'=>'titulo'] as $collection=>$type)foreach($o[$collection] as $record)if(!PortalPolicy::find($a[$collection],'id',$record['id']))foreach($a['docs'] as $doc)if(($doc['tipo']??'')===$type&&($doc['ref']??null)===$record['id'])throw new PortalError(422,'El registro tiene documentos emitidos. Anula el documento antes de retirar su origen.');
+        foreach(['certs'=>'cert','titulos'=>'titulo'] as $collection=>$type)foreach($o[$collection] as $record)if(!PortalPolicy::find($a[$collection],'id',$record['id']))foreach($a['docs'] as $doc)if(($doc['tipo']??'')===$type&&($doc['ref']??null)===($type==='cert'?$record['est']:$record['id'])&&($doc['valido']??true))throw new PortalError(422,'El registro tiene documentos emitidos. Anula el documento antes de retirar su origen.');
         foreach($a['docs'] as &$doc){
             if(PortalPolicy::find($o['docs'],'cod',$doc['cod']??''))continue;
             if(!preg_match('/^[A-Z0-9-]{8,64}$/',(string)($doc['cod']??'')))throw new PortalError(422,'Código de documento no válido.');
             if(in_array($doc['tipo']??'',['cert','titulo'],true)){
-                $record=self::foreign($a[$doc['tipo']==='cert'?'certs':'titulos'],$doc['ref'],'Documento');$student=self::foreign($a['estudiantes'],$record['est'],'Alumno');
+                if($doc['tipo']==='cert'){$student=self::foreign($a['estudiantes'],$doc['ref'],'Alumno');if(!PortalPolicy::find($a['certs'],'est',$student['id']))throw new PortalError(422,'El alumno no tiene certificaciones registradas.');}
+                else{$record=self::foreign($a['titulos'],$doc['ref'],'Documento');$student=self::foreign($a['estudiantes'],$record['est'],'Alumno');}
                 if(in_array(PortalPolicy::role($user),['estudiante','egresado'],true)&&$student['id']!==PortalPolicy::binding($user,'est'))throw new PortalError(403,'Documento de otro alumno.');
-                $doc['persona']=$student['nom'];$doc['fecha']=date(DATE_ATOM);$doc['por']=$user['nombre'];
+                $doc['persona']=$student['nom'];$doc['fecha']=date(DATE_ATOM);$doc['por']=$user['nombre'];$doc['valido']=true;
             }elseif(PortalPolicy::role($user)!=='admin'&&PortalPolicy::level($new,$user,'certificados')<2)throw new PortalError(403,'No puedes emitir ese documento.');
         }unset($doc);
     }
@@ -131,12 +132,21 @@ final class PortalDomain
                 self::putCertificate($data,$canonical);
             }
         }
-        foreach($a['docs'] as $doc){$holder=null;if(in_array($doc['tipo'],['cert','titulo'],true)){$source=PortalPolicy::find($a[$doc['tipo']==='cert'?'certs':'titulos'],'id',$doc['ref']??null);if($source)$holder=PortalPolicy::find($a['estudiantes'],'id',$source['est']);}$canonical=['id'=>'issued-'.$doc['cod'],'ref'=>'document:'.$doc['cod'],'codigo'=>strtoupper($doc['cod']),'dni'=>$holder['dni']??'','nombres'=>$doc['persona'],'programaId'=>'','tipo'=>['cert'=>'Certificado modular','titulo'=>'Título de Profesional Técnico','horario'=>'Horario académico','cargo'=>'Cargo de recepción'][$doc['tipo']]??'Constancia','fecha'=>substr($doc['fecha'],0,10),'origen'=>'Documento emitido','estado'=>($doc['valido']??true)?'Válido':'Anulado'];self::putCertificate($data,$canonical);if(!($doc['valido']??true))foreach($data['certificados'] as &$issued)if(($issued['ref']??'')===$canonical['ref'])$issued['estado']='Anulado';unset($issued);}
+        foreach($a['docs'] as $doc){$holder=null;if(($doc['tipo']??'')==='cert')$holder=PortalPolicy::find($a['estudiantes'],'id',$doc['ref']??null);elseif(($doc['tipo']??'')==='titulo'){$source=PortalPolicy::find($a['titulos'],'id',$doc['ref']??null);if($source)$holder=PortalPolicy::find($a['estudiantes'],'id',$source['est']);}$canonical=['id'=>'issued-'.$doc['cod'],'ref'=>'document:'.$doc['cod'],'codigo'=>strtoupper($doc['cod']),'dni'=>$holder['dni']??'','nombres'=>$holder['nom']??$doc['persona'],'programaId'=>'','tipo'=>['cert'=>'Certificado modular','titulo'=>'Título de Profesional Técnico','horario'=>'Horario académico','cargo'=>'Cargo de recepción'][$doc['tipo']]??'Constancia','fecha'=>substr($doc['fecha'],0,10),'origen'=>'Documento emitido','estado'=>($doc['valido']??true)?'Válido':'Anulado'];self::putCertificate($data,$canonical);if(!($doc['valido']??true))foreach($data['certificados'] as &$issued)if(($issued['ref']??'')===$canonical['ref'])$issued['estado']='Anulado';unset($issued);}
         foreach($data['certificados'] as &$r)if(preg_match('/^ix:(cert|tit):/',$r['ref']??'')&&!in_array($r['ref'],$active,true)&&($r['estado']??'')==='Válido'){$r['estado']='Anulado';$r['motivo']='Retirado del registro académico';}unset($r);
     }
     private static function putCertificate(array &$data,array $canonical): void
     {
-        foreach($data['certificados'] as &$existing)if(($existing['ref']??'')===$canonical['ref']||($existing['codigo']??'')===$canonical['codigo']){$existing=[...$existing,...array_diff_key($canonical,['id'=>1,'estado'=>1])];return;}unset($existing);
+        $target=null;$adopt=null;
+        foreach($data['certificados'] as $i=>$existing)if(($existing['ref']??'')===$canonical['ref'])$target=$i;
+        $legacyTypes=['Certificado modular'=>['Certificado modular','Constancia de certificación modular'],'Título de Profesional Técnico'=>['Título de Profesional Técnico','Reporte de validación de título']];
+        foreach($data['certificados'] as $i=>$existing){if(strtoupper((string)($existing['codigo']??''))!==strtoupper($canonical['codigo'])||$i===$target)continue;
+            $compatible=in_array($existing['tipo']??'', $legacyTypes[$canonical['tipo']]??[$canonical['tipo']],true);
+            if($target!==null||$adopt!==null||!empty($existing['ref'])||($existing['dni']??'')!==($canonical['dni']??'')||!$compatible)throw new PortalError(422,'El código de verificación ya pertenece a otro documento. Usa un código único.');
+            $adopt=$i;
+        }
+        $target??=$adopt;
+        if($target!==null){$data['certificados'][$target]=[...$data['certificados'][$target],...array_diff_key($canonical,['id'=>1,'estado'=>1])];return;}
         $data['certificados'][]=['estado'=>'Válido',...$canonical];
     }
     public static function staff(array &$data,string $text,string $view): void

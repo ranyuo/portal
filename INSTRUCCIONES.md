@@ -134,6 +134,6 @@ La auditoría completa, con filtros y CSV, está en `/auditoria.php` para admini
 
 El único servicio deliberadamente pendiente es el correo saliente y la recuperación por correo. La recuperación del propietario mediante la clave privada continúa disponible en `recuperar.php` cuando necesites volver a subir ese archivo temporalmente.
 
-Antes de actualizar, revisa `CONTROL-CALIDAD.md` y utiliza el paquete de la rama `hostinger-control-calidad`, que incorpora las correcciones de la revisión funcional posterior.
+Antes de actualizar, revisa `REVISION-PROFUNDA.md` y utiliza el paquete de la rama `hostinger-revision-profunda`, que incorpora las correcciones de la revisión funcional posterior.
 
 La carpeta tests es exclusivamente para desarrollo: no la subas a Hostinger.

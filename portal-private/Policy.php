@@ -64,7 +64,9 @@ final class PortalPolicy
             if($key==='estudiantes')return $est!==null&&(int)($row['id']??0)===$est;
             if(in_array($key,['certs','notas','titulos','perfilesLab','postulaciones'],true))return $est!==null&&(int)($row['est']??0)===$est;
             if($key==='docs'){
-                $source=($row['tipo']??'')==='cert'?'certs':'titulos';$reference=self::find($data['academico'][$source]??[],'id',$row['ref']??null);return $est!==null&&$reference&&(int)$reference['est']===$est;
+                if(($row['tipo']??'')==='cert')return $est!==null&&(int)($row['ref']??0)===$est&&self::find($data['academico']['certs']??[],'est',$est)!==null;
+                if(($row['tipo']??'')!=='titulo')return false;
+                $reference=self::find($data['academico']['titulos']??[],'id',$row['ref']??null);return $est!==null&&$reference&&(int)$reference['est']===$est;
             }
             if($key==='sesiones'){
                 $student=self::find($data['academico']['estudiantes']??[],'id',$est);

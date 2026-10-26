@@ -2395,7 +2395,8 @@ function openModal({title, body, wide, submit, onSubmit, foot, danger, onOpen}){
     <div class="mb">${body}</div>
     <footer>${foot || ""}<button type="button" class="btn sec" data-mclose="1">${onSubmit ? "Cancelar" : "Cerrar"}</button>${onSubmit ? `<button type="submit" class="btn ${danger ? "danger" : ""}">${submit || "Guardar"}</button>` : ""}</footer></form></div>`;
   const f = $("#mform .mb input:not([readonly]):not([type=checkbox]):not([type=file]), #mform .mb select, #mform .mb textarea");
-  setTimeout(() => { const el = f && f.isConnected ? f : $("#mform .x"); if(el) el.focus() }, 30);
+  const modal = $("#mform");
+  setTimeout(() => { if(!modal || !modal.isConnected || modal !== $("#mform") || modal.contains(document.activeElement)) return; const el = f && f.isConnected ? f : modal.querySelector(".x"); if(el) el.focus() }, 30);
   if(onOpen) onOpen($("#mform"));
 }
 function closeModal(){ const m = $("#ixmodal"); if(m) m.innerHTML = ""; MODAL = null }
@@ -2544,7 +2545,7 @@ function exportTableXLS(ek){
 const DOC_T = { cert:"Constancia de certificación modular", titulo:"Reporte de validación de título", cargo:"Cargo de recepción de documento", reclamo:"Hoja de reclamación", horario:"Horario académico" };
 function emitDoc(tipo, ref, persona){
   const ex = DB.docs.find(d => d.tipo === tipo && d.ref === ref && d.fecha.slice(0,10) === today());
-  if(ex) return ex;
+  if(ex){ if(ex.valido===false){toast("El documento fue anulado. Consulta con Secretaría Académica.");return false;}return ex; }
   const d = {cod:genCode(), tipo, ref, persona, fecha:nowStamp(), por:S.user ? S.user.nom : "Portal público", valido:true};
   DB.docs.unshift(d); log("Emitir documento", "Documentos", `${DOC_T[tipo]} ${d.cod}`);
   try{ if(tipo === "cert" || tipo === "titulo"){ const e = tipo === "cert" ? est(ref) : est((byId(DB.titulos, ref) || {}).est); HOST.registerDoc({cod:d.cod, tipo:DOC_T[tipo], dni:e.dni, nombres:e.nom, prog:prog(e.prog).pid || "", fecha:d.fecha}) } }catch(err){}
@@ -3167,7 +3168,7 @@ function consultaCert(pub){
 }
 function docCert(e){
   const cs = DB.certs.filter(c => c.est === e.id); if(!cs.length){ toast("El estudiante no tiene certificaciones registradas."); return }
-  const d = emitDoc("cert", e.id, e.nom);
+  const d = emitDoc("cert", e.id, e.nom); if(!d)return;
   const rows = cs.map(c => { const m = byId(DB.modulos,c.mod); return [`${m.cod} · ${m.nombre}`, c.num, fd(c.fecha)] });
   openModal({title:"Constancia de certificación modular", wide:true, body:`<div class="paper">${paperHead()}<h2>CONSTANCIA DE CERTIFICACIÓN MODULAR</h2>
     <p>La Secretaría Académica del ${esc(DB.cfg.nombre)} hace constar que <b>${esc(e.nom)}</b>, identificado(a) con DNI N.º <b>${e.dni}</b>, estudiante del programa de estudios <b>${esc(prog(e.prog).nombre)}</b>, registra las siguientes certificaciones modulares:</p>
@@ -3176,7 +3177,7 @@ function docCert(e){
     foot:`<button type="button" class="btn" data-act="pdfCert" data-id="${e.id}">Descargar PDF</button>`});
 }
 function pdfCert(id){
-  if(!libsOk("pdf")) return; const e = est(id), d = emitDoc("cert", e.id, e.nom), cs = DB.certs.filter(c => c.est === e.id);
+  if(!libsOk("pdf")) return; const e = est(id), d = emitDoc("cert", e.id, e.nom), cs = DB.certs.filter(c => c.est === e.id); if(!d)return;
   const doc = pdfNew(); let y = pdfHeader(doc, "CONSTANCIA DE CERTIFICACIÓN MODULAR");
   doc.setFontSize(10.5); doc.setTextColor(30); doc.setFont("helvetica","normal");
   const t = doc.splitTextToSize(`La Secretaría Académica del ${DB.cfg.nombre} hace constar que ${e.nom}, identificado(a) con DNI N.º ${e.dni}, estudiante del programa de estudios ${prog(e.prog).nombre}, registra las siguientes certificaciones modulares:`, 182);
@@ -3232,14 +3233,14 @@ function fichaTitulo(t, pub){
   <div class="btnrow"><button class="btn sm" data-act="docTit" data-id="${t.id}">Reporte de validación</button></div></section>`;
 }
 function docTit(id){
-  const t = byId(DB.titulos,id), e = est(t.est), d = emitDoc("titulo", t.id, e.nom);
+  const t = byId(DB.titulos,id), e = est(t.est), d = emitDoc("titulo", t.id, e.nom); if(!d)return;
   openModal({title:"Reporte de validación de título", wide:true, body:`<div class="paper">${paperHead()}<h2>REPORTE DE VALIDACIÓN DE TÍTULO</h2>
     <p>El ${esc(DB.cfg.nombre)} certifica que la persona indicada cuenta con registro de título emitido por la institución:</p>
     <dl class="dl"><dt>Titulado(a)</dt><dd>${esc(e.nom)}</dd><dt>DNI</dt><dd>${e.dni}</dd><dt>Programa de estudios</dt><dd>${esc(prog(e.prog).nombre)}</dd><dt>Condición</dt><dd>Titulado(a)</dd><dt>Fecha de culminación</dt><dd>${fd(t.culm)}</dd><dt>Fecha de titulación</dt><dd>${fd(t.tit)}</dd><dt>Código institucional</dt><dd>${esc(t.cod)}</dd><dt>Resolución</dt><dd>${esc(t.resol)}</dd><dt>Fecha de registro</dt><dd>${fd(t.tit)}</dd></dl>${paperFoot(d)}</div>`,
     foot:`<button type="button" class="btn" data-act="pdfTit" data-id="${t.id}">Descargar PDF</button>`});
 }
 function pdfTit(id){
-  if(!libsOk("pdf")) return; const t = byId(DB.titulos,id), e = est(t.est), d = emitDoc("titulo", t.id, e.nom);
+  if(!libsOk("pdf")) return; const t = byId(DB.titulos,id), e = est(t.est), d = emitDoc("titulo", t.id, e.nom); if(!d)return;
   const doc = pdfNew(); let y = pdfHeader(doc, "REPORTE DE VALIDACIÓN DE TÍTULO");
   doc.setFontSize(10.5); doc.setTextColor(30); doc.setFont("helvetica","normal");
   const tx = doc.splitTextToSize(`El ${DB.cfg.nombre} certifica que la persona indicada cuenta con registro de título emitido por la institución:`, 182); doc.text(tx, 14, y + 2); y += tx.length * 5.5 + 8;
@@ -3300,13 +3301,13 @@ function gestionReclamo(id){
       if(!save())return false; return true; }});
 }
 function docRec(id){
-  const x = byId(DB.reclamos,id), d = emitDoc("reclamo", x.id, x.nom);
+  const x = byId(DB.reclamos,id), d = emitDoc("reclamo", x.id, x.nom); if(!d)return;
   openModal({title:"Hoja de reclamación", wide:true, body:`<div class="paper">${paperHead()}<h2>HOJA DE RECLAMACIÓN N.º ${esc(x.num)}</h2>
     <dl class="dl"><dt>Tipo</dt><dd>${x.tipo}</dd><dt>Fecha de registro</dt><dd>${fd(x.fecha)}</dd><dt>Usuario</dt><dd>${esc(x.nom)} · DNI ${x.dni}</dd><dt>Domicilio</dt><dd>${esc(x.dom||"—")}</dd><dt>Contacto</dt><dd>${esc(x.tel)} · ${esc(x.correo)}</dd><dt>Área relacionada</dt><dd>${esc(areaN(x.area))}</dd><dt>Fecha del hecho</dt><dd>${fd(x.hecho)}</dd><dt>Descripción</dt><dd>${esc(x.desc)}</dd><dt>Pedido</dt><dd>${esc(x.pedido)}</dd><dt>Estado</dt><dd>${x.estado}</dd>${x.respuesta ? `<dt>Respuesta (${fd(x.fresp)})</dt><dd>${esc(x.respuesta)}</dd>` : `<dt>Plazo de respuesta</dt><dd>${fd(plazoRec(x).due)}</dd>`}</dl>${paperFoot(d)}</div>`,
     foot:`<button type="button" class="btn" data-act="pdfRec" data-id="${x.id}">Descargar PDF</button>`});
 }
 function pdfRec(id){
-  if(!libsOk("pdf")) return; const x = byId(DB.reclamos,id), d = emitDoc("reclamo", x.id, x.nom);
+  if(!libsOk("pdf")) return; const x = byId(DB.reclamos,id), d = emitDoc("reclamo", x.id, x.nom); if(!d)return;
   const doc = pdfNew(); let y = pdfHeader(doc, `HOJA DE RECLAMACIÓN N.º ${x.num}`, `${x.tipo} registrado el ${fd(x.fecha)}`);
   y = pdfKV(doc, y + 2, [["Usuario",x.nom],["DNI",x.dni],["Domicilio",x.dom||"—"],["Contacto",`${x.tel} · ${x.correo}`],["Área relacionada",areaN(x.area)],["Fecha del hecho",fd(x.hecho)],["Descripción",x.desc],["Pedido",x.pedido],["Estado",x.estado],...(x.respuesta ? [["Respuesta",`${x.respuesta} (${fd(x.fresp)})`]] : [["Plazo de respuesta",fd(plazoRec(x).due)]])]);
   pdfVerify(doc, d, y + 6); pdfFooter(doc); saveFile(`hoja_reclamacion_${x.num}.pdf`, doc.output("blob"));
@@ -3360,9 +3361,9 @@ function cargoHtml(x, d){
   <dl class="dl"><dt>N.º de expediente</dt><dd class="mono">${x.num}</dd><dt>Código de seguimiento</dt><dd class="mono" style="font-size:1.1rem">${x.cod}</dd><dt>Fecha y hora</dt><dd>${fd(x.fecha)}</dd><dt>Solicitante</dt><dd>${esc(x.sol)} · ${x.dni}</dd><dt>Tipo de documento</dt><dd>${x.tipoDoc}</dd><dt>Trámite</dt><dd>${esc(tram(x.tramite).nombre)}</dd><dt>Asunto</dt><dd>${esc(x.asunto)}</dd><dt>Adjuntos</dt><dd>${x.adj.map(a => `${esc(a.n)} (${kb(a.s)})`).join(", ")}</dd><dt>Plazo estimado</dt><dd>${tram(x.tramite).dias} días hábiles · hasta ${fd(plazoExp(x).due)}</dd></dl>
   <p class="note" style="color:var(--paper-muted)">Use el código de seguimiento en “Seguimiento de trámite” para consultar el estado de su expediente.</p>${paperFoot(d)}</div>`;
 }
-function docCargo(id){ const x = byId(HOST.exps(),id), d = emitDoc("cargo", x.id, x.sol); openModal({title:"Cargo de recepción", wide:true, body:cargoHtml(x,d), foot:`<button type="button" class="btn" data-act="pdfCargo" data-id="${x.id}">Descargar PDF</button>`}) }
+function docCargo(id){ const x = byId(HOST.exps(),id), d = emitDoc("cargo", x.id, x.sol); if(!d)return; openModal({title:"Cargo de recepción", wide:true, body:cargoHtml(x,d), foot:`<button type="button" class="btn" data-act="pdfCargo" data-id="${x.id}">Descargar PDF</button>`}) }
 function pdfCargo(id){
-  if(!libsOk("pdf")) return; const x = byId(HOST.exps(),id), d = emitDoc("cargo", x.id, x.sol);
+  if(!libsOk("pdf")) return; const x = byId(HOST.exps(),id), d = emitDoc("cargo", x.id, x.sol); if(!d)return;
   const doc = pdfNew(); let y = pdfHeader(doc, "CARGO DE RECEPCIÓN", `Mesa de partes virtual · ${x.num}`);
   y = pdfKV(doc, y + 2, [["N.º de expediente",x.num],["Código de seguimiento",x.cod],["Fecha y hora",fd(x.fecha)],["Solicitante",`${x.sol} · ${x.dni}`],["Tipo de documento",x.tipoDoc],["Trámite",tram(x.tramite).nombre],["Asunto",x.asunto],["Adjuntos",x.adj.map(a => a.n).join(", ")],["Plazo estimado",`${tram(x.tramite).dias} días hábiles · hasta ${fd(plazoExp(x).due)}`]]);
   pdfVerify(doc, d, y + 6); pdfFooter(doc); saveFile(`cargo_${x.num}.pdf`, doc.output("blob"));
@@ -4089,7 +4090,7 @@ return {
   view(v){ sync(); setUser(); S.view = v; return renderView() },
   can(v){ setUser(); return !!S.user && lvl(v) > 0 },
   close: closeModal,
-  cargoCode(ref, persona){ return emitDoc("cargo", ref, persona).cod },
+  cargoCode(ref, persona){ const doc=emitDoc("cargo",ref,persona);return doc?doc.cod:""; },
   cargoPdf(o){
     if(!(window.jspdf && window.jspdf.jsPDF)) return null;
     const doc = pdfNew(), W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 14, col = hexRgb(docColor()), G = [22,128,61];
@@ -4621,16 +4622,17 @@ function rateLimited(key, secs = 20) { return !!(RATE[key] && Date.now() - RATE[
 /* ---------- Validación de formularios ---------- */
 function showErrors(form, errs) {
   $$('[aria-invalid="true"]', form).forEach(el => el.removeAttribute('aria-invalid'));
-  $$('.field.invalid', form).forEach(f => { f.classList.remove('invalid'); const m = $('.errmsg', f); m && m.remove(); });
-  let first = null;
-  Object.entries(errs).forEach(([name, msg]) => {
-    const inp = form.querySelector(`[name="${name}"]`) || form.querySelector(`[data-name="${name}"]`); if (!inp) return;
-    const f = inp.closest('.field'); if (!f) return;
-    f.classList.add('invalid'); const m = document.createElement('div'); m.className = 'errmsg'; m.textContent = msg; f.appendChild(m);
-    inp.setAttribute('aria-invalid', 'true'); first = first || inp;
+  $$('.field.invalid', form).forEach(f => { f.classList.remove('invalid'); $$('.errmsg',f).forEach(el=>el.remove()); });
+  $$('.form-error',form).forEach(el=>el.remove());
+  const entries=Object.entries(errs).filter(([,msg])=>!!msg);let first=null;
+  entries.forEach(([name,msg])=>{
+    const escaped=CSS.escape(name);const inp=form.querySelector(`[name="${escaped}"]`)||form.querySelector(`[data-name="${escaped}"]`);
+    const field=inp?.closest('.field')||form.querySelector(`[data-f="${escaped}"]`);
+    if(field){field.classList.add('invalid');const message=document.createElement('div');message.className='errmsg';message.textContent=msg;field.appendChild(message);const target=inp||field.querySelector('input:not([hidden]),textarea,select,button')||field;target.setAttribute('aria-invalid','true');if(!target.matches('input,textarea,select,button'))target.tabIndex=-1;first ||= target;}
+    else{const message=document.createElement('div');message.className='notice err form-error';message.setAttribute('role','alert');message.textContent=msg;form.prepend(message);}
   });
-  if (first) { first.focus(); toast('Revise los campos marcados en rojo.', 'err'); }
-  return !first;
+  if(entries.length){first?.focus();toast('Revise los campos marcados en rojo.','err');}
+  return entries.length===0;
 }
 const reEmail = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 function validDoc(tipo, n) {
@@ -5190,7 +5192,7 @@ function bindReclamo() {
     r.notifUser = mailOut(r.correo, `Constancia de registro ${codigo}`, `Su ${v.tipo.toLowerCase()} fue registrado el ${fshort(fecha, true)} con el código ${codigo}.`);
     audit('Registro', 'Libro de reclamaciones', codigo, `${v.tipo} registrado desde el portal. Notificación institucional: ${r.notifInst}`); saveDB();
     f.reset(); $$('[data-c]', f).forEach(c => c.textContent = '0');
-    const m = modal({ title: 'Reclamación registrada', body: `<div class="notice ok">Tu ${esc(v.tipo.toLowerCase())} fue registrado correctamente el ${fdate(fecha, true)}.</div><p>Tu código de seguimiento es:</p><div class="code-box">${codigo}</div><p style="margin-top:12px">Hemos enviado una constancia de recepción a <b>${esc(r.correo)}</b>. Guarda este código para consultar el estado de tu reclamación.</p>`, foot: `<button class="btn sec" data-print>${ic('print').replace('<svg', '<svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"')} Descargar constancia</button><button class="btn" data-ok>Aceptar</button>` });
+    const m = modal({ title: 'Reclamación registrada', body: `<div class="notice ok">Tu ${esc(v.tipo.toLowerCase())} fue registrado correctamente el ${fdate(fecha, true)}.</div><p>Tu código de seguimiento es:</p><div class="code-box">${codigo}</div><p style="margin-top:12px">Puedes descargar tu constancia de recepción. El envío por correo está pendiente de habilitación. Guarda este código para consultar el estado de tu reclamación.</p>`, foot: `<button class="btn sec" data-print>${ic('print').replace('<svg', '<svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"')} Descargar constancia</button><button class="btn" data-ok>Aceptar</button>` });
     $('[data-ok]', m.el).onclick = m.close;
     $('[data-print]', m.el).onclick = () => downloadBlob(makePdf('Constancia de registro - Libro de Reclamaciones', [`Codigo de seguimiento: ${codigo}`, `Fecha de registro: ${fshort(fecha, true)}`, `Tipo: ${r.tipo}`, `Reclamante: ${r.nombres}`, `Documento: ${r.tipoDoc} ${maskDni(r.numDoc)}`, `Asunto: ${r.asunto}`, '', 'Detalle:', r.descripcion, '', 'Pedido:', r.pedido], inst().nombre.toUpperCase()), `Constancia_${codigo}.pdf`);
   };
@@ -5580,7 +5582,7 @@ function bindFields(fields, work, root, rerender) {
   $$('[data-imgx]', root).forEach(b => b.onclick = async () => { if (await confirmBox('¿Retirar la imagen? Se usará la imagen institucional predeterminada.', { ok: 'Retirar' })) { work[b.dataset.imgx] = ''; rerender(); } });
   $$('[data-ff]', root).forEach(inp => inp.onchange = async () => {
     const f = inp.files[0]; if (!f) return; const n = inp.dataset.ff; const er = checkFile(f, 'pdf'); if (er) { inp.value = ''; return toast(er, 'err'); }
-    
+
     if (work[n] && !await confirmBox(`Ya existe un documento vigente (${esc(work[n].original || work[n].nombre)}). ¿Reemplazarlo? La versión anterior quedará en el historial.`, { ok: 'Reemplazar', danger: false })) { inp.value = ''; return; }
     work[n] = {...await portalUpload(f),fecha:nowISO(),por:currentUser().usuario}; rerender();
   });
@@ -5650,14 +5652,14 @@ function crudList(spec) {
           if (spec.canDelete && !spec.canDelete(r)) return toast('No se puede eliminar este registro: el periodo está cerrado.', 'err');
           if (spec.beforeDelete) { const m = spec.beforeDelete(r); if (m) return toast(m, 'err'); }
           if (!await confirmBox(`Se enviará a la papelera: <b>${esc(lbl)}</b>. Dejará de mostrarse en el portal. Podrá restaurarlo luego.`, { ok: 'Eliminar' })) return;
-          r.deleted = true; r.delPor = currentUser().usuario; r.delEn = nowISO(); stamp(r); audit('Eliminación lógica', spec.title, lbl); saveDB(); toast('Enviado a la papelera.', 'ok'); return rer();
+          r.deleted = true; r.delPor = currentUser().usuario; r.delEn = nowISO(); stamp(r); audit('Eliminación lógica', spec.title, lbl); if(!saveDB())return; toast('Enviado a la papelera.', 'ok'); return rer();
         }
-        if (act === 'restore') { r.deleted = false; stamp(r); audit('Restauración', spec.title, lbl); saveDB(); toast('Registro restaurado.', 'ok'); return rer(); }
+        if (act === 'restore') { r.deleted = false; stamp(r); audit('Restauración', spec.title, lbl); if(!saveDB())return; toast('Registro restaurado.', 'ok'); return rer(); }
         if (act === 'hard') {
           if (spec.inUse) { const m = spec.inUse(r); if (m) return toast(m, 'err'); }
           if (!await confirmBox(`Eliminación DEFINITIVA de <b>${esc(lbl)}</b>. Esta acción no se puede deshacer.`, { ok: 'Continuar' })) return;
           if (!await confirmBox('Confirme nuevamente la eliminación definitiva.', { ok: 'Eliminar definitivamente', title: 'Confirmación adicional' })) return;
-          DB[spec.coll] = coll(spec.coll).filter(x => x.id !== id); audit('Eliminación definitiva', spec.title, lbl); saveDB(); toast('Eliminado definitivamente.', 'ok'); return rer();
+          DB[spec.coll] = coll(spec.coll).filter(x => x.id !== id); audit('Eliminación definitiva', spec.title, lbl); if(!saveDB())return; toast('Eliminado definitivamente.', 'ok'); return rer();
         }
         if (spec.onAct) spec.onAct(act, r, rer);
       });
@@ -5761,7 +5763,7 @@ SPECS.noticias = {
   rowActs: r => ib('star', 'star', r.destacada ? 'Quitar destacado' : 'Marcar como destacada') + ib('dup', 'copy', 'Duplicar como borrador'),
   onAct: (act, r, rer) => {
     if (act === 'star') { r.destacada = !r.destacada; stamp(r); audit(r.destacada ? 'Marcar destacada' : 'Quitar destacada', 'Noticias', r.titulo); saveDB(); rer(); }
-    if (act === 'dup') { const c = JSON.parse(JSON.stringify(r)); c.id = uid(); c.titulo = r.titulo + ' (copia ' + new Date().toLocaleTimeString('es-PE') + ')'; c.slug = slugify(c.titulo); c.estado = 'Borrador'; c.destacada = false; stamp(c, true); coll('noticias').push(c); audit('Creación (duplicado)', 'Noticias', c.titulo); saveDB(); toast('Borrador duplicado creado.', 'ok'); rer(); }
+    if (act === 'dup') { const c = JSON.parse(JSON.stringify(r)); c.id = uid(); c.titulo = r.titulo + ' (copia ' + new Date().toLocaleTimeString('es-PE') + ')'; c.slug = slugify(c.titulo); c.estado = 'Borrador'; c.destacada = false; stamp(c, true); coll('noticias').push(c); audit('Creación (duplicado)', 'Noticias', c.titulo); if(!saveDB())return; toast('Borrador duplicado creado.', 'ok'); rer(); }
   },
   preview: r => '#/noticias/' + (r.slug || slugify(r.titulo)),
   defaults: () => ({ fecha: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16), destacada: false, autor: currentUser().usuario, adjuntos: [], estado: 'Borrador' }),
@@ -5819,7 +5821,7 @@ SPECS.documentos = {
   onAct: (act, r, rer) => {
     if (act === 'ver') { const f = docFile(r); return f ? openDoc(f) : toast('Sin archivo', 'err'); }
     if (act === 'ver2') { const vs = coll('documentos').filter(d => d.grupo === r.grupo).sort((a, b) => String(b.version).localeCompare(String(a.version), undefined, { numeric: true })); return modal({ title: 'Historial de versiones: ' + esc(r.nombre), size: 'lg', body: `<div class="tbl-wrap"><table class="tbl light"><thead><tr><th>Versión</th><th>Vigencia</th><th>Fecha de publicación</th><th>Estado</th><th>Responsable</th></tr></thead><tbody>${vs.map(v => `<tr><td>${esc(v.version)}</td><td>${esc(v.vigencia)}</td><td>${fshort(v.fechaPub)}</td><td>${stBadge(v.deleted ? 'Eliminado' : v.estado)}</td><td>${esc(v.publicadoPor || v.modPor)}</td></tr>`).join('')}</tbody></table></div>` }); }
-    if (act === 'nv') { const c = JSON.parse(JSON.stringify(r)); c.id = uid(); const parts = String(r.version).split('.'); c.version = (+parts[0] + 1) + '.0'; c.estado = 'Borrador'; c.archivo = r.refModulo ? null : null; c.fechaPub = ''; stamp(c, true); coll('documentos').push(c); audit('Nueva versión (borrador)', 'Documentos de gestión', c.nombre + ' v' + c.version); saveDB(); toast('Se creó la versión ' + c.version + ' como borrador. Cargue el archivo y publíquela.', 'ok'); go('#/admin/documentos/' + c.id); }
+    if (act === 'nv') { const c = JSON.parse(JSON.stringify(r)); c.id = uid(); const major=Math.max(0,...coll('documentos').filter(v=>v.id===r.id||(r.grupo&&v.grupo===r.grupo)).map(v=>Number(String(v.version).match(/\d+/)?.[0]||0))); c.version=(major+1)+'.0'; c.estado = 'Borrador'; c.archivo = r.refModulo ? null : null; c.fechaPub = ''; stamp(c, true); coll('documentos').push(c); audit('Nueva versión (borrador)', 'Documentos de gestión', c.nombre + ' v' + c.version); if(!saveDB())return; toast('Se creó la versión ' + c.version + ' como borrador. Cargue el archivo y publíquela.', 'ok'); go('#/admin/documentos/' + c.id); }
   },
   defaults: () => ({ version: '1.0', vigencia: String(yearNow()), orden: alive('documentos').length + 1, refModulo: '' }),
   fields: w => [
@@ -5995,7 +5997,7 @@ SPECS.becasper = {
   defaults: () => ({ anio: yearNow(), periodo: 'I', vigente: false }),
   fields: [{ n: 'anio', l: 'Año académico', t: 'number', req: true }, { n: 'periodo', l: 'Periodo', t: 'select', req: true, empty: false, opts: ['I', 'II'] }, { n: 'vigente', l: 'Marcar como periodo vigente (se muestra por defecto en el portal)', t: 'checkbox', full: true }, { n: 'info', t: 'info', html: () => 'Un periodo <b>Cerrado</b> se conserva como histórico y bloquea la edición de sus beneficiarios, salvo para el Administrador.' }],
   validate: w => alive('becasPeriodos').some(p => p.id !== w.id && p.anio == w.anio && p.periodo === w.periodo) ? { periodo: 'Ya existe ese año y periodo.' } : {},
-  afterSave: w => { if (w.vigente) coll('becasPeriodos').forEach(p => { if (p.id !== w.id) p.vigente = false; }); },
+  afterSave: w => { if (w.vigente && w.estado === 'Publicado') coll('becasPeriodos').forEach(p => { if (p.id !== w.id) p.vigente = false; }); },
 };
 SPECS.becastipos = {
   key: 'becastipos', mod: 'becas', coll: 'tiposBeca', title: 'Tipos de beca', singular: 'tipo de beca', icon: 'star', states: ['Activo', 'Inactivo'], pubState: 'Activo', label: r => r.nombre, tabs: () => becasTabs('t'), softDelete: false,
@@ -6058,7 +6060,7 @@ SPECS.paginas = {
   beforeSave: w => { w.slug = slugify(w.slug); if (/^<|>$/.test(w.contenido || '') === false && ['jerarquica', 'docentes', 'campus'].includes(w.clave)) w.contenido = String(w.contenido || '').replace(/<[^>]+>/g, ''); },
   afterSave: (w, isNew, prev) => { if (prev) { const snap = { titulo: prev.titulo, contenido: prev.contenido, imagen: prev.imagen, mensaje: prev.mensaje, estado: prev.estado, fecha: prev.modEn, por: prev.modPor }; w.versiones = [snap].concat(prev.versiones || []).slice(0, 10); } },
   sideExtra: w => (w.versiones || []).length ? `<hr style="border:0;border-top:1px solid var(--line);width:100%"><b>Versiones anteriores</b>${w.versiones.map((v, i) => `<span style="display:flex;justify-content:space-between;gap:6px;align-items:center">${fshort(v.fecha, true)} · ${esc(v.por)} <button type="button" class="btn xs ghost" data-restv="${i}">Restaurar</button></span>`).join('')}` : '',
-  afterForm: (w, isNew, rer) => { $$('[data-restv]').forEach(b => b.onclick = async () => { const v = w.versiones[+b.dataset.restv]; if (!await confirmBox(`¿Cargar la versión del ${fshort(v.fecha, true)} en el editor? Deberá guardar para aplicarla.`, { ok: 'Cargar versión', danger: false })) return; Object.assign(w, { titulo: v.titulo, contenido: v.contenido, imagen: v.imagen, mensaje: v.mensaje }); rer(); toast('Versión cargada en el editor. Revise y guarde.'); }); },
+  afterForm: (w, isNew, rer) => { $$('[data-restv]').forEach(b => b.onclick = async () => { const v = w.versiones[+b.dataset.restv]; if (!await confirmBox(`¿Cargar la versión del ${fshort(v.fecha, true)} en el editor? Deberá guardar para aplicarla.`, { ok: 'Cargar versión', danger: false })) return; Object.assign(w, { titulo: v.titulo, contenido: v.contenido, imagen: v.imagen, mensaje: v.mensaje }); route(); toast('Versión cargada en el editor. Revise y guarde.'); }); },
 };
 /* ---------- Admisión ---------- */
 SPECS.admision = {
@@ -6080,7 +6082,7 @@ SPECS.admision = {
     { n: 'vigente', l: 'Proceso vigente (se muestra por defecto en el portal)', t: 'checkbox', side: true },
   ],
   validate: w => { const e = {}; if (!(w.anio >= 2000 && w.anio <= 2100)) e.anio = 'Año no válido.'; if (w.estado === 'Borrador' && w.vigente) e.vigente = 'Un proceso en borrador no puede marcarse como vigente.'; return e; },
-  afterSave: w => { if (w.vigente) coll('admisiones').forEach(a => { if (a.id !== w.id && a.vigente) { a.vigente = false; stamp(a); } }); if (w.estado === 'Cerrado') w.vigente = false; },
+  afterSave: w => { if (w.vigente && w.estado === 'Publicado') coll('admisiones').forEach(a => { if (a.id !== w.id && a.vigente) { a.vigente = false; stamp(a); } }); if (w.estado === 'Cerrado') w.vigente = false; },
 };
 function resHTML(w) {
   return `<div class="notice" style="margin-top:0">Cargue un archivo solo para los turnos que correspondan. El botón “Ver Resultados” aparece en el portal únicamente cuando existe el archivo.</div><div class="tbl-wrap"><table class="tbl light subtbl"><thead><tr><th>N.º</th><th>Programa de estudio</th><th>Resultado turno mañana</th><th>Resultado turno tarde</th></tr></thead><tbody>${sortO(alive('programas')).map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.nombre)}</td>${['M', 'T'].map(t => { const r = ((w.resultados || {})[p.id] || {})[t]; return `<td style="min-width:200px">${r ? `<span class="file-chip"><span class="ft">PDF</span>${esc(clamp(r.original || r.nombre, 26))}</span><div style="display:flex;gap:4px;margin-top:4px"><button type="button" class="btn xs ghost" data-rv="${p.id}|${t}">Ver</button><label class="btn xs sec" style="cursor:pointer">Reemplazar<input type="file" accept=".pdf" hidden data-rr="${p.id}|${t}"></label><button type="button" class="btn xs ghost" data-rx="${p.id}|${t}">Retirar</button></div>` : `<label class="btn xs ghost" style="cursor:pointer">${ic('upload').replace('<svg', '<svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"')} Cargar PDF<input type="file" accept=".pdf" hidden data-rr="${p.id}|${t}"></label>`}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>${(w.historial || []).length ? `<details style="margin-top:8px"><summary style="cursor:pointer;font-size:13px">Historial de resultados reemplazados o retirados (${w.historial.length})</summary><ul style="font-size:12.5px">${w.historial.map(h => `<li>${fshort(h.fecha, true)} · ${esc(h.accion)} · ${esc(h.programa)} turno ${h.turno === 'M' ? 'mañana' : 'tarde'} · ${esc(h.archivo)} · ${esc(h.por)}</li>`).join('')}</ul></details>` : ''}`;
@@ -6090,7 +6092,7 @@ function bindRes(w, box, rer) {
   const pn = id => (byId('programas', id) || {}).nombre;
   $$('[data-rv]', box).forEach(b => b.onclick = () => { const [p, t] = b.dataset.rv.split('|'); openDoc(w.resultados[p][t]); });
   $$('[data-rr]', box).forEach(inp => inp.onchange = async () => {
-    const f = inp.files[0]; if (!f) return; const [p, t] = inp.dataset.rr.split('|'); const er = checkFile(f, 'pdf'); if (er) return toast(er, 'err'); 
+    const f = inp.files[0]; if (!f) return; const [p, t] = inp.dataset.rr.split('|'); const er = checkFile(f, 'pdf'); if (er) return toast(er, 'err');
     const cur = (w.resultados[p] || {})[t];
     if (cur && !await confirmBox(`Ya existe un resultado para ${esc(pn(p))} – turno ${t === 'M' ? 'mañana' : 'tarde'}. ¿Reemplazarlo? El anterior quedará en el historial.`, { ok: 'Reemplazar', danger: false })) { inp.value = ''; return; }
     if (cur) w.historial.unshift({ fecha: nowISO(), accion: 'Reemplazo', programa: pn(p), turno: t, archivo: cur.original || cur.nombre, por: currentUser().usuario });
@@ -6106,7 +6108,7 @@ SPECS.matricula = {
   sort: (a, b) => String(b.periodo).localeCompare(a.periodo), preview: () => '#/matricula',
   cols: [{ l: 'Periodo', f: r => `<b>${esc(r.periodo)}</b>` }, { l: 'Título', f: r => esc(r.titulo) }, { l: 'Inicio de clases', f: r => fshort(r.inicioClases + 'T12:00') }, { l: 'Ítems', cls: 'num', f: r => (r.items || []).filter(i => !i.deleted).length }, { l: 'Vigente', f: r => r.vigente ? '<span class="badge ok">Vigente</span>' : '' }, { l: 'Estado', f: r => stBadge(r.estado) }],
   rowActs: () => ib('copy', 'copy', 'Crear nuevo periodo copiando esta estructura'),
-  onAct: async (a, r) => { if (a !== 'copy') return; const p = await promptBox('Identificación del nuevo periodo académico (ej.: 2027-I):', { title: 'Nuevo periodo a partir de ' + r.periodo, ok: 'Crear periodo' }); if (!p) return; if (coll('matriculas').some(m => normTitle(m.periodo) === normTitle(p))) return toast('Ya existe un periodo con esa identificación.', 'err'); const c = JSON.parse(JSON.stringify(r)); Object.assign(c, { id: uid(), periodo: p.trim(), titulo: 'Matrícula Regular ' + p.trim(), estado: 'Borrador', vigente: false, docTasas: null, docVersiones: [], cronograma: [] }); c.items = c.items.filter(i => !i.deleted).map(i => Object.assign(i, { id: uid() })); stamp(c, true); coll('matriculas').push(c); audit('Creación (copia de estructura)', 'Matrícula', 'Matrícula ' + c.periodo, 'Copiado de ' + r.periodo); saveDB(); toast('Periodo creado como borrador. El periodo original no se modificó.', 'ok'); go('#/admin/matricula/' + c.id); },
+  onAct: async (a, r) => { if (a !== 'copy') return; const p = await promptBox('Identificación del nuevo periodo académico (ej.: 2027-I):', { title: 'Nuevo periodo a partir de ' + r.periodo, ok: 'Crear periodo' }); if (!p) return; if (coll('matriculas').some(m => normTitle(m.periodo) === normTitle(p))) return toast('Ya existe un periodo con esa identificación.', 'err'); const c = JSON.parse(JSON.stringify(r)); Object.assign(c, { id: uid(), periodo: p.trim(), titulo: 'Matrícula Regular ' + p.trim(), estado: 'Borrador', vigente: false, docTasas: null, docVersiones: [], cronograma: [] }); c.items = c.items.filter(i => !i.deleted).map(i => Object.assign(i, { id: uid() })); stamp(c, true); coll('matriculas').push(c); audit('Creación (copia de estructura)', 'Matrícula', 'Matrícula ' + c.periodo, 'Copiado de ' + r.periodo); if(!saveDB())return; toast('Periodo creado como borrador. El periodo original no se modificó.', 'ok'); go('#/admin/matricula/' + c.id); },
   defaults: () => ({ items: [], cronograma: [], vigente: false }), versioned: ['docTasas'],
   fields: w => [
     { n: 'periodo', l: 'Periodo académico', req: true, unique: 'norm', ro: () => !!byId('matriculas', w.id), ph: '2027-I' }, { n: 'titulo', l: 'Título principal', pubReq: true }, { n: 'inicioClases', l: 'Fecha de inicio de clases', t: 'date', pubReq: true },
@@ -6117,7 +6119,7 @@ SPECS.matricula = {
     { n: 'vigente', l: 'Periodo vigente (se muestra en el portal)', t: 'checkbox', side: true },
   ],
   validate: w => { const e = {}; SECC.forEach(([s]) => { const seen = {}; (w.items || []).filter(i => i.seccion === s && !i.deleted).forEach(i => { const k = normTitle(i.texto); if (!k) e.items = 'Hay ítems vacíos.'; if (seen[k]) e.items = `Requisito duplicado en la misma sección: “${clamp(i.texto, 50)}”.`; seen[k] = 1; }); }); if (w.vigente && w.estado === 'Borrador') e.vigente = 'Un periodo en borrador no puede ser vigente.'; return e; },
-  afterSave: w => { if (w.vigente) coll('matriculas').forEach(m => { if (m.id !== w.id) m.vigente = false; }); if (w.estado === 'Cerrado') w.vigente = false; },
+  afterSave: w => { if (w.vigente && w.estado === 'Publicado') coll('matriculas').forEach(m => { if (m.id !== w.id) m.vigente = false; }); if (w.estado === 'Cerrado') w.vigente = false; },
 };
 function itemsHTML(w) {
   return `<div class="grid g3">${SECC.map(([s, l, icn]) => { const its = (w.items || []).map((x, i) => ({ x, i })).filter(o => o.x.seccion === s).sort((a, b) => a.x.orden - b.x.orden); return `<div class="panel" style="margin:0"><h2 style="font-size:14px">${ic(icn).replace('<svg', '<svg style="width:17px;height:17px;stroke:var(--link);fill:none;stroke-width:2"')} ${l}</h2><div class="pb" style="display:grid;gap:6px">${its.map(({ x, i }) => `<div style="display:flex;gap:4px;align-items:flex-start;${x.deleted ? 'opacity:.5' : ''}"><textarea class="inp" style="min-height:54px;font-size:13px" data-it="${i}" aria-label="Ítem" ${x.deleted ? 'disabled' : ''}>${esc(x.texto)}</textarea><div style="display:grid;gap:2px">${x.deleted ? `<button type="button" class="icon-btn" data-ires="${i}" title="Restaurar">${ic('restore')}</button>` : `<button type="button" class="icon-btn" data-iup="${i}" title="Subir">${ic('up')}</button><button type="button" class="icon-btn" data-ipub="${i}" title="${x.estado === 'Publicado' ? 'Despublicar' : 'Publicar'}" style="${x.estado === 'Publicado' ? '' : 'color:var(--warn)'}">${ic(x.estado === 'Publicado' ? 'eye' : 'lock')}</button><button type="button" class="icon-btn del" data-idel="${i}" title="Eliminar">${ic('trash')}</button>`}</div></div>`).join('') || '<small style="color:var(--muted)">Sin ítems.</small>'}<button type="button" class="btn xs sec" data-iadd="${s}">+ Agregar ítem</button></div></div>`; }).join('')}</div>`;
@@ -6140,7 +6142,7 @@ function singletonForm({ title, sub, icon, crumbs, tabs = '', fields, get, onSav
     html, after: () => {
       const form = $('[data-sf]'); const rer = () => { readSimple(fields, form, work); route(); };
       bindFields(fields, work, form, rer);
-      form.onsubmit = e => { e.preventDefault(); readSimple(fields, form, work); const er = {}; fields.forEach(f => { const v = work[f.n]; if (f.req && (v == null || v === '')) er[f.n] = 'Obligatorio.'; if (v && f.t === 'email' && !reEmail.test(v)) er[f.n] = 'Correo no válido.'; if (v && f.t === 'url' && !/^https?:\/\//.test(v)) er[f.n] = 'Debe iniciar con https://'; }); const v2 = onSave(work, er); if (v2 === false) return; if (!showErrors(form, er)) return; audit('Modificación', title, title); if (saveDB()) { ADM.work = null; toast('Cambios guardados.', 'ok'); route(); } };
+      form.onsubmit = e => { e.preventDefault(); readSimple(fields, form, work); const er = {}; fields.forEach(f => { const v = work[f.n]; if (f.req && (v == null || v === '')) er[f.n] = 'Obligatorio.'; if (v && f.t === 'email' && !reEmail.test(v)) er[f.n] = 'Correo no válido.'; if (v && f.t === 'url' && !/^https?:\/\//.test(v)) er[f.n] = 'Debe iniciar con https://'; }); const v2 = onSave(structuredClone(work), er); if (v2 === false) return; if (!showErrors(form, er)) return; audit('Modificación', title, title); if (saveDB()) { ADM.work = null; toast('Cambios guardados.', 'ok'); route(); } };
     }
   };
 }
@@ -6169,7 +6171,7 @@ CUSTOM.portada = () => singletonForm({
     { n: 'cifras', l: 'Cifras institucionales (use auto:anios, auto:programas, auto:matriculados o auto:egresados para calcularlas desde los datos)', t: 'rows', cols: [{ n: 'label', l: 'Etiqueta' }, { n: 'valor', l: 'Valor' }, { n: 'corte', l: 'Año de corte' }] },
     { n: 'beneficios', l: '¿Por qué estudiar aquí? (hasta 8)', t: 'rows', cols: [{ n: 't', l: 'Título' }, { n: 'd', l: 'Descripción' }, { n: 'i', l: 'Ícono', t: 'select', opts: ['grad', 'users', 'flask', 'briefcase', 'award', 'building', 'target', 'globe', 'monitor', 'star'] }] },
   ],
-  onSave: (w, er) => { (w.accesos || []).forEach(a => { if (a.enlace && !/^(#\/|https?:\/\/|ext:)/.test(a.enlace)) er.accesos = 'Enlace no válido: “' + a.enlace + '”. No use “#” vacío ni javascript:.'; }); (w.cifras || []).forEach(c => { if (!c.corte) er.cifras = 'Cada cifra debe indicar su año de corte.'; }); if ((w.beneficios || []).length > 8) er.beneficios = 'Máximo 8 beneficios.'; if (Object.keys(er).length) return; DB.config.home = w; },
+  onSave: (w, er) => { (w.accesos || []).forEach(a => { if (a.enlace && !/^(#\/|https?:\/\/|ext:)/.test(a.enlace)) er.accesos = 'Enlace no válido: “' + a.enlace + '”. No use “#” vacío ni javascript:.'; }); (w.cifras || []).forEach(c => { if (!c.corte) er.cifras = 'Cada cifra debe indicar su año de corte.'; }); if ((w.beneficios || []).length > 8 && JSON.stringify(w.beneficios)!==JSON.stringify(DB.config.home.beneficios)) er.beneficios = 'Máximo 8 beneficios. Reduzca la lista antes de modificarla.'; if (Object.keys(er).length) return; DB.config.home = w; },
 });
 CUSTOM.config = () => singletonForm({
   title: 'Configuración general', icon: 'gear', sub: 'Datos institucionales, contacto, redes, SEO, correos y parámetros protegidos.',
@@ -6203,7 +6205,7 @@ CUSTOM.estadisticas = (parts, q) => {
     + `<div class="chips">${years.map(a => `<a class="chip" href="#/admin/estadisticas?anio=${a}" aria-current="${a === y}">${a}</a>`).join('')}</div><form data-stf class="panel"><h2>Año ${y}</h2><div class="tbl-wrap" style="border:0"><table class="tbl light subtbl"><thead><tr><th>Programa</th>${K.map(k => `<th>${k[1]}</th>`).join('')}</tr></thead><tbody>${sortO(alive('programas')).map(p => { const s = st.find(x => x.anio === y && x.programaId === p.id) || {}; return `<tr><td>${esc(p.nombre)}</td>${K.map(([k, l]) => `<td><input class="inp" type="number" min="0" style="width:90px" value="${s[k] ?? ''}" data-st="${p.id}|${k}" aria-label="${l} ${esc(p.nombre)}"></td>`).join('')}</tr>`; }).join('')}</tbody></table></div><div class="pb" style="text-align:right"><button class="btn">Guardar año ${y}</button></div></form>`;
   return {
     html, after: () => {
-      $('[data-ny]').onclick = async () => { const a = +(await promptBox('Año a registrar:', { value: String(yearNow() + 1) })); if (!a || a < 2000 || a > 2100) return; if (years.includes(a)) return toast('El año ya existe.', 'err'); sortO(alive('programas')).forEach(p => st.push({ id: uid(), anio: a, programaId: p.id })); audit('Creación', 'Estadísticas', 'Año ' + a); saveDB(); go('#/admin/estadisticas?anio=' + a); };
+      $('[data-ny]').onclick = async () => { const a = +(await promptBox('Año a registrar:', { value: String(yearNow() + 1) })); if (!a || a < 2000 || a > 2100) return; if (years.includes(a)) return toast('El año ya existe.', 'err'); sortO(alive('programas')).forEach(p => st.push({ id: uid(), anio: a, programaId: p.id })); audit('Creación', 'Estadísticas', 'Año ' + a); if(!saveDB())return; go('#/admin/estadisticas?anio=' + a); };
       $('[data-stf]').onsubmit = e => { e.preventDefault(); let bad = false; $$('[data-st]').forEach(i => { if (i.value !== '' && (+i.value < 0 || !Number.isInteger(+i.value))) { bad = true; i.style.borderColor = 'var(--err)'; } }); if (bad) return toast('Ingrese números enteros positivos.', 'err'); $$('[data-st]').forEach(i => { const [p, k] = i.dataset.st.split('|'); let r = st.find(x => x.anio === y && x.programaId === p); if (!r) { r = { id: uid(), anio: y, programaId: p }; st.push(r); } r[k] = i.value === '' ? null : +i.value; }); audit('Modificación', 'Estadísticas', 'Año ' + y); if (saveDB()) toast('Estadísticas del año ' + y + ' guardadas.', 'ok'); };
     }
   };
@@ -6416,8 +6418,8 @@ function inbox({ key, collName, title, sub, icon, states, filterExtra = [], sear
     $$('tr[data-id] [data-act]').forEach(b => b.onclick = async () => {
       const r = byId(collName, b.closest('tr').dataset.id);
       if (b.dataset.act === 'open') return go(`#/admin/${key}/${r.id}`);
-      if (b.dataset.act === 'del') { if (!await confirmBox('El registro se enviará a la papelera.', { ok: 'Eliminar' })) return; r.deleted = true; stamp(r); audit('Eliminación lógica', title, r.asunto || r.codigo); saveDB(); toast('Enviado a la papelera.', 'ok'); return rer(); }
-      if (b.dataset.act === 'restore') { r.deleted = false; stamp(r); audit('Restauración', title, r.asunto || r.codigo); saveDB(); toast('Restaurado.', 'ok'); return rer(); }
+      if (b.dataset.act === 'del') { if (!await confirmBox('El registro se enviará a la papelera.', { ok: 'Eliminar' })) return; r.deleted = true; stamp(r); audit('Eliminación lógica', title, r.asunto || r.codigo); if(!saveDB())return; toast('Enviado a la papelera.', 'ok'); return rer(); }
+      if (b.dataset.act === 'restore') { r.deleted = false; stamp(r); audit('Restauración', title, r.asunto || r.codigo); if(!saveDB())return; toast('Restaurado.', 'ok'); return rer(); }
     });
   };
   return { html, after: bind, rows };
@@ -6470,7 +6472,7 @@ function reclamoDetalle(id) {
   const isAdm = currentUser().rol === 'admin';
   const html = admHead(`${r.tipo} ${r.codigo}`, `Registrado el ${fdate(r.fecha, true)} · ${r.anulado ? '<span class="badge err">Anulado</span>' : stBadge(r.estado)}`, `<button class="btn sec" data-pdf>${sic('print')} Hoja de reclamación (PDF)</button><a class="btn ghost" href="#/admin/reclamos">${sic('back')} Volver</a>`, 'book', [['Libro de reclamaciones', '#/admin/reclamos'], [r.codigo]])
     + `<div class="edit-grid"><div style="display:grid;gap:16px"><div class="panel"><h2>Registro original <span class="badge gray">${sic('lock', 12)} Solo lectura</span></h2><div class="pb"><dl class="kv"><dt>Código</dt><dd><b>${esc(r.codigo)}</b></dd><dt>Fecha y hora</dt><dd>${fdate(r.fecha, true)}</dd><dt>Tipo</dt><dd>${esc(r.tipo)}</dd><dt>Reclamante</dt><dd>${esc(r.nombres)}</dd><dt>Documento</dt><dd>${esc(r.tipoDoc)} ${dniCell(r.numDoc)}</dd><dt>Correo</dt><dd>${esc(r.correo)}</dd><dt>Teléfono</dt><dd>${esc(r.telefono || '—')}</dd><dt>Asunto</dt><dd>${esc(r.asunto)}</dd></dl><h3>Descripción del hecho</h3><div class="card cb" style="white-space:pre-wrap">${esc(r.descripcion)}</div><h3>Pedido</h3><div class="card cb" style="white-space:pre-wrap">${esc(r.pedido)}</div>${r.adjunto ? `<p><button class="btn sm sec" data-adj>${sic('download')} Adjunto: ${esc(r.adjunto.original || r.adjunto.nombre)} (${fsize(r.adjunto.size)})</button></p>` : '<p style="color:var(--muted)">Sin archivo adjunto.</p>'}</div></div>
-    <div class="panel"><h2>Respuesta institucional</h2><div class="pb">${r.respuesta ? `<div class="notice ok" style="white-space:pre-wrap">${esc(r.respuesta)}<br><small>Respondido por ${esc(r.atendidoPor || '—')} el ${fshort(r.atendidoEn, true)} · Notificación al usuario: ${esc(r.notifUser)}</small></div>` : ''}${r.anulado ? '' : `<textarea class="inp" id="lr-resp" aria-label="Respuesta al reclamante" rows="5" placeholder="Respuesta que se enviará al correo del reclamante">${esc(r.respuesta || '')}</textarea><p style="margin-top:8px"><button class="btn ok" data-resp>${sic('send')} Guardar respuesta y marcar atendido</button></p>`}</div></div>
+    <div class="panel"><h2>Respuesta institucional</h2><div class="pb">${r.respuesta ? `<div class="notice ok" style="white-space:pre-wrap">${esc(r.respuesta)}<br><small>Respondido por ${esc(r.atendidoPor || '—')} el ${fshort(r.atendidoEn, true)} · Notificación al usuario: ${esc(r.notifUser)}</small></div>` : ''}${r.anulado ? '' : `<textarea class="inp" id="lr-resp" aria-label="Respuesta al reclamante" rows="5" placeholder="Respuesta institucional; el envío por correo está pendiente.">${esc(r.respuesta || '')}</textarea><p style="margin-top:8px"><button class="btn ok" data-resp>${sic('send')} Guardar respuesta y marcar atendido</button></p>`}</div></div>
     <div class="panel"><h2>Notas internas <small style="font-weight:400;color:var(--muted)">(no visibles para el ciudadano)</small></h2><div class="pb">${(r.notas || []).map(n => `<div class="card cb" style="margin-bottom:8px"><small style="color:var(--muted)">${esc(n.usuario)} · ${fshort(n.fecha, true)}</small><br>${esc(n.texto)}</div>`).join('') || '<p style="color:var(--muted)">Sin notas.</p>'}<div style="display:flex;gap:8px"><input class="inp" id="lr-nota" aria-label="Nueva nota interna" placeholder="Agregar nota interna"><button class="btn sec" data-nota>Agregar</button></div></div></div></div>
     <div style="display:grid;gap:16px;align-content:start"><div class="panel"><h2>Gestión</h2><div class="pb" style="display:grid;gap:10px">${r.anulado ? `<div class="notice err">Registro anulado por ${esc(r.anuladoPor)}: ${esc(r.motivoAnulacion)}</div>` : `<div class="field"><label for="lr-st">Estado</label><select id="lr-st">${LR_STATES.map(s => `<option ${s === r.estado ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="field"><label for="lr-sn">Comentario del cambio</label><input id="lr-sn" class="inp"></div><button class="btn" data-st>Actualizar estado</button>${isAdm ? `<button class="btn danger" data-anular>Anular registro</button><small style="color:var(--muted)">La anulación no elimina el registro; queda en el historial y la auditoría.</small>` : ''}`}</div></div>
     <div class="panel"><h2>Notificaciones</h2><div class="pb meta-list"><span>Al correo institucional: ${stBadge(r.notifInst)}</span>${r.notifInst === 'Error' ? `<button class="btn sm gold" data-retry>${sic('restore')} Reintentar envío</button>` : ''}<span>Constancia al ciudadano: ${stBadge(r.notifUser)}</span><span style="font-size:12px">Destino: ${esc(DB.config.correoReclamos)}</span></div></div>
@@ -6587,9 +6589,9 @@ CUSTOM.temas = (parts) => {
     <div class="tm-grid">${keys.map(k => { const t = T[k], on = k === act; return `<article class="tm-item${on ? ' on' : ''}">${themeMock(t)}<div class="tm-body"><h3>${esc(t.label)} ${on ? '<span class="badge ok">Activo</span>' : ''}${t.base ? '' : ' <span class="badge gray">Personalizado</span>'}</h3><p>${esc(t.desc || '')}</p><div class="tm-acts">${on ? '' : `<button class="btn sm" data-act="${k}">${sic('check', 14)} Activar</button>`}<a class="btn sm sec" href="#/admin/temas/${k}">${sic('edit', 14)} Editar</a><button class="btn sm ghost" data-dup="${k}" title="Duplicar">${sic('copy', 14)}<span class="sr-only">Duplicar ${esc(t.label)}</span></button>${!t.base && !on ? `<button class="btn sm ghost" data-del="${k}" title="Eliminar">${sic('trash', 14)}<span class="sr-only">Eliminar ${esc(t.label)}</span></button>` : ''}</div></div></article>`; }).join('')}</div>`;
   return {
     html, after: () => {
-      $$('[data-act]').forEach(b => b.onclick = () => { const k = b.dataset.act; DB.config.tema = k; applyTheme(); audit('Activación de tema', 'Temas y apariencia', T[k].label); saveDB(); toast('Tema «' + T[k].label + '» activado en todo el portal.', 'ok'); route(); });
-      $$('[data-dup]').forEach(b => b.onclick = () => { const src = T[b.dataset.dup]; let label = src.label + ' (copia)', n = 2; while (Object.values(T).some(t => t.label === label)) label = src.label + ' (copia ' + n++ + ')'; let k = slugify(label) || 'tema', i = 2; while (T[k] || k === 'nuevo') k = slugify(label) + '-' + i++; T[k] = Object.assign({}, src, { label, base: false }); audit('Creación', 'Temas y apariencia', label, 'Duplicado de ' + src.label); saveDB(); toast('Tema duplicado. Ya puede editarlo.', 'ok'); go('#/admin/temas/' + k); });
-      $$('[data-del]').forEach(b => b.onclick = async () => { const k = b.dataset.del; if (!await confirmBox(`¿Eliminar el tema <b>${esc(T[k].label)}</b>? Esta acción no se puede deshacer.`, { ok: 'Eliminar' })) return; const l = T[k].label; delete T[k]; audit('Eliminación', 'Temas y apariencia', l); saveDB(); toast('Tema eliminado.', 'ok'); route(); });
+      $$('[data-act]').forEach(b => b.onclick = () => { const k = b.dataset.act; DB.config.tema = k; audit('Activación de tema', 'Temas y apariencia', T[k].label); if(!saveDB())return; applyTheme(); toast('Tema «' + T[k].label + '» activado en todo el portal.', 'ok'); route(); });
+      $$('[data-dup]').forEach(b => b.onclick = () => { const src = T[b.dataset.dup]; let label = src.label + ' (copia)', n = 2; while (Object.values(T).some(t => t.label === label)) label = src.label + ' (copia ' + n++ + ')'; let k = slugify(label) || 'tema', i = 2; while (T[k] || k === 'nuevo') k = slugify(label) + '-' + i++; T[k] = Object.assign({}, src, { label, base: false }); audit('Creación', 'Temas y apariencia', label, 'Duplicado de ' + src.label); if(!saveDB())return; toast('Tema duplicado. Ya puede editarlo.', 'ok'); go('#/admin/temas/' + k); });
+      $$('[data-del]').forEach(b => b.onclick = async () => { const k = b.dataset.del; if (!await confirmBox(`¿Eliminar el tema <b>${esc(T[k].label)}</b>? Esta acción no se puede deshacer.`, { ok: 'Eliminar' })) return; const l = T[k].label; delete T[k]; audit('Eliminación', 'Temas y apariencia', l); if(!saveDB())return; toast('Tema eliminado.', 'ok'); route(); });
     }
   };
 };
@@ -6655,8 +6657,9 @@ function temaEditor(key) {
         T[k] = data; audit(isNew ? 'Creación' : 'Modificación', 'Temas y apariencia', label, prev && prev !== label ? 'Antes: ' + prev : '');
         const activate = b.dataset.save === '1';
         if (activate) { DB.config.tema = k; audit('Activación de tema', 'Temas y apariencia', label); }
+        if(!saveDB())return;
         if (k === DB.config.tema) applyTheme();
-        saveDB(); ADM.work = null; toast(activate ? 'Tema guardado y activado en todo el portal.' : k === DB.config.tema ? 'Tema guardado. El portal ya muestra los cambios.' : 'Tema guardado.', 'ok'); go('#/admin/temas');
+        ADM.work = null; toast(activate ? 'Tema guardado y activado en todo el portal.' : k === DB.config.tema ? 'Tema guardado. El portal ya muestra los cambios.' : 'Tema guardado.', 'ok'); go('#/admin/temas');
       });
     }
   };
@@ -6967,7 +6970,7 @@ const S16 = n => sic(n, 16);
 /* =========================================================
    1.4 MESA DE PARTES VIRTUAL
    ========================================================= */
-const MPV_ESTADOS_PUB = { Recibido: 'Recibido por Mesa de Partes', Derivado: 'Derivado al área de destino', 'En proceso': 'En atención en el área', Observado: 'Observado (revise su correo)', Atendido: 'Atendido', Archivado: 'Archivado' };
+const MPV_ESTADOS_PUB = { Recibido: 'Recibido por Mesa de Partes', Derivado: 'Derivado al área de destino', 'En proceso': 'En atención en el área', Observado: 'Observado (revise el seguimiento)', Atendido: 'Atendido', Archivado: 'Archivado' };
 function horarioBox(compact) {
   const c = mpvCfg(); const now = new Date(); const r = recepcionDe(now.toISOString());
   const st = r.enHorario ? `<span class="pz-live ok">● En horario de atención: tu documento se recibe en este momento.</span>` : `<span class="pz-live off">● Fuera del horario de atención: puedes registrar tu documento; se considerará recibido el <b>${fdate(r.fecha, true)}</b>.</span>`;
@@ -7009,7 +7012,7 @@ function mpvConsulta() {
 }
 function mpvInfo() {
   const c = mpvCfg(); const as = areasAll().filter(a => a.activo);
-  return `<section class="card cb" style="padding:20px"><h2 style="font-size:18px;margin-top:0">¿Cómo funciona?</h2><ol class="pz-steps"><li><b>Registra</b> tus datos, el tipo de documento, el área de destino y adjunta tus archivos.</li><li><b>Recibe</b> al instante tu N.º de expediente (${esc(c.prefijo)}-AAAA-NNNNNN), tu N.º de documento (DOC-AAAA-NNNNNN) y el cargo de recepción en PDF.</li><li><b>Mesa de Partes</b> deriva tu documento al área competente; recibirás las notificaciones en tu correo.</li><li><b>Consulta</b> el estado en cualquier momento con tu N.º de expediente y tu DNI/RUC o el código de verificación.</li></ol>
+  return `<section class="card cb" style="padding:20px"><h2 style="font-size:18px;margin-top:0">¿Cómo funciona?</h2><ol class="pz-steps"><li><b>Registra</b> tus datos, el tipo de documento, el área de destino y adjunta tus archivos.</li><li><b>Recibe</b> al instante tu N.º de expediente (${esc(c.prefijo)}-AAAA-NNNNNN), tu N.º de documento (DOC-AAAA-NNNNNN) y el cargo de recepción en PDF.</li><li><b>Mesa de Partes</b> deriva tu documento al área competente. Consulta las novedades en el seguimiento; el envío por correo está pendiente de habilitación.</li><li><b>Consulta</b> el estado en cualquier momento con tu N.º de expediente y tu DNI/RUC o el código de verificación.</li></ol>
    <h3>Tipos de documento admitidos y plazos referenciales</h3><div class="tbl-wrap"><table class="tbl light no-rt"><thead><tr><th>Tipo de documento</th><th class="num">Plazo (días hábiles)</th></tr></thead><tbody>${c.tipos.map(t => `<tr><td>${esc(t)}</td><td class="num">${c.plazos[t] || 10}</td></tr>`).join('')}</tbody></table></div>
    <h3>Recepción fuera del horario</h3><p>Puedes registrar documentos las 24 horas. Los presentados después de las ${fmt12(c.horaFin)}, en sábado, domingo o feriado se consideran recibidos el <b>siguiente día hábil a las ${fmt12(c.horaIni)}</b>; los presentados antes de las ${fmt12(c.horaIni)} de un día hábil, ese mismo día a las ${fmt12(c.horaIni)}. El cargo indica la fecha y hora exacta de presentación y la de recepción administrativa.</p>
    <h3>Áreas receptoras</h3><div class="tbl-wrap"><table class="tbl light"><thead><tr><th>Nivel</th><th>Área / cargo / órgano</th><th>Correo institucional</th></tr></thead><tbody>${as.map(a => `<tr><td>${esc(a.nivel || '')}</td><td>${esc(a.nombre)}</td><td><a href="mailto:${esc(a.correo)}">${esc(a.correo)}</a></td></tr>`).join('')}</tbody></table></div></section>`;
@@ -7137,7 +7140,7 @@ cargoExp = async function (id) {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(50);
   [`La recepción no implica la conformidad con el contenido del documento. El trámite será atendido por el área de destino dentro del plazo de ${c.plazos[x.tipoTramite] || EXP_PLAZOS[x.tipoTramite] || 10} días hábiles, contados desde la fecha de recepción.`,
    `Consulte el estado escaneando el código QR o en Mesa de Partes Virtual › Consultar expediente, con el N.° ${x.numero} y su documento de identidad o el código ${x.cargoCod}.`,
-   'Las notificaciones se enviarán al correo electrónico registrado.'].forEach(s => { const t = doc.splitTextToSize('• ' + s, tw); doc.text(t, tx, ty); ty += 3.6 * t.length + .6; });
+   'El envío de notificaciones por correo está pendiente de habilitación; consulte el seguimiento del expediente.'].forEach(s => { const t = doc.splitTextToSize('• ' + s, tw); doc.text(t, tx, ty); ty += 3.6 * t.length + .6; });
   pdfPie(doc);
   downloadBlob(doc.output('blob'), 'cargo_' + x.numero + '.pdf'); audit('Descarga de cargo', 'Mesa de partes', x.numero); saveDB();
   toast('Cargo de recepción descargado.', 'ok');

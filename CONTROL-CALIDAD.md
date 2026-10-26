@@ -50,3 +50,7 @@ Se consultaron 24 enlaces externos públicos mediante HEAD: 10 respondieron HTTP
 No se ha subido esta versión al hosting ni se ha modificado su base real. Antes de desplegar, guarda una copia de archivos y base en hPanel. Conserva `portal-private/config.php`, los respaldos privados y los usuarios existentes; sigue `INSTRUCCIONES.md` y ejecuta `actualizar.php`, sin reinstalar. El correo saliente y la recuperación por correo siguen pendientes por acuerdo con el propietario.
 
 Los datos de ejemplo del modelo deben sustituirse o corregirse con información institucional real. La validación rechaza, por ejemplo, un RUC de muestra cuyo dígito verificador sea incorrecto; no se relaja esa regla para aceptar datos inválidos.
+
+## Segunda revisión funcional
+
+Consulta `REVISION-PROFUNDA.md` para las correcciones posteriores, la matriz de los 38 módulos y las nuevas pruebas `deep-*.php` y `browser-deep-*.cjs`.

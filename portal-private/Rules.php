@@ -23,6 +23,11 @@ final class PortalRules
     {if(!is_string($v))return false;$d=DateTimeImmutable::createFromFormat('!Y-m-d',$v);return $d&&$d->format('Y-m-d')===$v;}
     public static function apply(array $old,array &$new,array $user): void
     {
+        self::settings($old,$new);
+        foreach($new['estadisticas'] as $row)if(self::changed($old['estadisticas'],$row)){
+            if(filter_var($row['anio']??null,FILTER_VALIDATE_INT)===false||$row['anio']<2000||$row['anio']>2100||!PortalPolicy::find($new['programas'],'id',$row['programaId']??null))throw new PortalError(422,'El año y programa de la estadística deben ser válidos.');
+            foreach(['postulantes','ingresantes','matriculados','egresados','titulados','becas','creditos'] as $key)if(isset($row[$key])&&(filter_var($row[$key],FILTER_VALIDATE_INT)===false||$row[$key]<0))throw new PortalError(422,'Los indicadores estadísticos deben ser enteros no negativos.');
+        }
         foreach(PortalPolicy::definitions()['specs'] as $spec){$collection=$spec['collection'];if($collection==='usuarios')continue;foreach($new[$collection] as &$r){$prior=PortalPolicy::find($old[$collection],'id',$r['id']??null);if(PortalPolicy::equal($prior,$r))continue;
             if(!$prior){$r['creadoPor']=$user['usuario'];$r['creadoEn']=date(DATE_ATOM);}else foreach(['creadoPor','creadoEn'] as $field)if(isset($prior[$field]))$r[$field]=$prior[$field];else unset($r[$field]);
             $r['modPor']=$user['usuario'];$r['modEn']=date(DATE_ATOM);
@@ -56,7 +61,7 @@ final class PortalRules
         }
         foreach(['admisiones','matriculas','becasPeriodos'] as $collection){$changed=array_filter($new[$collection],fn($r)=>self::changed($old[$collection],$r));$selected=null;
             foreach($changed as $r){if(($r['estado']??'')==='Cerrado'){foreach($new[$collection] as &$row)if($row['id']===$r['id'])$row['vigente']=false;unset($row);continue;}
-                if(!empty($r['vigente'])){if(($r['estado']??'')==='Borrador')throw new PortalError(422,'Un proceso en borrador no puede ser vigente.');if($selected!==null)throw new PortalError(422,'Solo un proceso puede ser vigente.');$selected=$r['id'];}
+                if(!empty($r['vigente'])){if(($r['estado']??'')==='Borrador')throw new PortalError(422,'Un proceso en borrador no puede ser vigente.');if(($r['estado']??'')!=='Publicado')continue;if($selected!==null)throw new PortalError(422,'Solo un proceso puede ser vigente.');$selected=$r['id'];}
             }
             if($selected!==null)foreach($new[$collection] as &$r){if($r['id']!==$selected)$r['vigente']=false;}unset($r);
         }
@@ -78,6 +83,42 @@ final class PortalRules
                 if($collection==='personas'){foreach($new['academico']['docentes'] as $teacher)if(($teacher['per']??'')===$r['id']&&PortalPolicy::find($new['academico']['sesiones'],'doc',$teacher['id']))throw new PortalError(422,'La persona tiene clases asignadas.');}
                 foreach($relations as $source=>$fields)foreach($fields as $field=>$target)if($target===$collection)foreach(self::alive($new[$source]) as $ref)if(($ref[$field]??null)===$r['id'])throw new PortalError(422,'No se puede eliminar '.$collection.' porque tiene registros relacionados en '.$source.'.');
             }
+        }
+    }
+    private static function settings(array $old,array $new): void
+    {
+        $changed=fn(string $key)=>!PortalPolicy::equal($old['config'][$key]??null,$new['config'][$key]??null);
+        $link=function(mixed $value,bool $internal=true):bool{if(!is_string($value))return false;if($value==='')return true;if($internal&&(str_starts_with($value,'#/')||preg_match('/^ext:[A-Za-z0-9_-]+$/D',$value)))return true;return (bool)filter_var($value,FILTER_VALIDATE_URL)&&(bool)preg_match('#^https?://#i',$value);};
+        if($changed('home')){
+            $home=$new['config']['home']??null;if(!is_array($home))throw new PortalError(422,'La configuración de portada no es válida.');
+            foreach(['bloques','accesos','cifras','beneficios'] as $key)if(!is_array($home[$key]??null)||!array_is_list($home[$key]))throw new PortalError(422,'La lista de portada '.$key.' no es válida.');
+            $seen=[];foreach($home['bloques'] as $block){if(!is_array($block)||!is_string($block['k']??null)||isset($seen[$block['k']])||!is_bool($block['on']??null))throw new PortalError(422,'La visibilidad y el orden de los bloques deben ser válidos.');$seen[$block['k']]=true;}
+            foreach($home['accesos'] as $access)if(!is_array($access)||!$link($access['enlace']??''))throw new PortalError(422,'El enlace de acceso rápido debe ser una ruta interna, ext:id o una URL http/https.');
+            foreach($home['cifras'] as $figure)if(!is_array($figure)||!is_scalar($figure['corte']??null)||trim((string)$figure['corte'])==='')throw new PortalError(422,'Cada cifra institucional debe indicar su año de corte.');
+            if(count($home['beneficios'])>8&&!PortalPolicy::equal($old['config']['home']['beneficios']??null,$home['beneficios']))throw new PortalError(422,'La portada admite como máximo ocho beneficios.');
+        }
+        if($changed('popup')){
+            $popup=$new['config']['popup']??null;if(!is_array($popup)||!is_bool($popup['activo']??null))throw new PortalError(422,'El comunicado debe tener una casilla de activación válida.');
+            foreach(['inicio','fin'] as $key)if(!empty($popup[$key])&&!self::date($popup[$key]))throw new PortalError(422,'La fecha del comunicado no es válida.');
+            if(!empty($popup['inicio'])&&!empty($popup['fin'])&&$popup['fin']<$popup['inicio'])throw new PortalError(422,'La fecha final del comunicado debe ser posterior a la inicial.');
+            if(!$link($popup['enlace']??''))throw new PortalError(422,'El enlace del comunicado no es válido.');
+            if(!empty($popup['imagen'])&&!self::safeImage($popup['imagen']))throw new PortalError(422,'La imagen del comunicado no es válida.');
+        }
+        if($changed('inst')){
+            $inst=$new['config']['inst']??[];foreach(['nombre','nombreCorto','direccion','telefono','correo','horario','fechaCreacion'] as $key)if(!is_string($inst[$key]??null)||trim($inst[$key])==='')throw new PortalError(422,'Completa el dato institucional '.$key.'.');
+            if(!self::date($inst['fechaCreacion'])||!filter_var($inst['correo'],FILTER_VALIDATE_EMAIL))throw new PortalError(422,'La fecha o el correo institucional no es válido.');
+            if(!empty($inst['logo'])&&!self::safeImage($inst['logo']))throw new PortalError(422,'El logotipo institucional no es válido.');
+        }
+        if($changed('redes'))foreach($new['config']['redes']??[] as $url)if(!$link($url,false))throw new PortalError(422,'Las redes sociales requieren una URL http/https válida.');
+        if($changed('whatsapp')){$wa=$new['config']['whatsapp']??[];if(!is_bool($wa['activo']??null)||($wa['activo']&&!preg_match('/^[0-9]{9,13}$/D',(string)($wa['numero']??''))))throw new PortalError(422,'WhatsApp requiere una casilla válida y un número de nueve a trece dígitos.');}
+        if($changed('uit')||!PortalPolicy::equal($old['tupaDocs']??null,$new['tupaDocs']??null)){
+            foreach($new['config']['uit']??[] as $year=>$value)if(!preg_match('/^[0-9]{4}$/D',(string)$year)||!is_numeric($value)||$value<=0)throw new PortalError(422,'La UIT de cada año debe ser un importe positivo.');
+            $year=$new['tupaDocs']['anio']??null;if(!is_scalar($year)||!isset($new['config']['uit'][$year]))throw new PortalError(422,'Registra la UIT del año del TUPA vigente.');
+        }
+        if(!PortalPolicy::equal($old['licenciamiento']??null,$new['licenciamiento']??null)){
+            $license=$new['licenciamiento']??[];if(!in_array($license['estado']??null,['No iniciado','En proceso','Licenciado','Denegado'],true))throw new PortalError(422,'Estado de licenciamiento no válido.');
+            if($license['estado']==='Licenciado'&&(!is_string($license['resolucion']??null)||trim($license['resolucion'])===''))throw new PortalError(422,'El licenciamiento requiere su resolución institucional.');
+            foreach(['fechaResolucion','vigenciaHasta'] as $key)if(!empty($license[$key])&&!self::date($license[$key]))throw new PortalError(422,'La fecha de licenciamiento no es válida.');
         }
     }
     public static function catalogs(array &$new): void

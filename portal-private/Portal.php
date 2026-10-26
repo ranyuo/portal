@@ -71,9 +71,15 @@ final class PortalApp
         return $this->connection;
     }
 
+    private static function publishedScholarship(array $row,array $data): bool
+    {
+        if(($row['deleted']??false)||($row['estado']??'')!=='Publicado')return false;
+        $period=PortalPolicy::find($data['becasPeriodos']??[],'id',$row['periodoId']??null);
+        return $period&&!($period['deleted']??false)&&in_array($period['estado']??'',['Abierto','Cerrado','Vigente','Publicado'],true);
+    }
     private function publicData(array $data): array
     {
-        $scholarships=$data['becarios']??[];
+        $scholarships=array_values(array_filter($data['becarios']??[],fn($row)=>self::publishedScholarship($row,$data)));
             $data = array_intersect_key($data, array_flip(self::PUBLIC_COLLECTIONS));
             foreach (self::PRIVATE_COLLECTIONS as $key) {
                 $data[$key] = [];
@@ -491,7 +497,7 @@ final class PortalApp
         if ($type === 'certificados' && ($input['mode'] ?? '') === 'dni' && !preg_match('/^[0-9]{8}$/', $input['reference'])) throw new PortalError(422, 'El DNI debe tener ocho dígitos.');
         if ($type === 'becarios') {
             if(!preg_match('/^[0-9]{8}$/',$input['reference']))throw new PortalError(422,'DNI no válido.');
-            $matches=[];foreach($data['becarios']??[] as $r)if(!($r['deleted']??false)&&($r['estado']??'')==='Publicado'&&($r['dni']??'')===$input['reference']){$r=array_intersect_key($r,array_flip(['id','periodoId','apellidos','nombres','programaId','tipoId','motivo','estado','dni']));$r['dni']='****'.substr($r['dni'],-4);$matches[]=$r;}return ['records'=>$matches];
+            $matches=[];foreach($data['becarios']??[] as $r)if(self::publishedScholarship($r,$data)&&($r['dni']??'')===$input['reference']){$r=array_intersect_key($r,array_flip(['id','periodoId','apellidos','nombres','programaId','tipoId','motivo','estado','dni']));$r['dni']='****'.substr($r['dni'],-4);$matches[]=$r;}return ['records'=>$matches];
         }
         if ($type === 'certificados' && ($input['mode'] ?? '') === 'dni') {
             $matches=[]; foreach ($data['certificados']??[] as $r) if (!($r['deleted']??false) && ($r['dni']??'')===$input['reference']) $matches[]=array_intersect_key($r,array_flip(['id','codigo','nombres','programaId','tipo','detalle','fecha','estado','origen','motivo']));
