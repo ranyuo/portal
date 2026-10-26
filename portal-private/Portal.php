@@ -446,6 +446,8 @@ final class PortalApp
                 $count = (int)($data['config']['contadores']['RCL'][$year] ?? 0) + 1;
                 $data['config']['contadores']['RCL'][$year] = $count;
                 $record['codigo'] = sprintf('RCL-%s-%05d', $year, $count);
+                do { $record['cargoCod'] = strtoupper(bin2hex(random_bytes(8))); }
+                while (PortalPolicy::find($data['reclamos'], 'cargoCod', $record['cargoCod']) !== null);
                 preg_match('/^.{0,80}/us', $record['descripcion'], $prefix); $record['asunto'] = $prefix[0] ?? '';
                 $cfg = $data['config']['lr'];
                 $days = (int)($cfg[$record['tipo'] === 'Queja' ? 'plazoQueja' : 'plazoReclamo'] ?? 15);
@@ -504,11 +506,17 @@ final class PortalApp
             $matches=[]; foreach ($data['certificados']??[] as $r) if (!($r['deleted']??false) && ($r['dni']??'')===$input['reference']) $matches[]=array_intersect_key($r,array_flip(['id','codigo','nombres','programaId','tipo','detalle','fecha','estado','origen','motivo']));
             return ['records'=>$matches];
         }
+        if ($type === 'reclamos') {
+            $input['reference']=strtoupper(trim($input['reference']));$input['document']=strtoupper(trim($input['document']));
+            if (!preg_match('/^[A-Z0-9-]{6,20}$/D',$input['document'])) throw new PortalError(422,'Ingresa el documento completo del reclamante (DNI de 8 dígitos, no el número de folios) o el código de verificación de 16 caracteres.');
+        }
+        $claimReference=fn($value)=>preg_replace('/^(RCL|LR)-(\d{4})-0*(\d+)$/i','$1-$2-$3',strtoupper(trim((string)$value)));
         $field = $type === 'expedientes' ? 'numero' : 'codigo';
         foreach ($data[$type] ?? [] as $record) {
             if ($record['deleted'] ?? false) continue;
-            if (strtoupper($record[$field] ?? '') !== strtoupper($input['reference'])) continue;
-            if ($type !== 'certificados' && !hash_equals((string)($record['numDoc'] ?? ''), $input['document'])
+            if ($type==='reclamos' ? $claimReference($record[$field]??'')!==$claimReference($input['reference']) : strtoupper($record[$field] ?? '') !== strtoupper($input['reference'])) continue;
+            $recordDocument=(string)($record['numDoc']??'');if($type==='reclamos')$recordDocument=strtoupper(trim($recordDocument));
+            if ($type !== 'certificados' && !hash_equals($recordDocument, $input['document'])
                 && (empty($record['cargoCod']) || !hash_equals($record['cargoCod'], strtoupper($input['document'])))) continue;
             foreach (['archivos', 'archivo', 'adjunto', 'notas', 'notaInterna', 'correo', 'telefono', 'direccion', 'usuarioRegistro'] as $key) unset($record[$key]);
             if ($type === 'certificados') {

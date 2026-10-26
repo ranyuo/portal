@@ -6,7 +6,7 @@ final class PortalServices
     {
         $immutable=[
             'mensajes'=>['id','fecha','nombres','documento','correo','telefono','asunto','programa','mensaje'],
-            'reclamos'=>['id','fecha','codigo','tipo','nombres','nombresP','apellidos','tipoDoc','numDoc','correo','telefono','condicion','programaId','fechaHecho','areaHecho','descripcion','pedido','adjunto','plazoDias','vence','responsable'],
+            'reclamos'=>['id','fecha','codigo','cargoCod','tipo','nombres','nombresP','apellidos','tipoDoc','numDoc','correo','telefono','condicion','programaId','fechaHecho','areaHecho','descripcion','pedido','adjunto','plazoDias','vence','responsable'],
             'expedientes'=>['id','fecha','numero','numDocumento','cargoCod','nombres','nombresP','apellidos','tipoPersona','tipoDoc','numDoc','correo','telefono','direccion','tipoTramite','docRef','asunto','folios','observaciones','areaDestino','archivos','archivo','fechaRecepcion','enHorario','usuarioRegistro','canal'],
         ];
         $states=['mensajes'=>['Nuevo','Leído','Atendido','Respondido','Archivado'],'reclamos'=>['Recibido','Derivado','En atención','Atendido','Anulado'],'expedientes'=>['Recibido','Derivado','En proceso','En evaluación','Observado','Atendido','Respondido','Cerrado','Archivado','Anulado']];

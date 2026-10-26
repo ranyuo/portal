@@ -1,3 +1,5 @@
+Esta version incluye la correccion del Libro de Reclamaciones: lee primero CORRECCION-RECLAMOS.md y ejecuta actualizar.php despues de subir los archivos.
+
 # Paquete listo para Hostinger — actualización de tu instalación
 
 Esta distribución contiene el mismo código de la revisión profunda probada. Se excluyen las pruebas de desarrollo y las configuraciones privadas.
