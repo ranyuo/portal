@@ -1,0 +1,8 @@
+/portal-private/config.php
+/portal-private/config.*.php
+!/portal-private/config.example.php
+/portal-private/backups/
+/portal-private/.backups/
+/portal-private/*.lock
+/portal-private/*.log
+/tests/.results/

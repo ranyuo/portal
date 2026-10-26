@@ -1,0 +1,30 @@
+<?php
+declare(strict_types=1);
+ob_start();require dirname(__DIR__).'/portal-private/bootstrap.php';$path=getenv('PORTAL_CONFIG_FILE');if(!$path||!str_ends_with($path,'config.test.php'))throw new RuntimeException('Solo pruebas.');$c=require $path;if(!str_ends_with($c['db_name'],'_test'))throw new RuntimeException('Solo base de pruebas.');$app=portal_app();$db=$app->db();$db->exec('DELETE FROM pisco_rate_limits');$u=$db->query("SELECT id,auth_version FROM pisco_users WHERE username='admin'")->fetch();$_SESSION['user_id']=(int)$u['id'];$_SESSION['auth_version']=(int)$u['auth_version'];$count=0;
+function ok(bool $v,string $label):void{global$count;if(!$v)throw new RuntimeException($label);$count++;echo "OK $label\n";}
+function update(callable $f):void{global$app;$b=$app->bootstrap();$d=$b['data'];$f($d);$app->save(['data'=>$d,'revision'=>$b['revision']]);}
+function ruc(string $n):string{$w=[5,4,3,2,7,6,5,4,3,2];$s=0;foreach($w as$i=>$v)$s+=(int)$n[$i]*$v;$d=11-$s%11;return$n.($d===10?0:($d===11?1:$d));}
+$fixtures=[
+ 'programas'=>['id'=>780001,'cod'=>'AC-TEST','nombre'=>'Programa académico de prueba','dur'=>'3 años','sem'=>6,'activo'=>true],
+ 'uds'=>['id'=>780001,'cod'=>'UD-AC-TEST','nombre'=>'Unidad de prueba CRUD','prog'=>780001,'ciclo'=>'VI','horas'=>2,'cred'=>2],
+ 'docentes'=>['id'=>780001,'per'=>'d5','nom'=>'Docente de prueba CRUD','dni'=>'79999981','correo'=>'docente-crud@example.test','uds'=>[780001],'dias'=>['Lun'],'desde'=>'07:00','hasta'=>'20:00'],
+ 'ambientes'=>['id'=>780001,'cod'=>'AULA-AC-TEST','tipo'=>'Aula','cap'=>30,'ubic'=>'Pabellón de prueba','caract'=>'Prueba','prog'=>780001],
+ 'modulos'=>['id'=>780001,'prog'=>780001,'cod'=>'MOD-AC-TEST','nombre'=>'Módulo de prueba CRUD','ciclos'=>'VI'],
+ 'estudiantes'=>['id'=>780001,'dni'=>'79999981','nom'=>'Alumno de prueba CRUD','prog'=>780001,'periodo'=>'2026-II','ciclo'=>'VI','sec'=>'A','turno'=>'Mañana','estado'=>'Regular','correo'=>'alumno-crud@example.test','tel'=>'999111222'],
+ 'areas'=>['id'=>780001,'cod'=>'AREA-CRUD','nivel'=>'Áreas','nombre'=>'Área de prueba CRUD','resp'=>'Responsable de prueba','correo'=>'area-crud@example.test','activo'=>true],
+ 'tramites'=>['id'=>780001,'nombre'=>'Trámite de prueba CRUD','area'=>'AREA-CRUD','dias'=>5,'req'=>'Documento de prueba'],
+ 'empresas'=>['id'=>780001,'ruc'=>ruc('2012356789'),'nom'=>'Empresa de prueba CRUD','sector'=>'Servicios','ubic'=>'Pisco','contacto'=>'Responsable','correo'=>'empresa-crud@example.test','validada'=>true,'estadoVal'=>'Validada'],
+ 'ofertas'=>['id'=>780001,'emp'=>780001,'puesto'=>'Puesto de prueba CRUD','desc'=>'Descripción del puesto','req'=>'Requisitos de prueba','modal'=>'Presencial','prog'=>780001,'vac'=>2,'limite'=>'2099-01-01','estado'=>'Por validar'],
+ 'certs'=>['id'=>780001,'est'=>780001,'mod'=>780001,'fecha'=>date('Y-m-d'),'num'=>'AC-CRUD-2026'],
+ 'notas'=>['id'=>780001,'est'=>780001,'ud'=>'Unidad de prueba CRUD','periodo'=>'2026-II','nota'=>17],
+];
+$fields=['programas'=>'nombre','uds'=>'nombre','docentes'=>'hasta','ambientes'=>'ubic','modulos'=>'nombre','estudiantes'=>'nom','areas'=>'nombre','tramites'=>'nombre','empresas'=>'nom','ofertas'=>'puesto','certs'=>'num','notas'=>'nota'];
+foreach($fixtures as$key=>$row){try{update(function(&$d)use($key,$row){$d['academico'][$key][]=$row;});}catch(Throwable$e){throw new RuntimeException('Crear '.$key.': '.$e->getMessage(),0,$e);}ok(PortalPolicy::find($app->bootstrap()['data']['academico'][$key],'id',780001)!==null,'Crear catálogo académico '.$key);$field=$fields[$key];$value=$field==='nota'?16:($field==='hasta'?'21:00':'Edición académica '.$key);update(function(&$d)use($key,$field,$value){foreach($d['academico'][$key]as&$r)if($r['id']===780001)$r[$field]=$value;});ok(PortalPolicy::find($app->bootstrap()['data']['academico'][$key],'id',780001)[$field]===$value,'Editar catálogo académico '.$key);}
+update(function(&$d){$d['academico']['estudiantes'][]=['id'=>780002,'dni'=>'79999982','nom'=>'Egresado de prueba CRUD','prog'=>780001,'periodo'=>'2026-II','ciclo'=>'VI','sec'=>'A','turno'=>'Mañana','estado'=>'Egresado'];$d['academico']['titulos'][]=['id'=>780001,'est'=>780002,'culm'=>'2026-01-01','tit'=>date('Y-m-d'),'cod'=>'TIT-AC-CRUD-2026','resol'=>'RES-CRUD'];});ok(PortalPolicy::find($app->bootstrap()['data']['academico']['estudiantes'],'id',780002)['estado']==='Titulado','Registrar título y actualizar egresado');
+update(function(&$d){foreach($d['academico']['titulos']as&$r)if($r['id']===780001)$r['resol']='RES-CRUD-2';});ok(PortalPolicy::find($app->bootstrap()['data']['academico']['titulos'],'id',780001)['resol']==='RES-CRUD-2','Editar título persistente');
+update(function(&$d){$d['academico']['sesiones'][]=['id'=>780001,'per'=>'2026-II','prog'=>780001,'ciclo'=>'VI','sec'=>'A','turno'=>'Mañana','ud'=>780001,'doc'=>780001,'amb'=>780001,'dia'=>'Lun','ini'=>'08:00','fin'=>'09:00'];$d['academico']['publicados']['780001|VI|A|Mañana|2026-II']=['fecha'=>date('Y-m-d H:i'),'por'=>'Prueba'];});ok(true,'Crear y publicar horario con nuevos catálogos');
+update(function(&$d){foreach($d['academico']['sesiones']as&$r)if($r['id']===780001){$r['ini']='09:00';$r['fin']='10:00';}});ok(true,'Editar clase de horario publicado sin cruce');
+try{update(function(&$d){foreach($d['academico']['uds']as&$r)if($r['id']===780001)$r['horas']=99;});throw new RuntimeException('No se rechazó rango inválido');}catch(PortalError$e){ok($e->status===422,'Rango académico validado en PHP');}
+update(function(&$d){$d['academico']['sesiones']=array_values(array_filter($d['academico']['sesiones'],fn($r)=>$r['id']!==780001));unset($d['academico']['publicados']['780001|VI|A|Mañana|2026-II']);});
+foreach(['titulos','notas','certs','ofertas','empresas','tramites','areas','estudiantes','modulos','ambientes','docentes','uds','programas']as$key){update(function(&$d)use($key){$d['academico'][$key]=array_values(array_filter($d['academico'][$key],fn($r)=>!in_array($r['id'],[780001,780002],true)));});ok(PortalPolicy::find($app->bootstrap()['data']['academico'][$key],'id',780001)===null,'Eliminar catálogo académico '.$key.' sin dependencias');}
+echo"\n$count comprobaciones de CRUD académico aprobadas.\n";ob_end_flush();

@@ -15,6 +15,8 @@ try {
         if ($route === 'api/archivo' && $method === 'GET') PortalFiles::serve($app, is_string($_GET['id']??null)?$_GET['id']:'');
         if ($route === 'api/archivos' && $method === 'POST') portal_json($app->upload(),201);
         $input = $method === 'GET' ? [] : $app->input();
+        if ($route === 'api/desafio' && $method === 'POST') portal_json($app->challenge($input));
+        if ($route === 'api/eventos' && $method === 'POST') portal_json($app->interfaceEvent($input));
         if ($route === 'api/cuentas' && $method === 'POST') portal_json($app->accountOperation($input));
         if ($route === 'api/password' && $method === 'POST') { $app->changePassword($input); portal_json(['ok'=>true]); }
         if ($route === 'api/empresas' && $method === 'POST') portal_json($app->registerCompany($input),201);

@@ -1,6 +1,8 @@
+La versión unificada está en main. Para esta actualización lee también CORRECCION-RECLAMOS.md y ejecuta actualizar.php para completar códigos de reclamos anteriores.
+
 # Portal Pisco para Hostinger: PHP y MySQL, sin Laravel
 
-Esta es la versión elegida para desplegar en hPanel. No utiliza Laravel, Composer, npm, un servidor Node ni acceso SSH. Necesita PHP 8.2 o posterior, PDO MySQL, sesiones y Fileinfo. Se valida con PHP 8.4 y MySQL 8.4; las consultas no usan funciones exclusivas de MySQL 8.
+Esta es la versión elegida para desplegar en hPanel. No utiliza Laravel, Composer, npm, un servidor Node ni acceso SSH. Necesita PHP 8.2 o posterior, PDO MySQL, sesiones, Fileinfo y Zlib. Se valida con PHP 8.4 y MySQL 8.4; las consultas no usan funciones exclusivas de MySQL 8.
 
 ## Actualizar tu instalación existente
 
@@ -8,11 +10,11 @@ No vuelvas a instalar ni borres tu base de datos. Los cambios se aplican sobre t
 
 1. Crea una copia de archivos y base de datos desde hPanel. Conserva tu `portal-private/config.php` en privado.
 2. Descarga el ZIP de la rama indicada en GitHub y extráelo en tu computadora.
-3. Sube los archivos de **portal-private** a la carpeta **portal-private** que ya existe, junto a `public_html`. Incluye los archivos nuevos `Accounts.php`, `Domain.php`, `Files.php`, `Policy.php`, `Schema.php` y la carpeta **contracts**. No reemplaces ni elimines **config.php**.
-4. Sube el contenido de **public_html** dentro del **public_html** de tu dominio. No crees `public_html/public_html`.
+3. Sube los archivos de **portal-private** a la carpeta **portal-private** que ya existe, junto a `public_html`. Incluye todos los archivos y subcarpetas del paquete, no solo los que ya existían. Conserva también la carpeta privada **backups**, si existe. No reemplaces ni elimines **config.php**.
+4. Sube el contenido de **public_html** dentro del **public_html** de tu dominio. Incluye **assets/vendor**, `.htaccess` y `.user.ini`. No crees `public_html/public_html`.
 5. Abre **https://region.aplicacion.io/actualizar.php**. Introduce el valor `install_key` de tu configuración privada y pulsa **Actualizar conservando los datos**. No uses la contraseña de MySQL ni la del administrador en ese campo.
 6. Abre la intranet con tu usuario y contraseña habituales. La actualización conserva el contenido y las cuentas existentes. Esas cuentas mantienen su rol de administrador; crea los demás perfiles desde Usuarios.
-7. Comprueba guardado y lectura desde otra ventana privada. Elimina **actualizar.php** y **recuperar.php** del directorio público cuando termines. Puedes borrar también **install.php** si ya estaba instalado.
+7. Limpia la caché del sitio en hPanel y recarga el navegador con Ctrl+F5. Comprueba guardado y lectura desde otra ventana privada. Elimina **actualizar.php** y **recuperar.php** del directorio público cuando termines. Puedes borrar también **install.php** si ya estaba instalado.
 
 El actualizador añade columnas y tablas; no carga de nuevo los datos de ejemplo. Guarda una instantánea privada del contenido y cuentas en `pisco_upgrade_backups` antes del cambio. La copia independiente de hPanel sigue siendo necesaria para recuperar también archivos de código si una subida queda incompleta.
 
@@ -79,9 +81,9 @@ No cambies el nombre de `portal-private`, salvo que adaptes las rutas de los tre
 - Archivos reales en MySQL, descargables según los permisos de cada cuenta; copia SQL completa desde Respaldo.
 - Contador de visitas del servidor y avisos internos de la intranet. Las cifras ficticias del prototipo dejan de aparecer.
 
-El contenido se conserva en la tabla JSON `pisco_state` para mantener compatible el editor existente. Las cuentas, archivos binarios, visitas, versión de esquema y contadores de solicitudes tienen tablas propias. Los datos iniciales vienen del prototipo, no de una base de producción ni de los navegadores que usaron la página antigua.
+El contenido se conserva en la tabla JSON `pisco_state` para mantener compatible el editor existente. Las cuentas, archivos binarios, visitas, auditoría, ajustes, versión de esquema y contadores de solicitudes tienen tablas propias. Los cambios se envían por registro: dos usuarios pueden editar registros distintos simultáneamente; los conflictos sobre el mismo registro se rechazan. Los datos iniciales vienen del prototipo, no de una base de producción ni de los navegadores que usaron la página antigua.
 
-El envío de correo se omite por decisión del usuario: los mensajes, respuestas y constancias quedan guardados en el portal, y los avisos internos siguen activos. No se presenta una entrega de correo como realizada. PDF, Excel, QR, fuentes e imágenes mantienen los proveedores externos del modelo original. El hosting necesita acceso a esos proveedores y una conexión HTTPS.
+El envío de correo se omite por decisión del usuario: los mensajes, respuestas y constancias quedan guardados en el portal, y los avisos internos siguen activos. No se presenta una entrega de correo como realizada. PDF, Excel y QR se sirven desde **assets/vendor**, con sus licencias incluidas. Algunas imágenes, fuentes y mapas conservan proveedores externos; las fuentes tienen alternativas locales del navegador. Usa HTTPS.
 
 Los perfiles deben vincularse a registros reales: docente con su ficha de persona y docente académico, estudiante/egresado con el maestro de alumnos, empresa con su registro y coordinador con su programa. No existen contraseñas de demostración. El contenido inicial heredado necesita la revisión y sustitución institucional de textos, imágenes y documentos de ejemplo.
 
@@ -118,8 +120,22 @@ Las pruebas recrean únicamente las tablas `pisco_*` de esa base de pruebas. El 
 
 Las pruebas `tests/upgrade.php` simulan el esquema anterior en esa misma base desechable y comprueban que actualizarlo dos veces conserva exactamente el contenido y los hashes de contraseña. Cambian los perfiles de esa base al simular una instalación antigua: vuelve a ejecutar `parity.php` antes de probar los perfiles en el navegador.
 
-`tests/browser-parity.cjs` recorre los módulos y editores, las rutas públicas y los accesos de cada perfil. `browser-workflows.cjs` prueba los formularios con PDF, la descarga por el administrador y el respaldo SQL; descarga las bibliotecas externas con TLS verificado. `browser-profiles.cjs` guarda CV docente y CV de alumno desde la interfaz. Son herramientas de desarrollo; no se suben a Hostinger.
+`tests/browser-parity.cjs` recorre los módulos y editores, las rutas públicas y los accesos de cada perfil. `browser-workflows.cjs` prueba los formularios con PDF, la descarga por el administrador y el respaldo SQL; utiliza las bibliotecas incluidas en el paquete. `browser-profiles.cjs` guarda CV docente y CV de alumno desde la interfaz. Son herramientas de desarrollo; no se suben a Hostinger.
 
 Para restaurar la copia SQL descargada desde Respaldo, usa phpMyAdmin en hPanel sobre la base del portal después de guardar una copia actual. El SQL reemplaza únicamente las tablas del portal incluidas en la copia; no incluye `config.php` ni los archivos PHP del sitio. Guarda esos archivos por separado. La copia contiene información privada y hashes de cuentas: no la publiques ni la dejes en `public_html`.
+
+## Respaldos, restauración y programación
+
+Entra como administrador a **Respaldo** o `/respaldos.php`. Puedes crear y descargar una copia portable `.piscobak`, subirla y restaurarla con tu contraseña y la confirmación RESTAURAR. Incluye contenido, cuentas, visitas y archivos; valida la integridad y crea automáticamente una copia anterior a la restauración. Las sesiones anteriores se invalidan. La auditoría y la configuración privada del hosting se conservan.
+
+Las copias se guardan fuera del directorio público en `portal-private/backups`. No las publiques. Para archivos que superen el límite de subida de PHP, usa el administrador de archivos de hPanel para colocarlos allí, conservando su nombre original, y selecciónalos desde el panel de respaldos.
+
+La misma pantalla permite activar la copia diaria y elegir hora y retención. Para que se ejecute sin visitas, crea en **Advanced → Cron Jobs** de hPanel una tarea PHP cada hora que ejecute la ruta absoluta a `portal-private/cron.php`; el panel muestra la ruta de tu instalación. No uses una URL pública ni incluyas contraseñas. La aplicación evita duplicar la copia diaria y elimina las copias programadas que exceden la retención elegida. La programación necesita esta configuración de hPanel; no depende del correo.
+
+La auditoría completa, con filtros y CSV, está en `/auditoria.php` para administradores. Registra cambios de registros, cuentas, accesos y operaciones de respaldo; no sustituye una copia de seguridad independiente.
+
+El único servicio deliberadamente pendiente es el correo saliente y la recuperación por correo. La recuperación del propietario mediante la clave privada continúa disponible en `recuperar.php` cuando necesites volver a subir ese archivo temporalmente.
+
+Antes de actualizar, revisa `REVISION-PROFUNDA.md` y utiliza el paquete de la rama `main`, que incorpora las correcciones de la revisión funcional posterior.
 
 La carpeta tests es exclusivamente para desarrollo: no la subas a Hostinger.

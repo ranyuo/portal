@@ -1,37 +1,46 @@
 # Verificación de la migración PHP y MySQL
 
-Comparación con el modelo original `index_pisco_2026.html`. Ejecución local el 26 de octubre de 2026 con PHP 8.4, MySQL 8.4 y Chromium. Hostinger no se ha actualizado desde este entorno.
+Revisión del 26 de octubre de 2026 frente al modelo original `index_pisco_2026.html`. Entorno de pruebas separado: PHP 8.4, MySQL 8.4 y Chromium. Esta verificación no actualiza ni certifica la instalación que está actualmente en Hostinger.
 
-## Alcance implementado
+## Alcance
 
-Se conserva la interfaz HTML, CSS y JavaScript del modelo. PHP controla sesiones, permisos, cuentas, validación, consultas públicas y persistencia; MySQL guarda el contenido compartido, cuentas, archivos binarios y visitas. No requiere Laravel, Composer ni Node en el hosting.
+Se conserva la interfaz HTML, CSS y JavaScript. PHP controla autenticación, permisos, validación, consultas, archivos y operaciones; MySQL conserva contenido compartido, cuentas, adjuntos, visitas, auditoría y ajustes. No requiere Laravel, Composer ni un servidor Node en el hosting. PDF, Excel y QR están incluidos localmente con sus licencias.
 
-- 11 perfiles: administrador, imagen institucional, secretaría, coordinador, transparencia, atención, directivo, docente, estudiante, egresado y empresa.
-- 25 definiciones de editores: noticias, categorías, eventos, inversiones, convocatorias, documentos, tipos documentales, TUPA, jerarquía, docentes/personas, locales, reconocimientos, programas, egresados, certificados, becarios, periodos y tipos de beca, enlaces, servicios, portada, usuarios, páginas, admisión y matrícula.
-- Maestro de alumnos, horarios y cruces, publicación de horarios, notas, certificaciones modulares, títulos y verificación pública por código o DNI.
-- CV docente y autorización de publicación; perfiles profesionales y archivos CV de estudiantes/egresados; registro y validación institucional de empresas, ofertas, postulaciones y resultados.
-- Formularios públicos de contacto, suscripción, expedientes y reclamos; seguimiento con identificación del solicitante; documentos y evidencias compartidos entre equipos.
-- Avisos internos, visitas registradas por el servidor, respaldo SQL con archivos y actualizador protegido que conserva datos existentes.
+Se cubren los once perfiles del modelo, los veinticinco editores administrativos, páginas públicas y consultas, alumnos, horarios y cruces, notas, certificación modular, títulos, CV y perfiles profesionales, empresas, ofertas, postulaciones, contacto, suscripciones, reclamos, expedientes, seguimiento, aprobaciones, papelera, auditoría y respaldos.
 
-## Evidencia ejecutada
+## Pruebas reproducibles incluidas
 
-| Comprobación | Resultado |
+| Archivo en tests | Cobertura |
 |---|---|
-| Pruebas base del servidor | 31 aprobadas: instalación, autenticación, privacidad, CSRF, concurrencia, formularios y archivos |
-| Flujos y permisos del modelo | 51 aprobadas: los 11 perfiles; alcance por persona/programa/empresa; rechazo de cambios no autorizados; calificaciones; horarios; certificados; ofertas/postulaciones; CV; visitas |
-| Navegador | 115 comprobaciones aprobadas: módulos administrativos, los 25 editores, las 39 rutas públicas incluidas sus variantes de detalle, acceso por perfil, noticia compartida entre ventanas y franja móvil solo en Inicio; sin errores JavaScript |
-| Formularios con documentos | Expediente y reclamo enviados desde la interfaz con PDF real; descarga del adjunto recibido por el administrador; bytes idénticos |
-| Perfiles desde la interfaz | CV docente guardado y recargado; CV del alumno subido y recuperado desde MySQL |
-| Actualización del esquema anterior | Aplicada dos veces, conservando exactamente el contenido y los hashes de contraseña |
-| Actualizador web | Rechaza clave incorrecta y completa la actualización con la clave privada |
-| Respaldo SQL | Descargado desde la intranet y restaurado en una base distinta: 0 diferencias de contenido, cuentas y archivos; 4 archivos recuperados con sus mismos hashes |
+| run.php | 31 comprobaciones base: instalación, cuentas, sesiones, CSRF, formularios y archivos |
+| upgrade.php | Esquema antiguo actualizado dos veces; contenido y hashes de contraseña conservados |
+| parity.php | 51 comprobaciones de los once perfiles y flujos académicos, laborales y de publicación |
+| migration.php | 138 comprobaciones adicionales: CRUD de contenido, concurrencia por registro, programación de noticias, histórico, pruebas de formularios, respaldo y restauración con integridad |
+| academic-crud.php | 42 operaciones de maestros académicos, horarios y títulos, incluidas dependencias |
+| regressions.php | 11 comprobaciones de aprobación, inmutabilidad, fechas, avisos y permisos |
+| quality-lookups.php | 8 comprobaciones de detalle, anulación, privacidad, DNI y exclusión de certificados en papelera |
+| browser-crud.cjs | 50 operaciones reales de creación y edición desde los 25 editores, confirmadas contra el servidor |
+| browser-parity.cjs | 115 comprobaciones de navegación, 39 patrones de rutas públicas, perfiles, publicación entre ventanas y franja móvil solo en Inicio |
+| browser-profiles.cjs | Guardar y recargar CV docente y adjunto CV de alumno |
+| browser-workflows.cjs | Expediente y reclamo con PDF real, recepción y descarga con bytes idénticos; respaldo SQL |
+| browser-libraries.cjs | Excel, QR y PDF; reporte de 300 filas distribuido en varias páginas |
+| concurrency.cjs | 20 cambios simultáneos desde dos perfiles conservados sin pisar registros distintos |
+| browser-backups.cjs | Crear, descargar, subir y restaurar copia portable desde la interfaz; contenido recuperado, auditoría y programación |
+| browser-services.cjs | Respuestas a mensajes y reclamos, derivación y atención de expedientes, historial persistente al recargar |
+| browser-upgrade.cjs | Actualizador web: clave incorrecta rechazada y actualización con clave privada |
 
-La prueba general de navegación excluye recursos externos para aislar errores de la aplicación. Una prueba separada descarga las bibliotecas externas mediante TLS verificado y prueba generación de PDF, Excel y QR. No equivale a una revisión visual de todas las imágenes o a probar cada combinación posible de datos de producción.
+Las pruebas destructivas rechazan configuraciones que no sean de pruebas y una base cuyo nombre no termine en `_test`. Las credenciales sintéticas de esos scripts pertenecen exclusivamente a la base de pruebas; no se instalan como cuentas en producción.
 
-## Aplicación en Hostinger
+## Límites de la verificación
 
-Sigue `INSTRUCCIONES.md`. Conserva `portal-private/config.php` y la base existente. Sube ambas carpetas en su ubicación actual y ejecuta `/actualizar.php`; no ejecutes una reinstalación. Crea una copia independiente de archivos y base desde hPanel antes de actualizar.
+La batería comprueba los flujos descritos con datos controlados; no garantiza ausencia de cualquier fallo ni sustituye la revisión de datos institucionales reales. La configuración de PHP, los permisos de archivos, el cron y los límites de Hostinger deben comprobarse al desplegar allí. Las imágenes y mapas externos dependen de sus proveedores. Los archivos del antiguo prototipo que solo existían en el navegador requieren volver a adjuntarse.
 
-El tráfico comienza a medirse realmente desde esta versión; no se conservan cifras ficticias como visitas reales. Los datos de ejemplo del prototipo necesitan revisión institucional. Los archivos antiguos que solo estaban guardados en IndexedDB de una computadora no se pueden recuperar desde el servidor: deben volver a adjuntarse desde esa computadora.
+El correo saliente y la recuperación por correo quedan pendientes por indicación del usuario. Las respuestas, constancias y avisos internos se guardan realmente; no se simula el envío de correo. Consulta `INSTRUCCIONES.md` para actualizar conservando tu base, configuración y usuarios.
 
-El correo electrónico se omite por decisión del usuario. Las respuestas y constancias se guardan en el portal; no se simula su envío. Las cuentas existentes conservan su contraseña y su rol administrador; los demás perfiles se crean y vinculan a alumnos, docentes, programas o empresas reales desde Usuarios.
+## Control de calidad ampliado
+
+Consulta `CONTROL-CALIDAD.md` para el recorrido de enlaces, adaptación a pantallas pequeñas, fallos corregidos y pruebas adicionales de importación Excel, postulación laboral, formularios académicos, consultas y reintento de envíos. Los nuevos scripts se llaman `browser-quality*.cjs`.
+
+## Segunda revisión funcional
+
+Consulta `REVISION-PROFUNDA.md` para las correcciones posteriores, la matriz de los 38 módulos y las nuevas pruebas `deep-*.php` y `browser-deep-*.cjs`.

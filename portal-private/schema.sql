@@ -44,3 +44,20 @@ CREATE TABLE IF NOT EXISTS pisco_files (
     contents LONGBLOB NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS pisco_audit (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    occurred_at DATETIME(6) NOT NULL,
+    user_id BIGINT UNSIGNED NULL,
+    username VARCHAR(80) NOT NULL,
+    role VARCHAR(30) NOT NULL,
+    action VARCHAR(80) NOT NULL,
+    entity VARCHAR(100) NOT NULL,
+    record_key VARCHAR(250) NOT NULL,
+    details JSON NOT NULL,
+    INDEX (occurred_at), INDEX (entity,record_key), INDEX (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS pisco_settings (
+    setting_key VARCHAR(80) PRIMARY KEY,
+    setting_value JSON NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

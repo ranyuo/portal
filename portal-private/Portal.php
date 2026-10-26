@@ -14,10 +14,17 @@ require_once __DIR__.'/Policy.php';
 require_once __DIR__.'/Accounts.php';
 require_once __DIR__.'/Files.php';
 require_once __DIR__.'/Domain.php';
+require_once __DIR__.'/Forms.php';
+require_once __DIR__.'/Audit.php';
+require_once __DIR__.'/Backups.php';
+require_once __DIR__.'/Patch.php';
+require_once __DIR__.'/Rules.php';
+require_once __DIR__.'/Services.php';
+require_once __DIR__.'/Academic.php';
 
 final class PortalApp
 {
-    use PortalAccounts;
+    use PortalAccounts, PortalForms;
     private const PUBLIC_COLLECTIONS = ['__v', 'config', 'slides', 'enlaces', 'paginas', 'reconocimientos',
         'programas', 'personas', 'jerarquica', 'egresados', 'categoriasNoticia', 'noticias', 'eventos',
         'tiposDocumento', 'documentos', 'tupa', 'tupaDocs', 'estadisticas', 'licenciamiento', 'inversiones',
@@ -64,9 +71,15 @@ final class PortalApp
         return $this->connection;
     }
 
+    private static function publishedScholarship(array $row,array $data): bool
+    {
+        if(($row['deleted']??false)||($row['estado']??'')!=='Publicado')return false;
+        $period=PortalPolicy::find($data['becasPeriodos']??[],'id',$row['periodoId']??null);
+        return $period&&!($period['deleted']??false)&&in_array($period['estado']??'',['Abierto','Cerrado','Vigente','Publicado'],true);
+    }
     private function publicData(array $data): array
     {
-        $scholarships=$data['becarios']??[];
+        $scholarships=array_values(array_filter($data['becarios']??[],fn($row)=>self::publishedScholarship($row,$data)));
             $data = array_intersect_key($data, array_flip(self::PUBLIC_COLLECTIONS));
             foreach (self::PRIVATE_COLLECTIONS as $key) {
                 $data[$key] = [];
@@ -74,15 +87,17 @@ final class PortalApp
             foreach ($data as $key => $value) {
                 if (is_array($value) && array_is_list($value)) {
                     $data[$key] = array_values(array_filter($value, fn ($row) => ! is_array($row)
-                        || (! ($row['deleted'] ?? false) && (! isset($row['estado']) || in_array($row['estado'], ['Publicado', 'Publicada', 'Activo', 'Vigente', 'Abierto', 'Cerrado'])))));
+                        || (! ($row['deleted'] ?? false) && (! isset($row['estado']) || in_array($row['estado'], ($key==='documentos'?['Publicado','Histórico']:['Publicado', 'Publicada', 'Activo', 'Vigente', 'Abierto', 'Cerrado']))))));
                 }
             }
+            // La fecha de publicación se aplica en el servidor, también a los adjuntos.
+            $data['noticias']=array_values(array_filter($data['noticias']??[],fn($row)=>!empty($row['fecha'])&&strtotime($row['fecha'])!==false&&strtotime($row['fecha'])<=time()));
             $data['personas'] = array_map(function ($person) {
                 foreach (['dni', 'numDoc', 'direccion', 'fechaNacimiento', 'correoPersonal', 'telefonoPersonal'] as $key) {
                     unset($person[$key]);
                 }
                 if (isset($person['cv'])) {
-                    if (! ($person['cv']['autoriza']['ok'] ?? false)) {
+                    if (($person['cv']['autoriza']['ok'] ?? false)!==true) {
                         unset($person['cv']);
                     } else {
                         foreach (['dni', 'nacimiento', 'fnac', 'sexo', 'direccion', 'domicilio', 'correoPersonal', 'celular', 'huella', 'docs'] as $key) {
@@ -117,6 +132,7 @@ final class PortalApp
         try{$full['visitas']=$this->db()->query('SELECT visit_day,views FROM pisco_visits')->fetchAll(PDO::FETCH_KEY_PAIR);}catch(PDOException $e){if($e->getCode()!=='42S02')throw $e;$full['visitas']=[];}
         $data=PortalPolicy::project($full,$user,$this->publicData($full));
         $data['usuarios']=$this->visibleAccounts($user,$full);
+        if($user&&$user['rol']==='admin'){$data['auditoria']=[...PortalAudit::rows($this),...PortalAudit::legacy($this,$full)];$data['academico']['bitacora']=array_map(fn($r)=>['id'=>$r['id'],'f'=>$r['fecha'],'u'=>$r['usuario'],'a'=>$r['accion'],'m'=>$r['entidad'],'d'=>$r['registro'].' · '.$r['detalle']],PortalAudit::rows($this));}
         return ['data'=>$data,'revision'=>(int)$state['revision'],'user'=>$user,'csrf'=>$_SESSION['csrf'],'schema_version'=>PortalSchema::VERSION];
     }
     public function input(): array
@@ -130,6 +146,7 @@ final class PortalApp
             throw new PortalError(422, 'La solicitud no contiene JSON válido.');
         }
         if (!is_array($input)) throw new PortalError(422, 'Solicitud no válida.');
+        PortalRules::structure($input);
         return $input;
     }
 
@@ -143,6 +160,7 @@ final class PortalApp
     public function user(): ?array
     {
         if(empty($_SESSION['user_id']))return null;
+        if(!isset($_SESSION['auth_version'])){unset($_SESSION['user_id']);return null;}
         $statement=$this->db()->prepare('SELECT * FROM pisco_users WHERE id=? AND active=1');$statement->execute([$_SESSION['user_id']]);$user=$statement->fetch();
         if(!$user){unset($_SESSION['user_id']);return null;}
         if(isset($_SESSION['auth_version'])&&(int)$_SESSION['auth_version']!==(int)($user['auth_version']??1)){unset($_SESSION['user_id'],$_SESSION['auth_version']);return null;}
@@ -157,12 +175,20 @@ final class PortalApp
     {
         $state = $this->db()->query('SELECT data, revision FROM pisco_state WHERE id = 1'.($lock ? ' FOR UPDATE' : ''))->fetch();
         if (!$state) throw new PortalError(503, 'Completa la instalación en /install.php.');
+        $state['data']=json_encode($this->normalizeDates(json_decode($state['data'],true,flags:JSON_THROW_ON_ERROR)),JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE);
         return $state;
+    }
+
+    private function normalizeDates(array $data): array
+    {
+        foreach(['noticias','eventos'] as $key)foreach($data[$key]??[] as $i=>$r)if(!empty($r['fecha'])){try{$data[$key][$i]['fecha']=(new DateTimeImmutable($r['fecha'],new DateTimeZone($this->config['timezone']??'America/Lima')))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.v\Z');}catch(Exception){}}
+        return $data;
     }
 
     private function transaction(callable $operation): array
     {
         $db = $this->db();
+        $sessionBefore=$_SESSION;
         $db->beginTransaction();
         try {
             $result = $operation();
@@ -170,6 +196,7 @@ final class PortalApp
             return $result;
         } catch (Throwable $error) {
             if ($db->inTransaction()) $db->rollBack();
+            $_SESSION=$sessionBefore;
             throw $error;
         }
     }
@@ -177,7 +204,7 @@ final class PortalApp
     private function updateState(array $data, int $revision): void
     {
         $statement = $this->db()->prepare('UPDATE pisco_state SET data = ?, revision = ? WHERE id = 1');
-        $statement->execute([json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $revision]);
+        $statement->execute([json_encode($this->normalizeDates($data), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $revision]);
     }
 
     private function rate(string $action, int $limit, int $seconds): void
@@ -201,25 +228,29 @@ final class PortalApp
     public function login(array $input): array
     {
         $input=self::validate($input,['username'=>'required|string|max:80','password'=>'required|string|max:72']);$username=strtolower(trim($input['username']));
-        $this->rate('login:'.$username,5,300);
+        $this->rate('login',60,60);
         $db=$this->db();$db->beginTransaction();
         try{
             $stmt=$db->prepare('SELECT * FROM pisco_users WHERE username=? AND active=1 FOR UPDATE');$stmt->execute([$username]);$row=$stmt->fetch();
             if($row&&!empty($row['locked_until'])&&strtotime($row['locked_until'])>time()){$db->commit();throw new PortalError(423,'Cuenta bloqueada por intentos fallidos. Espera cinco minutos o solicita el desbloqueo.');}
             $ok=password_verify($input['password'],$row['password']??'$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.');
+            if(isset($input['role'])&&(!is_string($input['role'])||$input['role']!==($row['role']??'')))$ok=false;
             if(!$row||!$ok){
                 if($row){$failures=(int)($row['login_failures']??0)+1;$locked=$failures>=5?date('Y-m-d H:i:s',time()+300):null;
                     $db->prepare('UPDATE pisco_users SET login_failures=?,locked_until=? WHERE id=?')->execute([$locked?0:$failures,$locked,$row['id']]);}
+                PortalAudit::write($this,'Intento de acceso fallido','Cuentas',$username,['bloqueada'=>isset($locked)&&$locked?'sí':'no'],['usuario'=>'visitante','rol'=>'publico']);
                 $db->commit();throw new PortalError(422,'Usuario o contraseña incorrectos.');
             }
             if(password_needs_rehash($row['password'],PASSWORD_DEFAULT))$db->prepare('UPDATE pisco_users SET password=? WHERE id=?')->execute([password_hash($input['password'],PASSWORD_DEFAULT),$row['id']]);
             $db->prepare('UPDATE pisco_users SET login_failures=0,locked_until=NULL,last_login=? WHERE id=?')->execute([date('Y-m-d H:i:s'),$row['id']]);$db->commit();
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+        PortalAudit::write($this,'Iniciar sesión','Cuentas',(string)$row['id'],[], $this->accountDto($row));
         session_regenerate_id(true);$_SESSION['user_id']=(int)$row['id'];$_SESSION['auth_version']=(int)($row['auth_version']??1);$_SESSION['csrf']=bin2hex(random_bytes(32));return ['ok'=>true];
     }
 
     public function logout(): array
     {
+        if($this->user())PortalAudit::write($this,'Cerrar sesión','Cuentas',(string)$this->user()['server_id']);
         $_SESSION = [];
         session_regenerate_id(true);
         $_SESSION['csrf'] = bin2hex(random_bytes(32));
@@ -229,24 +260,31 @@ final class PortalApp
     public function save(array $input): array
     {
         $user=$this->requireUser();$this->rate('save',120,60);
-        if(!isset($input['revision'],$input['data'])||!is_int($input['revision'])||!is_array($input['data']))throw new PortalError(422,'Contenido o revisión no válidos.');
+        if(!isset($input['revision'])||!is_int($input['revision'])||(!isset($input['patch'])&&!is_array($input['data']??null)))throw new PortalError(422,'Contenido o revisión no válidos.');
         return $this->transaction(function()use($input,$user){
-            $state=$this->state(true);$user=$this->requireUser();if((int)$state['revision']!==$input['revision'])throw new PortalError(409,'Otra persona guardó cambios. Recarga la página antes de continuar.');
+            $state=$this->state(true);$user=$this->requireUser();if(!isset($input['patch'])&&(int)$state['revision']!==$input['revision'])throw new PortalError(409,'Otra persona guardó cambios. Recarga la página antes de continuar.');
             $previous=json_decode($state['data'],true,flags:JSON_THROW_ON_ERROR);
             foreach($input['data']['usuarios']??[] as $account)if(!is_array($account)||isset($account['passHash'],$account['password'])||isset($account['passHash'])||isset($account['password']))throw new PortalError(422,'Las contraseñas se gestionan mediante el servicio de cuentas.');
             $visible=PortalPolicy::project($previous,$user,$this->publicData($previous));$visible['usuarios']=$this->visibleAccounts($user,$previous);
-            $data=PortalPolicy::apply($previous,$visible,$input['data'],$user);
+            $incoming=isset($input['patch'])?PortalPatch::apply($visible,$input['patch']):$input['data'];
+            $data=PortalPolicy::apply($previous,$visible,$incoming,$user);
+            PortalRules::structure($data);
             $ops=$input['accounts']??[];if(!is_array($ops)||count($ops)>100)throw new PortalError(422,'Operaciones de cuentas no válidas.');
             foreach($ops as $operation){if(!is_array($operation))throw new PortalError(422,'Cuenta no válida.');$this->accountOperation($operation);}
             $aliases=[];$data=PortalFiles::persist($this,$data,$aliases,0,$previous);
-            PortalDomain::validate($previous,$data,$user);PortalDomain::syncCertificates($data);
+            PortalServices::apply($previous,$data,$user);PortalRules::apply($previous,$data,$user);PortalRules::catalogs($data);
+            PortalAcademic::validate($previous,$data);
+            PortalDomain::validate($previous,$data,$user);PortalDomain::syncCertificates($data);$this->validateBindings($data);
             $allAccounts=array_map($this->accountDto(...),$this->db()->query('SELECT * FROM pisco_users')->fetchAll());
             PortalDomain::notifications($previous,$data,$allAccounts);
             $data['usuarios']=[];$data['__v']=13;$data['visitas']=$previous['visitas']??[];
             $changed=[];foreach($data as $key=>$value)if(!PortalPolicy::equal($value,$previous[$key]??null))$changed[]=$key;
-            $data['auditoria']=array_slice([['id'=>bin2hex(random_bytes(16)),'fecha'=>date(DATE_ATOM),'usuario'=>$user['usuario'],'rol'=>$user['rol'],'accion'=>'Guardado en servidor','entidad'=>'Portal','registro'=>'Revisión '.((int)$state['revision']+1),'detalle'=>implode(', ',$changed)],...($previous['auditoria']??[])],0,1500);
+            PortalAudit::changes($this,$previous,$data,$user);
+            $data['auditoria']=$previous['auditoria']??[];
             $this->updateState($data,(int)$state['revision']+1);
+            $data=$this->normalizeDates($data);
             $projected=PortalPolicy::project($data,$this->user(),$this->publicData($data));
+            if($this->user()&&$this->user()['rol']==='admin'){$projected['auditoria']=[...PortalAudit::rows($this),...PortalAudit::legacy($this,$data)];$projected['academico']['bitacora']=array_map(fn($r)=>['id'=>$r['id'],'f'=>$r['fecha'],'u'=>$r['usuario'],'a'=>$r['accion'],'m'=>$r['entidad'],'d'=>$r['registro'].' · '.$r['detalle']],PortalAudit::rows($this));}
             return ['revision'=>(int)$state['revision']+1,'user'=>$this->user(),'users'=>$this->visibleAccounts($this->user(),$data),'normalized'=>$projected,'files'=>array_values($aliases)];
         });
     }
@@ -263,7 +301,9 @@ final class PortalApp
     }
     public function upload(): array
     {
-        $this->rate('uploads',30,60);$file=$_FILES['file']??null;
+        $this->rate('uploads',30,60);
+        if(!$this->user()){try{$proof=json_decode(is_string($_POST['proof']??null)?$_POST['proof']:'',true,flags:JSON_THROW_ON_ERROR);}catch(JsonException){throw new PortalError(422,'Verifica el formulario antes de subir adjuntos.');}$purpose=$_POST['purpose']??'';if(!in_array($purpose,['expedientes','reclamos'],true))throw new PortalError(422,'Formulario de adjuntos no válido.');$this->submissionProof($purpose,['proof'=>$proof,'idempotency_key'=>'upload']);}
+        $file=$_FILES['file']??null;
         if(!is_array($file)||($file['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK||!is_uploaded_file($file['tmp_name']))throw new PortalError(422,'No se pudo recibir el archivo. Revisa los límites de tamaño de PHP.');
         if((int)$file['size']>40*1024*1024)throw new PortalError(413,'Máximo 40 MB por archivo.');
         return ['file'=>PortalFiles::store($this,$file['name'],file_get_contents($file['tmp_name']))];
@@ -271,6 +311,7 @@ final class PortalApp
     public function registerCompany(array $input): array
     {
         $this->rate('company-registration',5,300);
+        if(($input['declaration']??false)!==true)throw new PortalError(422,'Debes aceptar la declaración de registro y el tratamiento de datos.');
         $r=self::validate($input,['ruc'=>'required|string|max:11','nom'=>'required|string|max:200','sector'=>'required|string|max:100','ubic'=>'required|string|max:200','dir'=>'required|string|max:300','contacto'=>'required|string|max:150','cargoC'=>'required|string|max:150','correo'=>'required|email|max:254','tel'=>'required|string|max:30','web'=>'nullable|string|max:300','password'=>'required|string|min:12|max:72']);
         if(!preg_match('/^(10|15|17|20)[0-9]{9}$/',$r['ruc']))throw new PortalError(422,'RUC no válido.');
         $weights=[5,4,3,2,7,6,5,4,3,2];$sum=0;foreach($weights as $i=>$w)$sum+=(int)$r['ruc'][$i]*$w;$digit=11-$sum%11;if($digit===10)$digit=0;if($digit===11)$digit=1;
@@ -280,10 +321,28 @@ final class PortalApp
             if(PortalPolicy::find($data['academico']['empresas'],'ruc',$r['ruc']))throw new PortalError(422,'Ya existe una empresa con ese RUC.');
             $id=max([0,...array_column($data['academico']['empresas'],'id')])+1;
             $company=[...array_diff_key($r,['password'=>1]),'id'=>$id,'validada'=>false,'estadoVal'=>'Pendiente','fechaReg'=>date('Y-m-d')];
-            $data['academico']['empresas'][]=$company;$this->updateState($data,(int)$state['revision']+1);
+            $data['academico']['empresas'][]=$company;PortalDomain::staff($data,'Empresa pendiente de validación: '.$company['nom'],'bolsa');$this->updateState($data,(int)$state['revision']+1);
+            PortalAudit::write($this,'Registrar empresa','academico.empresas',(string)$id);
             $this->createAccount(['username'=>$r['ruc'],'name'=>$r['nom'],'email'=>$r['correo'],'password'=>$r['password'],'role'=>'empresa','vin'=>'emp:'.$id,'dni'=>$r['ruc']],false);
             return ['company'=>$company,'username'=>$r['ruc'],'revision'=>(int)$state['revision']+1];
         });
+    }
+    public function interfaceEvent(array $input): array
+    {
+        $this->requireUser();$this->rate('events',120,60);
+        $action=$input['action']??'';if(!in_array($action,['Exportar','Vista previa'],true))throw new PortalError(422,'Evento no permitido.');
+        $filename=$input['filename']??'';if(!is_string($filename)||strlen($filename)>200)throw new PortalError(422,'Nombre de archivo no válido.');
+        PortalAudit::write($this,$action,'Interfaz',$filename,['origen'=>'Solicitud desde la interfaz','bytes'=>max(0,(int)($input['size']??0))]);return ['ok'=>true];
+    }
+    private function validateBindings(array $data): void
+    {
+        foreach($this->db()->query('SELECT username,role,profile FROM pisco_users WHERE active=1')->fetchAll() as $row){$p=json_decode($row['profile']??'{}',true)??[];$target=null;
+            if(in_array($row['role'],['estudiante','egresado'],true))$target=PortalPolicy::find($data['academico']['estudiantes'],'id',PortalPolicy::binding($p,'est'));
+            elseif($row['role']==='empresa')$target=PortalPolicy::find($data['academico']['empresas'],'id',PortalPolicy::binding($p,'emp'));
+            elseif($row['role']==='docente'){$target=PortalPolicy::find($data['academico']['docentes'],'id',PortalPolicy::binding($p,'doc'));$person=PortalPolicy::find($data['personas'],'id',$p['personaId']??'');if(!$person||($person['deleted']??false))$target=null;}
+            elseif($row['role']==='coordinador')$target=PortalPolicy::find($data['programas'],'id',$p['programaId']??'');else continue;
+            if(!$target||($target['deleted']??false))throw new PortalError(422,'El registro está vinculado a la cuenta activa '.$row['username'].'. Desactiva o cambia su vínculo antes de eliminarlo.');
+        }
     }
     public function installed(): bool
     {
@@ -361,6 +420,7 @@ final class PortalApp
         if (!is_string($input['idempotency_key'] ?? null) || !preg_match('/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i', $input['idempotency_key']) || !is_array($input['record'] ?? null)) {
             throw new PortalError(422, 'Solicitud no válida.');
         }
+        $this->submissionProof($type,$input);
         $record = self::validate($input['record'], self::RULES[$type]);
         if (!empty($record['archivos'])) {
             $record['archivos'] = array_map($this->validateFile(...), $record['archivos']);
@@ -372,9 +432,10 @@ final class PortalApp
         return $this->transaction(function () use ($record, $type, $input) {
             $state = $this->state(true);
             $data = json_decode($state['data'], true, flags: JSON_THROW_ON_ERROR);
+            $record=$this->formDomain($type,$record,$data);
             $id = hash('sha256', session_id().'|'.$type.'|'.$input['idempotency_key']);
             foreach ($data[$type] ?? [] as $existing) {
-                if (($existing['id'] ?? null) === $id) return ['record' => $existing, 'status' => 200];
+                if (($existing['id'] ?? null) === $id) { $_SESSION['challenges'][$input['proof']['challenge_id']]['used_key']=$input['idempotency_key'];return ['record' => $existing, 'status' => 200,'revision'=>(int)$state['revision'],'counters'=>$this->user()?($data['config']['contadores']??[]):null]; }
             }
             $record['id'] = $id;
             $record['fecha'] = date(DATE_ATOM);
@@ -385,12 +446,14 @@ final class PortalApp
                 $count = (int)($data['config']['contadores']['RCL'][$year] ?? 0) + 1;
                 $data['config']['contadores']['RCL'][$year] = $count;
                 $record['codigo'] = sprintf('RCL-%s-%05d', $year, $count);
+                do { $record['cargoCod'] = strtoupper(bin2hex(random_bytes(8))); }
+                while (PortalPolicy::find($data['reclamos'], 'cargoCod', $record['cargoCod']) !== null);
                 preg_match('/^.{0,80}/us', $record['descripcion'], $prefix); $record['asunto'] = $prefix[0] ?? '';
                 $cfg = $data['config']['lr'];
                 $days = (int)($cfg[$record['tipo'] === 'Queja' ? 'plazoQueja' : 'plazoReclamo'] ?? 15);
                 $record += ['plazoDias' => $days, 'vence' => $this->deadline($days, $data)->format(DATE_ATOM),
                     'responsable' => ['nombre' => $cfg['responsable'], 'cargo' => $cfg['cargo'], 'correo' => $cfg['correo']],
-                    'area' => '', 'notas' => [], 'respuesta' => '', 'notifInst' => 'Pendiente', 'notifUser' => 'Pendiente', 'anulado' => false];
+                    'area' => '', 'notas' => [], 'respuesta' => '', 'notifInst' => 'Omitido', 'notifUser' => 'Omitido', 'anulado' => false];
             }
             if ($type === 'expedientes') {
                 foreach (['MPV', 'DOC'] as $counter) {
@@ -399,7 +462,8 @@ final class PortalApp
                 $cfg = $data['config']['mpv'];
                 $record['numero'] = sprintf('%s-%s-%06d', $cfg['prefijo'], $year, $data['config']['contadores']['MPV'][$year]);
                 $record['numDocumento'] = sprintf('DOC-%s-%06d', $year, $data['config']['contadores']['DOC'][$year]);
-                $record['cargoCod'] = strtoupper(bin2hex(random_bytes(16)));
+                do { $record['cargoCod'] = strtoupper(bin2hex(random_bytes(8))); }
+                while (PortalPolicy::find($data['expedientes'], 'cargoCod', $record['cargoCod']) !== null);
                 $received = new DateTimeImmutable();
                 $business = fn ($date) => (int)$date->format('N') < 6 && !in_array($date->format('Y-m-d'), $cfg['feriados'] ?? [], true);
                 $inHours = $business($received) && $received->format('H:i') >= $cfg['horaIni'] && $received->format('H:i') <= $cfg['horaFin'];
@@ -411,15 +475,18 @@ final class PortalApp
                     $received = $received->setTime((int)$hour, (int)$minute);
                 }
                 $record += ['fechaRecepcion' => $received->format(DATE_ATOM), 'enHorario' => $inHours,
-                    'usuarioRegistro' => 'Ciudadano – portal web', 'canal' => 'Mesa de Partes Virtual',
+                    'usuarioRegistro' => $this->user()['nombre']??'Ciudadano – portal web', 'canal' => 'Mesa de Partes Virtual',
                     'area' => 'MP', 'archivo' => $record['archivos'][0]];
             }
             if (in_array($type, ['reclamos', 'expedientes'], true)) {
                 $record['historial'] = [['fecha' => $record['fecha'], 'usuario' => 'portal', 'estado' => 'Recibido', 'nota' => 'Registro recibido desde el portal.']];
             }
             $data[$type] = [$record, ...($data[$type] ?? [])];
+            if(in_array($type,['mensajes','reclamos','expedientes'],true))PortalDomain::staff($data,'Nuevo registro: '.($record['codigo']??$record['numero']??$record['asunto']??$type),$type==='expedientes'?'mesa':$type);
             $this->updateState($data, (int)$state['revision'] + 1);
-            return ['record' => $record, 'status' => 201];
+            PortalAudit::write($this,'Registrar solicitud',$type,$record['codigo']??$record['numero']??$id);
+            $_SESSION['challenges'][$input['proof']['challenge_id']]['used_key']=$input['idempotency_key'];
+            return ['record' => $record, 'status' => 201,'revision'=>(int)$state['revision']+1,'counters'=>$this->user()?($data['config']['contadores']??[]):null];
         });
     }
 
@@ -429,22 +496,31 @@ final class PortalApp
         $this->rate('lookups', 10, 60);
         $input = self::validate($input, ['reference' => 'required|string|max:150', 'document' => (in_array($type,['certificados','becarios'],true) ? 'nullable' : 'required').'|string|max:50', 'mode' => 'nullable|string|max:10']);
         $data = json_decode($this->state()['data'], true, flags: JSON_THROW_ON_ERROR);
+        if (!in_array($input['mode'] ?? '', ['', 'codigo', 'dni'], true)) throw new PortalError(422, 'Modo de consulta no válido.');
+        if ($type === 'certificados' && ($input['mode'] ?? '') === 'dni' && !preg_match('/^[0-9]{8}$/', $input['reference'])) throw new PortalError(422, 'El DNI debe tener ocho dígitos.');
         if ($type === 'becarios') {
             if(!preg_match('/^[0-9]{8}$/',$input['reference']))throw new PortalError(422,'DNI no válido.');
-            $matches=[];foreach($data['becarios']??[] as $r)if(!($r['deleted']??false)&&($r['estado']??'')==='Publicado'&&($r['dni']??'')===$input['reference']){$r=array_intersect_key($r,array_flip(['id','periodoId','apellidos','nombres','programaId','tipoId','motivo','estado','dni']));$r['dni']='****'.substr($r['dni'],-4);$matches[]=$r;}return ['records'=>$matches];
+            $matches=[];foreach($data['becarios']??[] as $r)if(self::publishedScholarship($r,$data)&&($r['dni']??'')===$input['reference']){$r=array_intersect_key($r,array_flip(['id','periodoId','apellidos','nombres','programaId','tipoId','motivo','estado','dni']));$r['dni']='****'.substr($r['dni'],-4);$matches[]=$r;}return ['records'=>$matches];
         }
         if ($type === 'certificados' && ($input['mode'] ?? '') === 'dni') {
-            $matches=[]; foreach ($data['certificados']??[] as $r) if (($r['dni']??'')===$input['reference']) $matches[]=array_intersect_key($r,array_flip(['id','codigo','nombres','programaId','tipo','detalle','fecha','estado','origen','motivo']));
+            $matches=[]; foreach ($data['certificados']??[] as $r) if (!($r['deleted']??false) && ($r['dni']??'')===$input['reference']) $matches[]=array_intersect_key($r,array_flip(['id','codigo','nombres','programaId','tipo','detalle','fecha','estado','origen','motivo']));
             return ['records'=>$matches];
         }
+        if ($type === 'reclamos') {
+            $input['reference']=strtoupper(trim($input['reference']));$input['document']=strtoupper(trim($input['document']));
+            if (!preg_match('/^[A-Z0-9-]{6,20}$/D',$input['document'])) throw new PortalError(422,'Ingresa el documento completo del reclamante (DNI de 8 dígitos, no el número de folios) o el código de verificación de 16 caracteres.');
+        }
+        $claimReference=fn($value)=>preg_replace('/^(RCL|LR)-(\d{4})-0*(\d+)$/i','$1-$2-$3',strtoupper(trim((string)$value)));
         $field = $type === 'expedientes' ? 'numero' : 'codigo';
         foreach ($data[$type] ?? [] as $record) {
-            if (strtoupper($record[$field] ?? '') !== strtoupper($input['reference'])) continue;
-            if ($type !== 'certificados' && !hash_equals((string)($record['numDoc'] ?? ''), $input['document'])
+            if ($record['deleted'] ?? false) continue;
+            if ($type==='reclamos' ? $claimReference($record[$field]??'')!==$claimReference($input['reference']) : strtoupper($record[$field] ?? '') !== strtoupper($input['reference'])) continue;
+            $recordDocument=(string)($record['numDoc']??'');if($type==='reclamos')$recordDocument=strtoupper(trim($recordDocument));
+            if ($type !== 'certificados' && !hash_equals($recordDocument, $input['document'])
                 && (empty($record['cargoCod']) || !hash_equals($record['cargoCod'], strtoupper($input['document'])))) continue;
             foreach (['archivos', 'archivo', 'adjunto', 'notas', 'notaInterna', 'correo', 'telefono', 'direccion', 'usuarioRegistro'] as $key) unset($record[$key]);
             if ($type === 'certificados') {
-                $record = array_intersect_key($record, array_flip(['id', 'codigo', 'nombres', 'programaId', 'tipo', 'fecha', 'estado', 'origen']));
+                $record = array_intersect_key($record, array_flip(['id', 'codigo', 'nombres', 'programaId', 'tipo', 'detalle', 'fecha', 'estado', 'origen', 'motivo']));
             } else {
                 $record['historial'] = array_map(fn ($item) => array_intersect_key($item, array_flip(['fecha', 'estado'])), $record['historial'] ?? []);
             }

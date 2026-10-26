@@ -1572,10 +1572,10 @@ a.db-kpi:hover{transform:translateY(-3px);box-shadow:var(--sh2);border-color:var
 .toast.warn{border-left-color:#fbbf24}
 
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
+<script src="/assets/vendor/jspdf.umd.min.js" defer></script>
+<script src="/assets/vendor/jspdf.plugin.autotable.min.js" defer></script>
+<script src="/assets/vendor/xlsx.full.min.js" defer></script>
+<script src="/assets/vendor/qrcode.min.js" defer></script>
 <style id="pisco-css">
 /* ===== Portal Web IESTP "Pisco" 2026: módulos del informe N.º 009-2026 ===== */
 .pz-h2{font-size:18px;margin:18px 0 10px;color:var(--hc)}
@@ -2021,9 +2021,10 @@ tr.pz-bad td{background:var(--errbg)}
 .pz-bl-reg{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .pz-bl-e2h{display:flex;gap:12px;align-items:flex-start;padding:16px 18px;background:var(--sky);border-bottom:1px solid var(--line)}
 .pz-bl-e2h>svg{flex:none;color:var(--link);margin-top:2px}.pz-bl-e2h b{display:block;font-size:16px}.pz-bl-e2h span{font-size:13.5px;color:var(--muted)}
+.pz-bl-ix{min-width:0;overflow-wrap:anywhere}
 .pz-bl-ix .ix .tabs{display:none}
 .pz-bl-ix .ix .panel{border:0;box-shadow:none;margin:0}
-.pz-bl-side{display:grid;gap:12px}
+.pz-bl-side{display:grid;gap:12px;min-width:0;overflow-wrap:anywhere}
 .pz-bl-side section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
 .pz-bl-side h3{display:flex;gap:8px;align-items:center;font-size:15px;margin:0 0 8px}.pz-bl-side h3::after{display:none}.pz-bl-side h3 svg{color:var(--link)}
 .pz-bl-side p{font-size:13.5px;margin:0 0 10px;text-align:left}
@@ -2202,7 +2203,7 @@ function seed(){ throw new Error('Los datos académicos se inicializan en PHP y 
 let DB = HOST.loadAcad();
 if(!DB || DB.v !== 3){ DB = seed(); DB.progMap = {apsti:1, cont:2, pa:3, enf:4}; }
 rebuildSlots();
-function save(){ HOST.saveAcad(DB) }
+function save(){ return HOST.saveAcad(DB) }
 
 /* ---------- estado de la interfaz ---------- */
 const S = { user:null, view:"inicio", tab:{}, q:{}, last:{}, mode:"login", pubTab:"titulos", ui:{} };
@@ -2288,10 +2289,10 @@ const FUENTES = [
 const TAMANOS = [["s","Pequeño","14px"],["m","Normal","15px"],["l","Grande","16.5px"]];
 const AP_DEF = {tema:"ica", fuente:"moderna", tam:"m", logo:"", titulo:"Intranet Pisco"};
 const ap = () => { let a = null; try{ a = DB && DB.cfg && DB.cfg.ap }catch(e){} return Object.assign({}, AP_DEF, a || {}) };
-function setDocs(patch, msg){ if(lvl("config") < 2) return; DB.cfg.docs = Object.assign(docCfg(), patch); log("Configurar documentos","Configuración",Object.keys(patch).join(", ")); save(); if(msg) toast(msg); render() }
+function setDocs(patch, msg){ if(lvl("config") < 2) return; DB.cfg.docs = Object.assign(docCfg(), patch); log("Configurar documentos","Configuración",Object.keys(patch).join(", ")); if(!save())return false; if(msg) toast(msg); render() }
 function applyAp(){ /* la apariencia la define el portal (Temas y apariencia) */ }
 const sealHtml = (cls) => { const a = ap(); return a.logo ? `<div class="seal logo ${cls||""}"><img src="${esc(a.logo)}" alt="Logo de ${esc(DB.cfg.siglas)}"></div>` : `<div class="seal ${cls||""}">IESTP<br>PISCO</div>` };
-function setAp(patch, msg){ DB.cfg.ap = Object.assign(ap(), patch); applyAp(); save(); if(msg) toast(msg); render() }
+function setAp(patch, msg){ DB.cfg.ap = Object.assign(ap(), patch); applyAp(); if(!save())return false; if(msg) toast(msg); render() }
 const lvl = m => S.user ? ((DB.perms[S.user.rol]||{})[m] || 0) : 0;
 const R = () => S.user ? S.user.rol : "pub";
 const vin = () => { const v = (S.user && S.user.vin || "").split(":"); return {t:v[0], id:+v[1]||0} };
@@ -2394,16 +2395,17 @@ function openModal({title, body, wide, submit, onSubmit, foot, danger, onOpen}){
     <div class="mb">${body}</div>
     <footer>${foot || ""}<button type="button" class="btn sec" data-mclose="1">${onSubmit ? "Cancelar" : "Cerrar"}</button>${onSubmit ? `<button type="submit" class="btn ${danger ? "danger" : ""}">${submit || "Guardar"}</button>` : ""}</footer></form></div>`;
   const f = $("#mform .mb input:not([readonly]):not([type=checkbox]):not([type=file]), #mform .mb select, #mform .mb textarea");
-  setTimeout(() => { const el = f && f.isConnected ? f : $("#mform .x"); if(el) el.focus() }, 30);
+  const modal = $("#mform");
+  setTimeout(() => { if(!modal || !modal.isConnected || modal !== $("#mform") || modal.contains(document.activeElement)) return; const el = f && f.isConnected ? f : modal.querySelector(".x"); if(el) el.focus() }, 30);
   if(onOpen) onOpen($("#mform"));
 }
 function closeModal(){ const m = $("#ixmodal"); if(m) m.innerHTML = ""; MODAL = null }
-function confirmBox(title, msg, label, fn){ openModal({title, body:`<p>${msg}</p>`, submit:label || "Confirmar", danger:true, onSubmit:() => { fn(); return true }}) }
+function confirmBox(title, msg, label, fn){ openModal({title, body:`<p>${msg}</p>`, submit:label || "Confirmar", danger:true, onSubmit:() => fn() !== false}) }
 
 /* ---------- CRUD genérico ---------- */
 const ENT = {};
 function crudForm(ek, row, defaults){
-  const E = ENT[ek], fields = E.fields(row);
+  const E = ENT[ek], fields = E.fields(row);if(ek==='programas'&&row?.pid)for(const f of fields)if(['cod','nombre'].includes(f.k)){f.ro=true;f.hint='Se administra desde Programas de estudio del portal.';}
   if(!row && !defaults && E.defaults) defaults = E.defaults();
   const base = row || defaults || {};
   openModal({ title:(row ? "Editar " : "Nuevo ") + E.one, wide:E.wide, body:`<div class="f">${fields.map(f => fieldHtml(f, base[f.k])).join("")}</div>${E.formNote ? `<p class="note">${E.formNote}</p>` : ""}`,
@@ -2412,9 +2414,9 @@ function crudForm(ek, row, defaults){
       const {vals, errs} = readFields(fields, form, DB[E.col], row && row.id);
       if(E.check){ const extra = E.check(vals, row); Object.assign(errs, extra || {}) }
       if(!showErrs(form, errs)) return false;
-      if(row){ Object.assign(row, vals); E.after && E.after(row, false); log("Editar", E.mod, E.label(row)); toast(`Cambios guardados: ${E.label(row)}.`) }
-      else { const r = Object.assign({id:nextId(DB[E.col])}, defaults || {}, vals); DB[E.col].push(r); E.after && E.after(r, true); log("Registrar", E.mod, E.label(r)); toast(`Registro creado: ${E.label(r)}.`) }
-      save(); return true;
+      if(row){ Object.assign(row, vals); E.after && E.after(row, false); log("Editar", E.mod, E.label(row)); }
+      else { const r = Object.assign({id:nextId(DB[E.col])}, defaults || {}, vals); DB[E.col].push(r); E.after && E.after(r, true); log("Registrar", E.mod, E.label(r)); }
+      if(!save())return false; toast("Cambios guardados en el servidor.");return true;
     }});
 }
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -2441,7 +2443,7 @@ function crudDelete(ek, id){
   const block = E.refs && E.refs(row);
   if(block){ openModal({title:"No se puede eliminar", body:`<div class="alert warn">${block}</div><p class="note">Para mantener la integridad de la información, primero reasigne o elimine los registros relacionados.</p>`}); return }
   confirmBox(`Eliminar ${E.one}`, `Se eliminará <b>${esc(E.label(row))}</b>. Esta acción no se puede deshacer.`, "Eliminar", () => {
-    DB[E.col] = DB[E.col].filter(r => r.id !== row.id); E.afterDel && E.afterDel(row); log("Eliminar", E.mod, E.label(row)); save(); toast(`Registro eliminado: ${E.label(row)}.`); render();
+    DB[E.col] = DB[E.col].filter(r => r.id !== row.id); E.afterDel && E.afterDel(row); log("Eliminar", E.mod, E.label(row)); if(!save())return false; toast(`Registro eliminado: ${E.label(row)}.`); render();
   });
 }
 
@@ -2450,7 +2452,7 @@ let _dl;
 function dlCap(){ if(_dl === undefined || _dl === null) _dl = (window.claude && window.claude.use) ? Promise.resolve(window.claude.use("downloads")).catch(() => null).then(d => { if(!d) _dl = null; return d }) : Promise.resolve(null); return _dl || Promise.resolve(null) }
 function dlHelp(name, data){ const prev = "";
   openModal({title:"No se pudo descargar en esta vista", wide:!!prev, body:`<p>El archivo <b class="mono">${esc(name)}</b> se generó correctamente, pero esta ventana no permite descargas.</p>${prev}
-  <div class="alert info"><div><b>Cómo descargar:</b><ol style="margin:6px 0 0;padding-left:18px"><li>Abra la intranet desde su enlace de claude.ai, con la sesión iniciada (no desde una vista previa ni desde una copia del archivo).</li><li>Vuelva a pulsar el botón PDF o Excel.</li><li>Acepte el aviso de descarga que aparece. Si lo rechazó antes, recargue la página.</li></ol></div></div>`}) }
+  <div class="alert info"><div><b>Cómo descargar:</b><ol style="margin:6px 0 0;padding-left:18px"><li>Abra la intranet del instituto en su navegador e inicie sesión.</li><li>Vuelva a pulsar el botón PDF o Excel.</li><li>Acepte el aviso de descarga que aparece. Si lo rechazó antes, recargue la página.</li></ol></div></div>`}) }
 function browserSave(name, data){
   try{ const blob = data instanceof Blob ? data : new Blob([data], {type: /\.json$/.test(name) ? "application/json" : "application/octet-stream"});
     const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = name; a.style.display = "none";
@@ -2471,7 +2473,7 @@ function exportXLSX(name, head, rows, sheet){
   ws["!cols"] = head.map((h,i) => ({wch: Math.min(60, Math.max(h.length, ...rows.map(r => String(r[i] ?? "").length)) + 2)}));
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, (sheet || "Datos").slice(0,31));
   const buf = XLSX.write(wb, {bookType:"xlsx", type:"array"});
-  log("Exportar", "Reportes", name); save();
+  log("Exportar", "Reportes", name); if(!save())return false;
   saveFile(name, new Blob([buf]));
 }
 /* ---------- personalización de documentos y reportes (DB.cfg.docs) ---------- */
@@ -2531,7 +2533,7 @@ function exportTablePDF(ek){
   const doc = pdfNew(cols.length > 6 ? "landscape" : "portrait");
   const y = pdfHeader(doc, E.title, `${rows.length} registro(s)${S.q[ek] ? ` · filtro: "${S.q[ek]}"` : ""}`);
   pdfTable(doc, y, cols.map(c => strip(c.h)), rows.map(r => cols.map(c => strip(c.x ? c.x(r) : c.v(r)))));
-  pdfFooter(doc); log("Exportar", E.mod, `${E.title} (PDF)`); save();
+  pdfFooter(doc); log("Exportar", E.mod, `${E.title} (PDF)`); if(!save())return false;
   saveFile(`${ek}_${fileStamp()}.pdf`, doc.output("blob"));
 }
 function exportTableXLS(ek){
@@ -2543,13 +2545,12 @@ function exportTableXLS(ek){
 const DOC_T = { cert:"Constancia de certificación modular", titulo:"Reporte de validación de título", cargo:"Cargo de recepción de documento", reclamo:"Hoja de reclamación", horario:"Horario académico" };
 function emitDoc(tipo, ref, persona){
   const ex = DB.docs.find(d => d.tipo === tipo && d.ref === ref && d.fecha.slice(0,10) === today());
-  if(ex) return ex;
+  if(ex){ if(ex.valido===false){toast("El documento fue anulado. Consulta con Secretaría Académica.");return false;}return ex; }
   const d = {cod:genCode(), tipo, ref, persona, fecha:nowStamp(), por:S.user ? S.user.nom : "Portal público", valido:true};
   DB.docs.unshift(d); log("Emitir documento", "Documentos", `${DOC_T[tipo]} ${d.cod}`);
   try{ if(tipo === "cert" || tipo === "titulo"){ const e = tipo === "cert" ? est(ref) : est((byId(DB.titulos, ref) || {}).est); HOST.registerDoc({cod:d.cod, tipo:DOC_T[tipo], dni:e.dni, nombres:e.nom, prog:prog(e.prog).pid || "", fecha:d.fecha}) } }catch(err){}
-  save(); return d;
+  if(!save())return false; return d;
 }
-const VERIF_URL = "https://claude.ai/artifact/GU7Awx4CHYcL6PWxvyD5Vt";
 const b64u = o => { const b = new TextEncoder().encode(JSON.stringify(o)); let bin = ""; b.forEach(x => bin += String.fromCharCode(x)); return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"") };
 const unb64u = t => { const bin = atob(t.replace(/-/g,"+").replace(/_/g,"/")); return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)))) };
 /* el QR abre la verificación pública con el código y los datos del documento */
@@ -2755,7 +2756,7 @@ ENT.ofertas = { col:"ofertas", one:"oferta laboral", title:"Ofertas laborales", 
     {k:"limite",l:"Fecha límite de postulación",t:"date",req:true},
     ...(isEmp ? [] : [{k:"estado",l:"Estado",t:"select",req:true,opts:() => ["Por validar","Publicada","Rechazada","Cerrada"].map(x => [x,x]),def:"Publicada"}])] },
   check:(v,row) => (!row && v.limite && v.limite < today()) ? {limite:"La fecha límite no puede estar en el pasado."} : null,
-  after:(r,isNew) => { if(!r.fecha) r.fecha = today(); if(isNew && R() === "emp"){ r.estado = "Por validar"; notify("r:adm",`Nueva oferta por validar: ${r.puesto}`,"bolsa"); notify("r:admin",`Nueva oferta por validar: ${r.puesto}`,"bolsa") } },
+  after:(r,isNew) => { if(!r.fecha) r.fecha = today(); if(R() === "emp"){ r.estado = "Por validar"; notify("r:adm",`Nueva oferta por validar: ${r.puesto}`,"bolsa"); notify("r:admin",`Nueva oferta por validar: ${r.puesto}`,"bolsa") } },
   cols:[{h:"Puesto",v:r => `<b>${esc(r.puesto)}</b>`},{h:"Empresa",v:r => esc(empresa(r.emp).nom),hide:() => R() === "emp"},{h:"Modalidad",v:r => r.modal},{h:"Programa",v:r => r.prog ? prog(r.prog).cod : "Todos"},{h:"Vacantes",v:r => r.vac},{h:"Cierra",v:r => fd(r.limite)},{h:"Postulantes",v:r => cnt(DB.postulaciones,p => p.of === r.id)},{h:"Estado",v:r => estPill(r.estado)}],
   sort:(a,b) => (b.fecha||"").localeCompare(a.fecha||""),
   defaults:() => R() === "emp" ? {emp:myEmp().id, estado:"Por validar", fecha:today()} : {fecha:today()},
@@ -2831,7 +2832,7 @@ function renderLogin(){
 }
 function doLogin(u){
   closeModal(); u.ult = nowStamp(); S.user = u; S.mode = "app"; S.view = "inicio"; S.tab = {}; S.q = {}; S.ui = {};
-  log("Iniciar sesión","Seguridad",`Ingreso de ${u.u} (${ROLES[u.rol]})`); save(); LS.set(SKEY,{uid:u.id,view:"inicio"}); render(); window.scrollTo(0,0);
+  log("Iniciar sesión","Seguridad",`Ingreso de ${u.u} (${ROLES[u.rol]})`); if(!save())return false; LS.set(SKEY,{uid:u.id,view:"inicio"}); render(); window.scrollTo(0,0);
   toast(`Bienvenido(a), ${u.nom.split(" ")[0]}.`);
 }
 
@@ -3058,7 +3059,7 @@ function sesForm(s, pre){
       if(s) Object.assign(s, vals); else DB.sesiones.push(Object.assign(tmp, {id:nextId(DB.sesiones)}));
       const k = gkey(g.p,g.c,g.s,g.t); let msg = s ? "Clase actualizada." : "Clase agregada al horario.";
       if(DB.publicados[k]){ delete DB.publicados[k]; msg += " El horario volvió a borrador: publíquelo de nuevo."; }
-      log(s ? "Editar" : "Registrar","Horarios",`${prog(g.p).cod} ${g.c}-${g.s} · ${ud(vals.ud).nombre} ${vals.dia} ${vals.ini}`); save(); toast(msg); return true;
+      log(s ? "Editar" : "Registrar","Horarios",`${prog(g.p).cod} ${g.c}-${g.s} · ${ud(vals.ud).nombre} ${vals.dia} ${vals.ini}`); if(!save())return false; toast(msg); return true;
     }});
   // Validación en vivo: refresca advertencias al cambiar campos
   $("#mform").addEventListener("change", () => { confirmed = false; const b = $("#mform button[type=submit]"); if(b) b.textContent = s ? "Guardar cambios" : "Agregar al horario"; $("#sesWarn").innerHTML = "" });
@@ -3070,7 +3071,7 @@ function horarioPDF(title, ss, turno, byDoc){
   const rows = SLOTS[turno].map(x => { if(x[0] === "REC") return [`${x[1]}-${x[2]}`, ...days.map(() => "Receso")];
     return [`${x[0]}-${x[1]}`, ...days.map(d => { const s = ss.find(z => z.dia === d && mins(z.ini) < mins(x[1]) && mins(x[0]) < mins(z.fin)); if(!s) return ""; const dd = docente(s.doc), a = amb(s.amb); return `${ud(s.ud).nombre}\n${byDoc ? prog(s.prog).cod + " " + s.ciclo + "-" + s.sec : (dd ? shortName(dd.nom) : "Sin docente")}\n${a ? a.cod : ""}` })] });
   pdfTable(doc, y, ["Hora", ...days.map(d => DIAS_L[d])], rows, {styles:{fontSize:7.5, cellPadding:2, valign:"middle", minCellHeight:13}, columnStyles:{0:{cellWidth:24, fontStyle:"bold"}}, didParseCell:c => { if(c.section === "body" && c.cell.raw === "Receso") c.cell.styles.fillColor = [236,240,239]; else if(c.section === "body" && c.column.index > 0 && c.cell.raw) c.cell.styles.fillColor = [219,235,232] }});
-  pdfFooter(doc); log("Exportar","Horarios",title + " (PDF)"); save();
+  pdfFooter(doc); log("Exportar","Horarios",title + " (PDF)"); if(!save())return false;
   saveFile(`horario_${slug(title)}_${fileStamp()}.pdf`, doc.output("blob"));
 }
 function horarioXLS(title, ss, turno, byDoc){
@@ -3167,7 +3168,7 @@ function consultaCert(pub){
 }
 function docCert(e){
   const cs = DB.certs.filter(c => c.est === e.id); if(!cs.length){ toast("El estudiante no tiene certificaciones registradas."); return }
-  const d = emitDoc("cert", e.id, e.nom);
+  const d = emitDoc("cert", e.id, e.nom); if(!d)return;
   const rows = cs.map(c => { const m = byId(DB.modulos,c.mod); return [`${m.cod} · ${m.nombre}`, c.num, fd(c.fecha)] });
   openModal({title:"Constancia de certificación modular", wide:true, body:`<div class="paper">${paperHead()}<h2>CONSTANCIA DE CERTIFICACIÓN MODULAR</h2>
     <p>La Secretaría Académica del ${esc(DB.cfg.nombre)} hace constar que <b>${esc(e.nom)}</b>, identificado(a) con DNI N.º <b>${e.dni}</b>, estudiante del programa de estudios <b>${esc(prog(e.prog).nombre)}</b>, registra las siguientes certificaciones modulares:</p>
@@ -3176,7 +3177,7 @@ function docCert(e){
     foot:`<button type="button" class="btn" data-act="pdfCert" data-id="${e.id}">Descargar PDF</button>`});
 }
 function pdfCert(id){
-  if(!libsOk("pdf")) return; const e = est(id), d = emitDoc("cert", e.id, e.nom), cs = DB.certs.filter(c => c.est === e.id);
+  if(!libsOk("pdf")) return; const e = est(id), d = emitDoc("cert", e.id, e.nom), cs = DB.certs.filter(c => c.est === e.id); if(!d)return;
   const doc = pdfNew(); let y = pdfHeader(doc, "CONSTANCIA DE CERTIFICACIÓN MODULAR");
   doc.setFontSize(10.5); doc.setTextColor(30); doc.setFont("helvetica","normal");
   const t = doc.splitTextToSize(`La Secretaría Académica del ${DB.cfg.nombre} hace constar que ${e.nom}, identificado(a) con DNI N.º ${e.dni}, estudiante del programa de estudios ${prog(e.prog).nombre}, registra las siguientes certificaciones modulares:`, 182);
@@ -3232,14 +3233,14 @@ function fichaTitulo(t, pub){
   <div class="btnrow"><button class="btn sm" data-act="docTit" data-id="${t.id}">Reporte de validación</button></div></section>`;
 }
 function docTit(id){
-  const t = byId(DB.titulos,id), e = est(t.est), d = emitDoc("titulo", t.id, e.nom);
+  const t = byId(DB.titulos,id), e = est(t.est), d = emitDoc("titulo", t.id, e.nom); if(!d)return;
   openModal({title:"Reporte de validación de título", wide:true, body:`<div class="paper">${paperHead()}<h2>REPORTE DE VALIDACIÓN DE TÍTULO</h2>
     <p>El ${esc(DB.cfg.nombre)} certifica que la persona indicada cuenta con registro de título emitido por la institución:</p>
     <dl class="dl"><dt>Titulado(a)</dt><dd>${esc(e.nom)}</dd><dt>DNI</dt><dd>${e.dni}</dd><dt>Programa de estudios</dt><dd>${esc(prog(e.prog).nombre)}</dd><dt>Condición</dt><dd>Titulado(a)</dd><dt>Fecha de culminación</dt><dd>${fd(t.culm)}</dd><dt>Fecha de titulación</dt><dd>${fd(t.tit)}</dd><dt>Código institucional</dt><dd>${esc(t.cod)}</dd><dt>Resolución</dt><dd>${esc(t.resol)}</dd><dt>Fecha de registro</dt><dd>${fd(t.tit)}</dd></dl>${paperFoot(d)}</div>`,
     foot:`<button type="button" class="btn" data-act="pdfTit" data-id="${t.id}">Descargar PDF</button>`});
 }
 function pdfTit(id){
-  if(!libsOk("pdf")) return; const t = byId(DB.titulos,id), e = est(t.est), d = emitDoc("titulo", t.id, e.nom);
+  if(!libsOk("pdf")) return; const t = byId(DB.titulos,id), e = est(t.est), d = emitDoc("titulo", t.id, e.nom); if(!d)return;
   const doc = pdfNew(); let y = pdfHeader(doc, "REPORTE DE VALIDACIÓN DE TÍTULO");
   doc.setFontSize(10.5); doc.setTextColor(30); doc.setFont("helvetica","normal");
   const tx = doc.splitTextToSize(`El ${DB.cfg.nombre} certifica que la persona indicada cuenta con registro de título emitido por la institución:`, 182); doc.text(tx, 14, y + 2); y += tx.length * 5.5 + 8;
@@ -3297,16 +3298,16 @@ function gestionReclamo(id){
       const prev = x.estado; x.resp = vals.resp; x.area = vals.area;
       if(vals.respuesta){ x.respuesta = vals.respuesta; x.estado = "Respondido"; x.fresp = today(); log("Responder","Reclamos",x.num); toast(`Respuesta registrada. Se notificó a ${x.correo}.`); const u = HOST.users().find(z => z.dni === x.dni); if(u) notify("u:"+u.id, `Tu ${x.tipo.toLowerCase()} ${x.num} fue respondido`, "reclamos") }
       else { if(x.resp && prev === "Recibido") x.estado = "En atención"; log("Asignar","Reclamos",`${x.num} → ${x.resp || "sin responsable"}`); toast("Reclamo actualizado.") }
-      save(); return true; }});
+      if(!save())return false; return true; }});
 }
 function docRec(id){
-  const x = byId(DB.reclamos,id), d = emitDoc("reclamo", x.id, x.nom);
+  const x = byId(DB.reclamos,id), d = emitDoc("reclamo", x.id, x.nom); if(!d)return;
   openModal({title:"Hoja de reclamación", wide:true, body:`<div class="paper">${paperHead()}<h2>HOJA DE RECLAMACIÓN N.º ${esc(x.num)}</h2>
     <dl class="dl"><dt>Tipo</dt><dd>${x.tipo}</dd><dt>Fecha de registro</dt><dd>${fd(x.fecha)}</dd><dt>Usuario</dt><dd>${esc(x.nom)} · DNI ${x.dni}</dd><dt>Domicilio</dt><dd>${esc(x.dom||"—")}</dd><dt>Contacto</dt><dd>${esc(x.tel)} · ${esc(x.correo)}</dd><dt>Área relacionada</dt><dd>${esc(areaN(x.area))}</dd><dt>Fecha del hecho</dt><dd>${fd(x.hecho)}</dd><dt>Descripción</dt><dd>${esc(x.desc)}</dd><dt>Pedido</dt><dd>${esc(x.pedido)}</dd><dt>Estado</dt><dd>${x.estado}</dd>${x.respuesta ? `<dt>Respuesta (${fd(x.fresp)})</dt><dd>${esc(x.respuesta)}</dd>` : `<dt>Plazo de respuesta</dt><dd>${fd(plazoRec(x).due)}</dd>`}</dl>${paperFoot(d)}</div>`,
     foot:`<button type="button" class="btn" data-act="pdfRec" data-id="${x.id}">Descargar PDF</button>`});
 }
 function pdfRec(id){
-  if(!libsOk("pdf")) return; const x = byId(DB.reclamos,id), d = emitDoc("reclamo", x.id, x.nom);
+  if(!libsOk("pdf")) return; const x = byId(DB.reclamos,id), d = emitDoc("reclamo", x.id, x.nom); if(!d)return;
   const doc = pdfNew(); let y = pdfHeader(doc, `HOJA DE RECLAMACIÓN N.º ${x.num}`, `${x.tipo} registrado el ${fd(x.fecha)}`);
   y = pdfKV(doc, y + 2, [["Usuario",x.nom],["DNI",x.dni],["Domicilio",x.dom||"—"],["Contacto",`${x.tel} · ${x.correo}`],["Área relacionada",areaN(x.area)],["Fecha del hecho",fd(x.hecho)],["Descripción",x.desc],["Pedido",x.pedido],["Estado",x.estado],...(x.respuesta ? [["Respuesta",`${x.respuesta} (${fd(x.fresp)})`]] : [["Plazo de respuesta",fd(plazoRec(x).due)]])]);
   pdfVerify(doc, d, y + 6); pdfFooter(doc); saveFile(`hoja_reclamacion_${x.num}.pdf`, doc.output("blob"));
@@ -3360,9 +3361,9 @@ function cargoHtml(x, d){
   <dl class="dl"><dt>N.º de expediente</dt><dd class="mono">${x.num}</dd><dt>Código de seguimiento</dt><dd class="mono" style="font-size:1.1rem">${x.cod}</dd><dt>Fecha y hora</dt><dd>${fd(x.fecha)}</dd><dt>Solicitante</dt><dd>${esc(x.sol)} · ${x.dni}</dd><dt>Tipo de documento</dt><dd>${x.tipoDoc}</dd><dt>Trámite</dt><dd>${esc(tram(x.tramite).nombre)}</dd><dt>Asunto</dt><dd>${esc(x.asunto)}</dd><dt>Adjuntos</dt><dd>${x.adj.map(a => `${esc(a.n)} (${kb(a.s)})`).join(", ")}</dd><dt>Plazo estimado</dt><dd>${tram(x.tramite).dias} días hábiles · hasta ${fd(plazoExp(x).due)}</dd></dl>
   <p class="note" style="color:var(--paper-muted)">Use el código de seguimiento en “Seguimiento de trámite” para consultar el estado de su expediente.</p>${paperFoot(d)}</div>`;
 }
-function docCargo(id){ const x = byId(HOST.exps(),id), d = emitDoc("cargo", x.id, x.sol); openModal({title:"Cargo de recepción", wide:true, body:cargoHtml(x,d), foot:`<button type="button" class="btn" data-act="pdfCargo" data-id="${x.id}">Descargar PDF</button>`}) }
+function docCargo(id){ const x = byId(HOST.exps(),id), d = emitDoc("cargo", x.id, x.sol); if(!d)return; openModal({title:"Cargo de recepción", wide:true, body:cargoHtml(x,d), foot:`<button type="button" class="btn" data-act="pdfCargo" data-id="${x.id}">Descargar PDF</button>`}) }
 function pdfCargo(id){
-  if(!libsOk("pdf")) return; const x = byId(HOST.exps(),id), d = emitDoc("cargo", x.id, x.sol);
+  if(!libsOk("pdf")) return; const x = byId(HOST.exps(),id), d = emitDoc("cargo", x.id, x.sol); if(!d)return;
   const doc = pdfNew(); let y = pdfHeader(doc, "CARGO DE RECEPCIÓN", `Mesa de partes virtual · ${x.num}`);
   y = pdfKV(doc, y + 2, [["N.º de expediente",x.num],["Código de seguimiento",x.cod],["Fecha y hora",fd(x.fecha)],["Solicitante",`${x.sol} · ${x.dni}`],["Tipo de documento",x.tipoDoc],["Trámite",tram(x.tramite).nombre],["Asunto",x.asunto],["Adjuntos",x.adj.map(a => a.n).join(", ")],["Plazo estimado",`${tram(x.tramite).dias} días hábiles · hasta ${fd(plazoExp(x).due)}`]]);
   pdfVerify(doc, d, y + 6); pdfFooter(doc); saveFile(`cargo_${x.num}.pdf`, doc.output("blob"));
@@ -3394,7 +3395,7 @@ function gestionExp(id){
       log(vals.accion === "Derivado" ? "Derivar" : "Actualizar","Mesa de partes",`${x.num} → ${vals.accion} (${vals.area})`);
       const u = HOST.users().find(z => z.dni === x.dni); if(u) notify("u:"+u.id, `Tu expediente ${x.num} cambió a “${vals.accion}”`, "mesa");
       if(vals.accion === "Derivado"){ const resp = HOST.users().filter(z => z.area === vals.area); resp.forEach(z => notify("u:"+z.id, `Se derivó a tu área el expediente ${x.num}`, "mesa")) }
-      save(); toast(`${x.num}: ${vals.accion.toLowerCase()}. Se notificó al solicitante por correo.`); return true; }});
+      if(!save())return false; toast(`${x.num}: ${vals.accion.toLowerCase()}. Se notificó al solicitante por correo.`); return true; }});
 }
 V.mesa = () => {
   const L = lvl("mesa");
@@ -3471,7 +3472,7 @@ function editPerfilLab(){
   openModal({title:"Editar mi perfil profesional", wide:true, body:`<div class="f">${fields.map(f => fieldHtml(f, f.k === "correo" || f.k === "tel" ? e[f.k] : p[f.k])).join("")}</div>`,
     onSubmit:form => { const {vals, errs} = readFields(fields, form); if(!showErrs(form, errs)) return false;
       e.correo = vals.correo; e.tel = vals.tel; p.resumen = vals.resumen; p.competencias = vals.competencias; p.exp = vals.exp; if(vals.cv.length) p.cv = vals.cv[0];
-      log("Editar","Bolsa laboral","Perfil profesional " + e.dni); save(); toast("Perfil profesional actualizado."); return true }});
+      log("Editar","Bolsa laboral","Perfil profesional " + e.dni); if(!save())return false; toast("Perfil profesional actualizado."); return true }});
 }
 V.bolsa = () => {
   const r = R(), L = lvl("bolsa");
@@ -3575,7 +3576,7 @@ function editDoc(id){
   openModal({title:"Editar perfil docente", wide:true, body:`<div class="f">${fields.map(f => fieldHtml(f, f.k === "esp" || f.k === "correo" ? d[f.k] : f.k === "files" ? "" : p[f.k])).join("")}</div>`,
     onSubmit:form => { const {vals, errs} = readFields(fields, form); if(!showErrs(form, errs)) return false;
       d.esp = vals.esp; d.correo = vals.correo; ["resumen","grados","exp","certs","cursos","port"].forEach(k => p[k] = vals[k]); if(vals.files.length) p.files = [...(p.files||[]), ...vals.files];
-      log("Editar","Branding docente",d.nom); save(); toast("Perfil docente actualizado y publicado en el directorio."); return true }});
+      log("Editar","Branding docente",d.nom); if(!save())return false; toast("Perfil docente actualizado y publicado en el directorio."); return true }});
 }
 V.docentes = () => {
   const intro = head("2.4 · Gestión administrativa","Branding para docentes","Portafolio profesional de cada docente con estructura uniforme e identidad institucional, visible en la intranet y en el portal público.");
@@ -3730,7 +3731,7 @@ function setBloq(t, patch, msg){
   if(e){ toast(e); render(); return }
   const lost = applyBloques(t, nc);
   if(lost){ toast(`No se puede: hay ${lost.length} clase(s) en la última hora (por ejemplo ${ud(lost[0].ud).nombre}, ${DIAS_L[lost[0].dia]}). Muévalas o quítelas primero.`); render(); return }
-  log("Configurar horario","Horarios",`Turno ${t}: ${msg}`); save(); toast(`Turno ${t}: ${msg}.`); render();
+  log("Configurar horario","Horarios",`Turno ${t}: ${msg}`); if(!save())return false; toast(`Turno ${t}: ${msg}.`); render();
 }
 
 function docsConfig(){
@@ -3850,18 +3851,18 @@ const ACTIONS = {
   uClear(){ S.ui.uRol = ""; S.ui.uEst = ""; S.q.usuarios = ""; render() },
   uVerRol(id){ S.ui.uRolSel = id; S.tab.usuarios = "permisos"; render(); window.scrollTo(0,0) },
   uRolSel(id){ S.ui.uRolSel = id; render() },
-  uPerm(id){ if(lvl("usuarios") < 2) return; const [r,k,v] = id.split("|"); if(permLocked(r,k)) return; DB.perms[r] = DB.perms[r] || {}; DB.perms[r][k] = +v; const m = MODS.find(x => x[0] === k); log("Cambiar permiso","Usuarios",`${ROLES[r]} · ${m ? m[1] : k} → ${PERM_L[+v]}`); save(); toast(`${ROLES[r]}: ${m ? m[1] : k} → ${PERM_L[+v]}.`); render() },
-  uPermAll(id){ if(lvl("usuarios") < 2) return; const [r,v] = id.split("|"); const go = () => { MODS.forEach(([k]) => { if(!permLocked(r,k)) DB.perms[r][k] = +v }); log("Cambiar permiso","Usuarios",`${ROLES[r]} · todos → ${PERM_L[+v]}`); save(); toast(`${ROLES[r]}: todos los módulos en “${PERM_L[+v]}”.`); render() };
+  uPerm(id){ if(lvl("usuarios") < 2) return; const [r,k,v] = id.split("|"); if(permLocked(r,k)) return; DB.perms[r] = DB.perms[r] || {}; DB.perms[r][k] = +v; const m = MODS.find(x => x[0] === k); log("Cambiar permiso","Usuarios",`${ROLES[r]} · ${m ? m[1] : k} → ${PERM_L[+v]}`); if(!save())return false; toast(`${ROLES[r]}: ${m ? m[1] : k} → ${PERM_L[+v]}.`); render() },
+  uPermAll(id){ if(lvl("usuarios") < 2) return; const [r,v] = id.split("|"); const go = () => { MODS.forEach(([k]) => { if(!permLocked(r,k)) DB.perms[r][k] = +v }); log("Cambiar permiso","Usuarios",`${ROLES[r]} · todos → ${PERM_L[+v]}`); if(!save())return false; toast(`${ROLES[r]}: todos los módulos en “${PERM_L[+v]}”.`); render() };
     if(+v === 0) confirmBox("Quitar todos los permisos", `El rol <b>${esc(ROLES[r])}</b> quedará sin acceso a los módulos (salvo el panel de inicio). Sus usuarios dejarán de verlos en el menú.`, "Quitar todo", go); else go() },
   docEstilo(id){ setDocs({estilo:id}, "Estilo del encabezado actualizado.") },
   docColor(id){ setDocs({color:id}, "Color de los documentos actualizado.") },
   docImgDel(id){ setDocs({[id]:null}, "Imagen quitada.") },
-  docReset(){ confirmBox("Restablecer documentos","Se quitarán los logos y la firma, y el encabezado volverá al estilo y color originales.","Restablecer",() => { DB.cfg.docs = {}; log("Configurar documentos","Configuración","Restablecido"); save(); toast("Documentos restablecidos."); render() }) },
+  docReset(){ confirmBox("Restablecer documentos","Se quitarán los logos y la firma, y el encabezado volverá al estilo y color originales.","Restablecer",() => { DB.cfg.docs = {}; log("Configurar documentos","Configuración","Restablecido"); if(!save())return false; toast("Documentos restablecidos."); render() }) },
   docSample(){ if(!libsOk("pdf")) return; const d = {cod:"MUES-TRA1", tipo:"titulo", fecha:nowStamp(), persona:"Nombre de ejemplo", por:S.user ? S.user.nom : ""}; const doc = pdfNew(); let y = pdfHeader(doc, "DOCUMENTO DE EJEMPLO", "Vista de prueba del encabezado, la firma y el pie de página");
     y = pdfKV(doc, y + 4, [["Titulado(a)","Nombre de ejemplo"],["DNI","00000000"],["Programa de estudios",(DB.programas[0]||{}).nombre || "—"]]);
     y = pdfTable(doc, y + 4, ["Columna 1","Columna 2","Columna 3"], [["Dato","Dato","Dato"],["Dato","Dato","Dato"]]);
     pdfVerify(doc, d, y + 10); pdfFooter(doc); saveFile(`documento_ejemplo_${fileStamp()}.pdf`, doc.output("blob")) },
-  bloqReset(){ confirmBox("Volver al horario original","Mañana: de 08:00 a 14:15 con receso de 11:00 a 11:15. Tarde: de 14:30 a 19:45 con receso de 17:30 a 17:45. Las clases programadas se moverán a esas horas.","Volver al original",() => { const old = JSON.parse(JSON.stringify(DB.cfg.bloques || {})); const sv = DB.sesiones.map(x => [x.ini, x.fin]); const lost = ["Tarde","Mañana"].map(t => applyBloques(t, BLOQ_DEF[t])).filter(Boolean); if(lost.length){ DB.sesiones.forEach((x,i) => { x.ini = sv[i][0]; x.fin = sv[i][1] }); DB.cfg.bloques = old; rebuildSlots(); toast("Hay clases en horas que no existen en el horario original. Muévalas primero."); return } DB.cfg.bloques = {}; rebuildSlots(); log("Configurar horario","Horarios","Horario original restablecido"); save(); toast("Se restableció el horario original."); render() }) },
+  bloqReset(){ confirmBox("Volver al horario original","Mañana: de 08:00 a 14:15 con receso de 11:00 a 11:15. Tarde: de 14:30 a 19:45 con receso de 17:30 a 17:45. Las clases programadas se moverán a esas horas.","Volver al original",() => { const old = JSON.parse(JSON.stringify(DB.cfg.bloques || {})); const sv = DB.sesiones.map(x => [x.ini, x.fin]); const lost = ["Tarde","Mañana"].map(t => applyBloques(t, BLOQ_DEF[t])).filter(Boolean); if(lost.length){ DB.sesiones.forEach((x,i) => { x.ini = sv[i][0]; x.fin = sv[i][1] }); DB.cfg.bloques = old; rebuildSlots(); toast("Hay clases en horas que no existen en el horario original. Muévalas primero."); return } DB.cfg.bloques = {}; rebuildSlots(); log("Configurar horario","Horarios","Horario original restablecido"); if(!save())return false; toast("Se restableció el horario original."); render() }) },
   bqAddRec(id){ const [t,h] = id.split("|"); const c = bloqCfg(t); setBloq(t, {recs:[...c.recs, {after:+h, min:15}]}, `receso de 15 min después de la ${h}.ª hora`) },
   bqDelRec(id){ const [t,h] = id.split("|"); const c = bloqCfg(t); setBloq(t, {recs:c.recs.filter(r => r.after !== +h)}, `se quitó el receso después de la ${h}.ª hora`) },
   bqAddHora(t){ const c = bloqCfg(t); if(c.n >= 10) return toast("Máximo 10 horas de clase por turno."); setBloq(t, {n:c.n + 1}, `${c.n + 1} horas de clase`) },
@@ -3881,8 +3882,8 @@ const ACTIONS = {
   apReset(){ confirmBox("Restablecer apariencia","Se volverá al tema Verde Ica, la tipografía Moderna, el sello por defecto y el título original. Los colores del tema Web institucional también se restablecen.","Restablecer",() => { log("Cambiar apariencia","Configuración","Apariencia restablecida"); setAp(Object.assign({}, AP_DEF), "Apariencia restablecida.") }) },
   bell(){ S.ui.dd = S.ui.dd === "bell" ? null : "bell"; render() },
   account(){ S.ui.dd = S.ui.dd === "account" ? null : "account"; render() },
-  readAll(){ myNotifs().forEach(n => { if(!n.leido.includes(S.user.id)) n.leido.push(S.user.id) }); save(); render() },
-  openNotif(id){ const n = byId(DB.notifs,+id); if(!n.leido.includes(S.user.id)) n.leido.push(S.user.id); save(); S.ui.dd = null; go(lvl(n.go) ? n.go : "inicio") },
+  readAll(){ myNotifs().forEach(n => { if(!n.leido.includes(S.user.id)) n.leido.push(S.user.id) }); if(!save())return false; render() },
+  openNotif(id){ const n = byId(DB.notifs,+id); if(!n.leido.includes(S.user.id)) n.leido.push(S.user.id); if(!save())return false; S.ui.dd = null; go(lvl(n.go) ? n.go : "inicio") },
   logout(){ logout() },
   changePass(){ location.href = "/accounts.php"; },
   /* horarios */
@@ -3890,13 +3891,13 @@ const ACTIONS = {
   editSes(id){ sesForm(byId(DB.sesiones,+id)) },
   delSes(id){ const s = byId(DB.sesiones,+id); confirmBox("Quitar clase", `Se quitará <b>${esc(ud(s.ud).nombre)}</b> del ${DIAS_L[s.dia].toLowerCase()} ${s.ini}–${s.fin}.`, "Quitar", () => {
     DB.sesiones = DB.sesiones.filter(x => x.id !== s.id); const k = gkey(s.prog,s.ciclo,s.sec,s.turno); let m = "Clase retirada del horario."; if(DB.publicados[k]){ delete DB.publicados[k]; m += " El horario volvió a borrador." }
-    log("Eliminar","Horarios",`${prog(s.prog).cod} ${s.ciclo}-${s.sec} · ${ud(s.ud).nombre} ${s.dia} ${s.ini}`); save(); toast(m); render() }) },
+    log("Eliminar","Horarios",`${prog(s.prog).cod} ${s.ciclo}-${s.sec} · ${ud(s.ud).nombre} ${s.dia} ${s.ini}`); if(!save())return false; toast(m); render() }) },
   goSes(id){ const s = byId(DB.sesiones,+id); S.ui.hg = {p:s.prog,c:s.ciclo,s:s.sec,t:s.turno}; S.tab.horarios = "prog"; render(); sesForm(s) },
   publish(){ const g = grupoSel(); DB.publicados[gkey(g.p,g.c,g.s,g.t)] = {fecha:nowStamp(), por:S.user.nom};
     DB.estudiantes.filter(e => e.prog === g.p && e.ciclo === g.c && e.sec === g.s && e.turno === g.t).forEach(e => { const u = HOST.users().find(z => z.vin === "est:"+e.id); if(u) notify("u:"+u.id,"Se publicó el horario de tu sección","horarios") });
     [...new Set(sesGrupo(g).map(s => s.doc))].forEach(d => { const u = HOST.users().find(z => z.vin === "doc:"+d); if(u) notify("u:"+u.id,`Se publicó el horario de ${prog(g.p).cod} ${g.c}-${g.s}`,"horarios") });
-    log("Publicar","Horarios",`${prog(g.p).cod} ${g.c}-${g.s} ${g.t} ${DB.cfg.periodo}`); save(); toast("Horario publicado. Estudiantes y docentes ya pueden consultarlo."); render() },
-  unpublish(){ const g = grupoSel(); delete DB.publicados[gkey(g.p,g.c,g.s,g.t)]; log("Retirar publicación","Horarios",`${prog(g.p).cod} ${g.c}-${g.s} ${g.t}`); save(); toast("Publicación retirada. El horario volvió a borrador."); render() },
+    log("Publicar","Horarios",`${prog(g.p).cod} ${g.c}-${g.s} ${g.t} ${DB.cfg.periodo}`); if(!save())return false; toast("Horario publicado. Estudiantes y docentes ya pueden consultarlo."); render() },
+  unpublish(){ const g = grupoSel(); delete DB.publicados[gkey(g.p,g.c,g.s,g.t)]; log("Retirar publicación","Horarios",`${prog(g.p).cod} ${g.c}-${g.s} ${g.t}`); if(!save())return false; toast("Publicación retirada. El horario volvió a borrador."); render() },
   hPDF(){ const g = grupoSel(); horarioPDF(`${prog(g.p).cod} ciclo ${g.c} sección ${g.s}`, sesGrupo(g), g.t) },
   hXLS(){ const g = grupoSel(); horarioXLS(`${prog(g.p).cod} ciclo ${g.c} sección ${g.s}`, sesGrupo(g), g.t) },
   hdPDF(){ const d = myDoc() || docente(S.ui.hdoc || DB.docentes[0].id); horarioPDF(`Docente ${d.nom}`, DB.sesiones.filter(s => s.doc === d.id && s.per === DB.cfg.periodo && s.turno === "Mañana"), "Mañana", true) },
@@ -3929,14 +3930,14 @@ const ACTIONS = {
     confirmBox("Confirmar postulación", `Postularás a <b>${esc(o.puesto)}</b> en ${esc(empresa(o.emp).nom)} con tu perfil y el CV <b>${esc(p.cv.n)}</b>.`, "Postular", () => {
       DB.postulaciones.push({id:nextId(DB.postulaciones), of:o.id, est:e.id, fecha:today(), estado:"Recibida"});
       const u = HOST.users().find(z => z.vin === "emp:"+o.emp); if(u) notify("u:"+u.id, `Nueva postulación a “${o.puesto}”`, "bolsa");
-      log("Postular","Bolsa laboral",`${e.dni} → ${o.puesto}`); save(); toast("Postulación enviada. La empresa revisará tu perfil."); render() }) },
-  retirarPost(id){ confirmBox("Retirar postulación","Se retirará tu postulación a esta oferta.","Retirar",() => { DB.postulaciones = DB.postulaciones.filter(p => p.id !== +id); log("Retirar postulación","Bolsa laboral",String(id)); save(); toast("Postulación retirada."); render() }) },
+      log("Postular","Bolsa laboral",`${e.dni} → ${o.puesto}`); if(!save())return false; toast("Postulación enviada. La empresa revisará tu perfil."); render() }) },
+  retirarPost(id){ confirmBox("Retirar postulación","Se retirará tu postulación a esta oferta.","Retirar",() => { DB.postulaciones = DB.postulaciones.filter(p => p.id !== +id); log("Retirar postulación","Bolsa laboral",String(id)); if(!save())return false; toast("Postulación retirada."); render() }) },
   valOf(id){ const o = byId(DB.ofertas,+id); o.estado = "Publicada"; const u = HOST.users().find(z => z.vin === "emp:"+o.emp); if(u) notify("u:"+u.id,`Tu oferta “${o.puesto}” fue aprobada y publicada`,"bolsa");
     DB.estudiantes.filter(e => !o.prog || e.prog === o.prog).forEach(e => { const us = HOST.users().find(z => z.vin === "est:"+e.id); if(us) notify("u:"+us.id,`Nueva oferta laboral: ${o.puesto}`,"bolsa") });
     if(!empresa(o.emp).validada) toast("Oferta aprobada. Recuerde validar también a la empresa para que sea visible."); else toast("Oferta aprobada y publicada.");
-    log("Aprobar","Bolsa laboral",o.puesto); save(); render() },
-  rejOf(id){ const o = byId(DB.ofertas,+id); o.estado = "Rechazada"; const u = HOST.users().find(z => z.vin === "emp:"+o.emp); if(u) notify("u:"+u.id,`Tu oferta “${o.puesto}” no fue aprobada`,"bolsa"); log("Rechazar","Bolsa laboral",o.puesto); save(); toast("Oferta rechazada."); render() },
-  valEmp(id){ const e = byId(DB.empresas,+id); e.validada = true; const u = HOST.users().find(z => z.vin === "emp:"+e.id); if(u) notify("u:"+u.id,"Tu empresa fue validada por el instituto","bolsa"); log("Validar","Bolsa laboral",e.nom); save(); toast(`${e.nom} validada.`); render() },
+    log("Aprobar","Bolsa laboral",o.puesto); if(!save())return false; render() },
+  rejOf(id){ const o = byId(DB.ofertas,+id); o.estado = "Rechazada"; const u = HOST.users().find(z => z.vin === "emp:"+o.emp); if(u) notify("u:"+u.id,`Tu oferta “${o.puesto}” no fue aprobada`,"bolsa"); log("Rechazar","Bolsa laboral",o.puesto); if(!save())return false; toast("Oferta rechazada."); render() },
+  valEmp(id){ const e = byId(DB.empresas,+id); e.validada = true; const u = HOST.users().find(z => z.vin === "emp:"+e.id); if(u) notify("u:"+u.id,"Tu empresa fue validada por el instituto","bolsa"); log("Validar","Bolsa laboral",e.nom); if(!save())return false; toast(`${e.nom} validada.`); render() },
   verPerfilLab(id){ verPerfilLab(+id) },
   editPerfilLab(){ editPerfilLab() },
   repPostXLS(){ exportXLSX(`postulaciones_${fileStamp()}.xlsx`, ["Postulante","DNI","Programa","Oferta","Empresa","Fecha","Estado"], DB.postulaciones.map(p => { const s = est(p.est), o = byId(DB.ofertas,p.of); return [s.nom, s.dni, prog(s.prog).cod, o.puesto, empresa(o.emp).nom, fd(p.fecha), p.estado] }), "Postulaciones") },
@@ -3946,15 +3947,15 @@ const ACTIONS = {
   editDoc(id){ editDoc(+id) },
   /* sistema */
   resetPass(id){ location.hash = "#/admin/usuarios/server-" + id; },
-  resetPerms(){ confirmBox("Restaurar permisos","Se restaurará la matriz de permisos por defecto para todos los roles.","Restaurar",() => { DB.perms = structuredClone(HOST.defaultPermissions()); log("Restaurar permisos","Usuarios","Matriz por defecto"); save(); toast("Permisos restaurados."); render() }) },
-  backup(){ log("Respaldo","Sistema","Descarga de respaldo completo"); save(); saveFile(`respaldo_intranet_${fileStamp()}.json`, JSON.stringify(DB, null, 1)) },
-  resetDemo(){ confirmBox("Restablecer datos de demostración","Se borrarán todos los cambios hechos en esta demostración y se cargarán los datos iniciales.","Restablecer",() => { const uid = S.user.id; DB = seed(); rebuildSlots(); applyAp(); save(); S.user = byId(HOST.users(),uid); S.ui = {}; S.tab = {}; S.q = {}; if(!S.user) logout(); else { toast("Datos de demostración restablecidos."); go("inicio") } }) }
+  resetPerms(){ confirmBox("Restaurar permisos","Se restaurará la matriz de permisos por defecto para todos los roles.","Restaurar",() => { DB.perms = structuredClone(HOST.defaultPermissions()); log("Restaurar permisos","Usuarios","Matriz por defecto"); if(!save())return false; toast("Permisos restaurados."); render() }) },
+  backup(){ HOST.openBackups(); },
+  resetDemo(){ HOST.openBackups(); }
 };
 
 const CHANGES = {
   uEst(el){ S.ui.uEst = el.value; render() },
-  uToggle(el){ if(lvl("usuarios") < 2) return; const u = byId(HOST.users(), +el.dataset.id); if(!u || u.id === S.user.id){ render(); return } u.estado = el.checked ? "Activo" : "Inactivo"; log(el.checked ? "Activar cuenta" : "Desactivar cuenta","Usuarios",u.u); save(); toast(`Cuenta ${u.u} ${el.checked ? "activada" : "desactivada"}.`); setTimeout(render) },
-  uCopy(el){ if(lvl("usuarios") < 2 || !el.value) return; const r = el.dataset.id, from = el.value; confirmBox("Copiar permisos", `El rol <b>${esc(ROLES[r])}</b> tendrá los mismos permisos que <b>${esc(ROLES[from])}</b>.`, "Copiar", () => { MODS.forEach(([k]) => { if(!permLocked(r,k)) DB.perms[r][k] = (DB.perms[from]||{})[k] || 0 }); log("Copiar permisos","Usuarios",`${ROLES[from]} → ${ROLES[r]}`); save(); toast(`Permisos de ${ROLES[from]} copiados a ${ROLES[r]}.`); render() }); el.value = "" },
+  uToggle(el){ if(lvl("usuarios") < 2) return; const u = byId(HOST.users(), +el.dataset.id); if(!u || u.id === S.user.id){ render(); return } u.estado = el.checked ? "Activo" : "Inactivo"; log(el.checked ? "Activar cuenta" : "Desactivar cuenta","Usuarios",u.u); if(!save())return false; toast(`Cuenta ${u.u} ${el.checked ? "activada" : "desactivada"}.`); setTimeout(render) },
+  uCopy(el){ if(lvl("usuarios") < 2 || !el.value) return; const r = el.dataset.id, from = el.value; confirmBox("Copiar permisos", `El rol <b>${esc(ROLES[r])}</b> tendrá los mismos permisos que <b>${esc(ROLES[from])}</b>.`, "Copiar", () => { MODS.forEach(([k]) => { if(!permLocked(r,k)) DB.perms[r][k] = (DB.perms[from]||{})[k] || 0 }); log("Copiar permisos","Usuarios",`${ROLES[from]} → ${ROLES[r]}`); if(!save())return false; toast(`Permisos de ${ROLES[from]} copiados a ${ROLES[r]}.`); render() }); el.value = "" },
   docColorPick(el){ setDocs({color:el.value.toLowerCase()}, "Color de los documentos actualizado.") },
   docImg(el){ const f = el.files && el.files[0], k = el.dataset.id; if(!f || lvl("config") < 2) return;
     if(!/^image\/(png|jpeg|svg\+xml|webp)$/.test(f.type)){ toast("El archivo debe ser una imagen PNG, JPG, SVG o WEBP."); el.value = ""; return }
@@ -3976,13 +3977,9 @@ const CHANGES = {
     if(!/^image\/(png|jpeg|svg\+xml|webp)$/.test(f.type)){ toast("El archivo debe ser una imagen PNG, JPG, SVG o WEBP."); el.value = ""; return }
     if(f.size > 300 * 1024){ toast(`La imagen pesa ${Math.round(f.size/1024)} KB. Use una de hasta 300 KB.`); el.value = ""; return }
     const rd = new FileReader(); rd.onload = () => { log("Cambiar apariencia","Configuración",`Logo: ${f.name}`); setAp({logo:String(rd.result)}, "Logo actualizado.") }; rd.onerror = () => toast("No se pudo leer la imagen. Intente con otro archivo."); rd.readAsDataURL(f) },
-  postEst(el){ const p = byId(DB.postulaciones,+el.dataset.id); p.estado = el.value; const u = HOST.users().find(z => z.vin === "est:"+p.est); if(u) notify("u:"+u.id,`Tu postulación a “${byId(DB.ofertas,p.of).puesto}” está: ${p.estado}`,"bolsa"); log("Actualizar postulación","Bolsa laboral",`${est(p.est).dni} → ${p.estado}`); save(); toast("Estado de la postulación actualizado. El postulante puede consultar el estado en su intranet."); render() },
-  perm(el){ const [r,k] = el.dataset.id.split("|"); DB.perms[r][k] = +el.value; log("Cambiar permiso","Usuarios",`${ROLES[r]} · ${k} → ${["Sin acceso","Consulta","Gestión"][+el.value]}`); save(); toast(`Permiso actualizado para ${ROLES[r]}.`); render() },
-  restore(el){ const f = el.files && el.files[0]; if(!f) return; const rd = new FileReader();
-    rd.onload = () => { let data; try{ data = JSON.parse(rd.result) }catch(e){ toast("El archivo no es un respaldo válido."); return }
-      if(!data || data.v !== 3 || !Array.isArray(data.usuarios)){ toast("El archivo no corresponde a un respaldo de esta intranet."); return }
-      confirmBox("Restaurar respaldo", `Se reemplazarán los datos actuales por el respaldo <b>${esc(f.name)}</b>.`, "Restaurar", () => { const uid = S.user.id; DB = data; rebuildSlots(); applyAp(); log("Restaurar respaldo","Sistema",f.name); save(); S.user = byId(HOST.users(),uid); if(!S.user) logout(); else { toast("Respaldo restaurado."); render() } }) };
-    rd.readAsText(f); el.value = "" }
+  postEst(el){ const p = byId(DB.postulaciones,+el.dataset.id); p.estado = el.value; const u = HOST.users().find(z => z.vin === "est:"+p.est); if(u) notify("u:"+u.id,`Tu postulación a “${byId(DB.ofertas,p.of).puesto}” está: ${p.estado}`,"bolsa"); log("Actualizar postulación","Bolsa laboral",`${est(p.est).dni} → ${p.estado}`); if(!save())return false; toast("Estado de la postulación actualizado. El postulante puede consultar el estado en su intranet."); render() },
+  perm(el){ const [r,k] = el.dataset.id.split("|"); DB.perms[r][k] = +el.value; log("Cambiar permiso","Usuarios",`${ROLES[r]} · ${k} → ${["Sin acceso","Consulta","Gestión"][+el.value]}`); if(!save())return false; toast(`Permiso actualizado para ${ROLES[r]}.`); render() },
+  restore(el){el.value='';HOST.openBackups();}
 };
 
 const FORMS = {
@@ -3995,7 +3992,7 @@ const FORMS = {
     const usr = HOST.users().find(x => x.u.toLowerCase() === u.toLowerCase() || (x.dni && x.dni === u));
     const err = m => { $("#loginErr").innerHTML = `<div class="alert bad">${m}</div>` };
     if(!u || !p) return err("Ingrese usuario y contraseña.");
-    if(!usr || usr.pass !== p){ log("Acceso fallido","Seguridad",u); save(); return err("Usuario o contraseña incorrectos.") }
+    if(!usr || usr.pass !== p){ log("Acceso fallido","Seguridad",u); if(!save())return false; return err("Usuario o contraseña incorrectos.") }
     if(usr.estado !== "Activo") return err("Su cuenta está inactiva. Comuníquese con el administrador de la intranet.");
     doLogin(usr);
   },
@@ -4010,7 +4007,7 @@ const FORMS = {
     DB.seq.rec++; const num = `R-${today().slice(0,4)}-${String(DB.seq.rec).padStart(4,"0")}`;
     const x = Object.assign({id:nextId(DB.reclamos), num, fecha:today(), resp:"", respuesta:"", estado:"Recibido"}, vals);
     DB.reclamos.unshift(x); notify("r:adm",`Nuevo ${x.tipo.toLowerCase()} ${num} (${x.area})`,"reclamos"); notify("r:admin",`Nuevo ${x.tipo.toLowerCase()} ${num}`,"reclamos");
-    log("Registrar","Reclamos",num); save(); render();
+    log("Registrar","Reclamos",num); if(!save())return false; render();
     docRec(x.id); toast(`${x.tipo} ${num} registrado. La constancia está disponible para descargar.`);
   },
   exp(form){
@@ -4020,7 +4017,7 @@ const FORMS = {
     DB.seq.exp++; let cod; do{ cod = genCode() }while(HOST.exps().some(e => e.cod === cod));
     const x = Object.assign({id:nextId(HOST.exps()), num:`EXP-${today().slice(0,4)}-${String(DB.seq.exp).padStart(6,"0")}`, cod, fecha:nowStamp(), area:"MP", estado:"Recibido", hist:[[nowStamp(),"Recibido","MP","Registro por mesa de partes virtual"]]}, vals);
     HOST.exps().unshift(x); notify("r:adm",`Expediente ${x.num} recibido: ${tram(x.tramite).nombre}`,"mesa"); notify("r:admin",`Expediente ${x.num} recibido`,"mesa");
-    log("Registrar","Mesa de partes",x.num); save(); render(); docCargo(x.id); toast(`Documento recibido: ${x.num}. Guarde su código de seguimiento.`);
+    log("Registrar","Mesa de partes",x.num); if(!save())return false; render(); docCargo(x.id); toast(`Documento recibido: ${x.num}. Guarde su código de seguimiento.`);
   },
   regEmp(form){
     const fields=[...EMP_REG_FIELDS(),{k:"pass",req:true,pat:[/^.{12,}$/,"Mínimo 12 caracteres."]}];
@@ -4028,18 +4025,18 @@ const FORMS = {
     if(vals.ruc&&!errs.ruc&&!rucValido(vals.ruc))errs.ruc="El RUC no es válido.";
     const decl=form.querySelector("#empDecl");if(!decl?.checked)errs.ruc="Debes aceptar la declaración jurada.";
     if(!showErrs(form,errs))return;
-    try{const result=HOST.registerCompany(vals);DB.empresas.push(result.company);render();
+    try{const result=HOST.registerCompany({...vals,declaration:decl.checked});DB.empresas.push(result.company);render();
       openModal({title:"Empresa registrada",body:`<div class="alert ok">${esc(result.company.nom)} quedó pendiente de validación institucional.</div><p>Tu usuario es <b>${esc(result.username)}</b>. Entra con la contraseña que acabas de elegir.</p>`,foot:'<a class="btn" href="#/admin">Ingresar a la intranet</a>'});
     }catch(error){toast(error.message);}
   },
   empSelf(form){
     const e = myEmp(), fields = ENT.empresas.fields().filter(f => f.k !== "validada" && f.k !== "ruc"), {vals, errs} = readFields(fields, form);
-    if(!showErrs(form, errs)) return; Object.assign(e, vals); S.user.nom = e.nom; log("Editar","Bolsa laboral",`Empresa ${e.nom}`); save(); toast("Datos de la empresa actualizados."); render();
+    if(!showErrs(form, errs)) return; Object.assign(e, vals); S.user.nom = e.nom; log("Editar","Bolsa laboral",`Empresa ${e.nom}`); if(!save())return false; toast("Datos de la empresa actualizados."); render();
   },
   cfg(form){
     const fields = [{k:"periodo",req:true,pat:PAT_PER}];
     const {vals, errs} = readFields(fields, form); if(!showErrs(form, errs)) return;
-    const chg = vals.periodo !== DB.cfg.periodo; Object.assign(DB.cfg, vals); log("Editar","Configuración","Datos institucionales"); save();
+    const chg = vals.periodo !== DB.cfg.periodo; Object.assign(DB.cfg, vals); log("Editar","Configuración","Datos institucionales"); if(!save())return false;
     toast(chg ? `Configuración guardada. Periodo vigente: ${vals.periodo}. La programación de horarios se muestra para ese periodo.` : "Configuración guardada."); render();
   }
 };
@@ -4089,10 +4086,11 @@ function setUser(){ S.user = HOST.user() }
 V["pub:bolsa"] = () => { const T = tabs("pubbolsa", [["ofertas","Ofertas laborales vigentes"],["empresa","Registro de empresas"]]); return T.html + (T.cur === "empresa" ? registroEmpresa() : ofertasPublicas()) };
 rebuildSlots();
 return {
+  contracts(){ return Object.fromEntries(Object.entries(ENT).filter(([,v])=>v.fields).map(([key,v])=>[key,{collection:v.col,fields:v.fields().map(f=>({name:f.k,type:f.t||'text',required:!!f.req,unique:!!f.uniq,min:f.min??null,max:f.max??null,pattern:f.pat?.source||null}))}])); },
   view(v){ sync(); setUser(); S.view = v; return renderView() },
   can(v){ setUser(); return !!S.user && lvl(v) > 0 },
   close: closeModal,
-  cargoCode(ref, persona){ return emitDoc("cargo", ref, persona).cod },
+  cargoCode(ref, persona){ const doc=emitDoc("cargo",ref,persona);return doc?doc.cod:""; },
   cargoPdf(o){
     if(!(window.jspdf && window.jspdf.jsPDF)) return null;
     const doc = pdfNew(), W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 14, col = hexRgb(docColor()), G = [22,128,61];
@@ -4139,7 +4137,7 @@ return {
   areas(){ return DB.areas.filter(a => a.activo).map(a => [a.cod, a.nombre]) },
   areasFull(){ return DB.areas.map(a => Object.assign({}, a)) },
   db(){ return DB },
-  persist(){ save() },
+  persist(){ return save() },
   notifyTo(to, txt, go){ notify(to, txt, go) },
   logAct(a, m, d){ log(a, m, d) },
   nextIdOf(col){ return Math.max(0, ...DB[col].map(x => +x.id || 0)) + 1 },
@@ -4464,30 +4462,25 @@ function sanitize(html) {
 
 /* ---------- Generador mínimo de PDF (documentos de demostración) ---------- */
 function pdfText(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\x20-\x7e]/g, '').replace(/([()\\])/g, '\\$1'); }
-function makePdf(title, lines = [], inst = '') {
-  const content = [];
-  content.push('BT /F2 11 Tf 50 800 Td (' + pdfText(inst) + ') Tj ET');
-  content.push('0.05 0.23 0.5 RG 2 w 50 790 m 545 790 l S');
-  content.push('BT /F2 17 Tf 50 760 Td (' + pdfText(title) + ') Tj ET');
-  let y = 730;
-  const wrap = (t, n = 92) => { const out = []; let cur = ''; String(t).split(' ').forEach(w => { if ((cur + ' ' + w).length > n) { out.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w; }); out.push(cur); return out; };
-  lines.forEach(l => wrap(l).forEach(seg => { if (y > 60) { content.push('BT /F1 11 Tf 50 ' + y + ' Td (' + pdfText(seg) + ') Tj ET'); y -= 17; } }));
-  content.push('BT /F1 8 Tf 50 40 Td (Documento de demostracion generado por el portal web. Reemplacelo por el documento oficial desde el panel administrativo.) Tj ET');
-  const stream = content.join('\n');
-  const objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>', '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>', `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`];
-  let pdf = '%PDF-1.4\n'; const offs = [];
-  objs.forEach((o, i) => { offs.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('');
-  pdf += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return new Blob([pdf], { type: 'application/pdf' });
+function makePdf(title, lines = [], inst = '', sample = false) {
+  if(window.jspdf){const doc=new jspdf.jsPDF({unit:'mm',format:'a4'});let y=25;const header=()=>{doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(String(inst),15,12,{maxWidth:180});doc.setFontSize(15);doc.text(String(title),15,22,{maxWidth:180});y=32;};header();doc.setFont('helvetica','normal');doc.setFontSize(10);
+    for(const line of lines)for(const part of doc.splitTextToSize(String(line),180)){if(y>275){doc.addPage();header();doc.setFont('helvetica','normal');doc.setFontSize(10);}doc.text(part,15,y);y+=5;}
+    const total=doc.getNumberOfPages();for(let n=1;n<=total;n++){doc.setPage(n);doc.setFontSize(8);doc.text(sample?'Documento de ejemplo: reemplazar por el archivo institucional.':'Generado por el portal institucional.',15,288);doc.text(n+' / '+total,190,288,{align:'right'});}return new Blob([doc.output('arraybuffer')],{type:'application/pdf'});
+  }
+  // Respaldo de generación sin red: conserva todas las líneas en varias páginas.
+  const pages=[];let page=[],y=730;const start=()=>{page=['BT /F2 11 Tf 50 800 Td ('+pdfText(inst)+') Tj ET','BT /F2 16 Tf 50 760 Td ('+pdfText(title)+') Tj ET'];y=730;};start();
+  for(const line of lines){const words=String(line).split(/\s+/);let segment='';const emit=()=>{if(y<65){pages.push(page);start();}page.push('BT /F1 11 Tf 50 '+y+' Td ('+pdfText(segment)+') Tj ET');y-=17;segment='';};for(const word of words){if((segment+' '+word).length>90&&segment)emit();segment+=(segment?' ':'')+word;}emit();}pages.push(page);
+  const regular=3+pages.length*2,bold=regular+1;const objs=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids ['+pages.map((_,i)=>(3+i*2)+' 0 R').join(' ')+'] /Count '+pages.length+' >>'];
+  pages.forEach((items,i)=>{items.push('BT /F1 8 Tf 50 40 Td ('+pdfText(sample?'Documento de ejemplo.':'Generado por el portal institucional.')+' '+(i+1)+'/'+pages.length+') Tj ET');const stream=items.join('\n');objs.push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 '+regular+' 0 R /F2 '+bold+' 0 R >> >> /Contents '+(4+i*2)+' 0 R >>','<< /Length '+stream.length+' >>\nstream\n'+stream+'\nendstream');});
+  objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');let pdf='%PDF-1.4\n';const offsets=[];objs.forEach((o,i)=>{offsets.push(pdf.length);pdf+=(i+1)+' 0 obj\n'+o+'\nendobj\n';});const xref=pdf.length;pdf+='xref\n0 '+(objs.length+1)+'\n0000000000 65535 f \n'+offsets.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size '+(objs.length+1)+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';return new Blob([pdf],{type:'application/pdf'});
 }
+
 function dataURItoBlob(uri) { const [h, b] = uri.split(','); const mime = h.match(/:(.*?);/)[1]; const bin = atob(b); const arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); return new Blob([arr], { type: mime }); }
 /* doc: {nombre, data?(dataURI), titulo?, lineas?} */
 function docBlob(doc) {
   if (!doc) return null;
   if (doc.data) return dataURItoBlob(doc.data);
-  return makePdf(doc.titulo || doc.nombre, doc.lineas || [], (DB.config.inst.nombre || '').toUpperCase());
+  return makePdf(doc.titulo || doc.nombre, doc.lineas || [], (DB.config.inst.nombre || '').toUpperCase(),true);
 }
 function openDoc(doc) {
   const b = docBlob(doc); if (!b) return toast('Documento no disponible', 'err');
@@ -4557,16 +4550,9 @@ const hashPass = (user, pass) => sha256(unescape(encodeURIComponent('iestp|' + u
 /* ---------- Almacenamiento ---------- */
 const STORE_KEY = 'portal_iestp_v1';
 let DB = null; let MEM_ONLY = false;
-function loadDB() {
-  try { const s = localStorage.getItem(STORE_KEY); if (s) { DB = JSON.parse(s); if (DB && DB.__v === SEED_VERSION) return; } } catch (e) { MEM_ONLY = true; }
-  DB = seedDB(); saveDB();
-}
-function saveDB() {
-  if (MEM_ONLY) return true;
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); return true; }
-  catch (e) { toast('No se pudo guardar: el almacenamiento del navegador está lleno. Use archivos más livianos o restablezca los datos.', 'err'); return false; }
-}
-function resetDB() { DB = seedDB(); saveDB(); }
+function loadDB(){DB=structuredClone(window.PORTAL_BOOTSTRAP.data);MEM_ONLY=false;}
+function saveDB(){toast('No se cargó el servicio de guardado del servidor. Recarga la página.','err');return false;}
+function resetDB(){location.href='/respaldos.php';}
 const coll = n => (DB[n] = DB[n] || []);
 const byId = (n, id) => coll(n).find(x => x.id === id);
 const alive = n => coll(n).filter(x => !x.deleted);
@@ -4597,16 +4583,11 @@ const ROLES = {
 /* Módulos cuyo contenido requiere aprobación del Administrador antes de publicarse (sección 6.3) */
 const APPROVAL_MODS = ['documentos', 'admision', 'convocatorias'];
 let SESSION = null;
-function currentUser() {
-  if (SESSION) return SESSION;
-  try { const id = sessionStorage.getItem('portal_sess'); if (id) SESSION = byId('usuarios', id) || null; } catch (e) { }
-  return SESSION;
-}
-function setSession(u) { SESSION = u; try { u ? sessionStorage.setItem('portal_sess', u.id) : sessionStorage.removeItem('portal_sess'); } catch (e) { } touchSession(); }
-/* Cierre automático de sesión por inactividad */
-const SESSION_IDLE_MIN = 30;
-function touchSession() { try { sessionStorage.setItem('portal_act', String(Date.now())); } catch (e) { } }
-function sessionExpired() { try { const t = +sessionStorage.getItem('portal_act') || 0; return !!t && Date.now() - t > SESSION_IDLE_MIN * 60000; } catch (e) { return false; } }
+function currentUser(){return window.PORTAL_BOOTSTRAP.user;}
+function setSession(u){if(!u)location.href='/#/admin';}
+const SESSION_IDLE_MIN=30;let portalActivityAt=Date.now();
+function touchSession(){portalActivityAt=Date.now();}
+function sessionExpired(){return Date.now()-portalActivityAt>SESSION_IDLE_MIN*60000;}
 const role = () => ROLES[(currentUser() || {}).rol] || {};
 const can = mod => { const r = role(); return !!(r.mods && r.mods.includes(mod)); };
 const canFlag = f => !!role()[f];
@@ -4624,30 +4605,34 @@ function stamp(rec, isNew) {
 
 /* ---------- Captcha simple + anti-spam (prototipo) ---------- */
 function captchaHTML(id) {
-  const a = 2 + Math.floor(Math.random() * 8), b = 1 + Math.floor(Math.random() * 9);
-  return `<div class="field"><span class="lbl">Verificación anti-spam <span class="req">*</span></span><div class="captcha" data-ans="${a + b}" id="${id}"><span>¿Cuánto es</span><b aria-label="${a} más ${b}">${a} + ${b}</b><span>?</span><input class="inp" name="captcha" inputmode="numeric" aria-label="Resultado de la suma" required autocomplete="off"><small style="color:var(--muted)">Protección contra envíos automatizados</small></div></div><input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">`;
+  const purpose=id==='cap-c'?'mensajes':id==='cap-nl'?'suscriptores':id.includes('cq')?'certificados':id.includes('lr')?'reclamos':'expedientes';
+  try { const c=portalRequest('POST','/api/desafio',{purpose});return `<div class="field"><span class="lbl">Verificación anti-spam *</span><div class="captcha" id="${id}" data-challenge="${c.id}" data-purpose="${purpose}"><span>¿Cuánto es</span><b>${esc(c.question)}</b><span>?</span><input class="inp" name="captcha" inputmode="numeric" aria-label="Resultado de la suma" required autocomplete="off"></div></div><input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">`; }
+  catch(error){return `<p role="alert">${esc(error.message)} Recarga la página para habilitar el formulario.</p>`;}
 }
 function checkCaptcha(form, id) {
   if (form.website && form.website.value) return 'Envío bloqueado por el filtro anti-spam.';
-  const box = $('#' + id, form); if (!box) return '';
-  if (String(form.captcha.value).trim() !== box.dataset.ans) return 'La verificación anti-spam es incorrecta.';
+  const box = $('#' + id, form);if(!box||!box.dataset.challenge)return 'Recarga la página para verificar el formulario.';
+  const answer=String(form.querySelector('[name="captcha"]')?.value||'').trim();if(!/^\d{1,3}$/.test(answer))return 'Escribe el resultado de la suma.';
+  portalProofs[box.dataset.purpose]={challenge_id:box.dataset.challenge,answer,website:form.website?.value||'',accept:form.querySelector('[name="acepto"]')?.checked===true,declare:form.querySelector('[name="declaro"]')?.checked===true};
   return '';
 }
 const RATE = {};
-function rateLimited(key, secs = 20) { const t = Date.now(); if (RATE[key] && t - RATE[key] < secs * 1000) return true; RATE[key] = t; return false; }
+function rateLimited(key, secs = 20) { return !!(RATE[key] && Date.now() - RATE[key] < secs * 1000); }
 
 /* ---------- Validación de formularios ---------- */
 function showErrors(form, errs) {
-  $$('.field.invalid', form).forEach(f => { f.classList.remove('invalid'); const m = $('.errmsg', f); m && m.remove(); });
-  let first = null;
-  Object.entries(errs).forEach(([name, msg]) => {
-    const inp = form.querySelector(`[name="${name}"]`) || form.querySelector(`[data-name="${name}"]`); if (!inp) return;
-    const f = inp.closest('.field'); if (!f) return;
-    f.classList.add('invalid'); const m = document.createElement('div'); m.className = 'errmsg'; m.textContent = msg; f.appendChild(m);
-    inp.setAttribute('aria-invalid', 'true'); first = first || inp;
+  $$('[aria-invalid="true"]', form).forEach(el => el.removeAttribute('aria-invalid'));
+  $$('.field.invalid', form).forEach(f => { f.classList.remove('invalid'); $$('.errmsg',f).forEach(el=>el.remove()); });
+  $$('.form-error',form).forEach(el=>el.remove());
+  const entries=Object.entries(errs).filter(([,msg])=>!!msg);let first=null;
+  entries.forEach(([name,msg])=>{
+    const escaped=CSS.escape(name);const inp=form.querySelector(`[name="${escaped}"]`)||form.querySelector(`[data-name="${escaped}"]`);
+    const field=inp?.closest('.field')||form.querySelector(`[data-f="${escaped}"]`);
+    if(field){field.classList.add('invalid');const message=document.createElement('div');message.className='errmsg';message.textContent=msg;field.appendChild(message);const target=inp||field.querySelector('input:not([hidden]),textarea,select,button')||field;target.setAttribute('aria-invalid','true');if(!target.matches('input,textarea,select,button'))target.tabIndex=-1;first ||= target;}
+    else{const message=document.createElement('div');message.className='notice err form-error';message.setAttribute('role','alert');message.textContent=msg;form.prepend(message);}
   });
-  if (first) { first.focus(); toast('Revise los campos marcados en rojo.', 'err'); }
-  return !first;
+  if(entries.length){first?.focus();toast('Revise los campos marcados en rojo.','err');}
+  return entries.length===0;
 }
 const reEmail = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 function validDoc(tipo, n) {
@@ -4699,7 +4684,7 @@ function bindChartTips(root) {
 }
 
 /* ---------- CSV ---------- */
-function toCSV(rows) { return '﻿' + rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n'); }
+function toCSV(rows) { return '﻿' + rows.map(r => r.map(c => `"${String(c ?? '').replace(/^[=+@\t\r-]/,m=>"'"+m).replace(/"/g, '""')}"`).join(';')).join('\r\n'); }
 function parseCSV(text) {
   const sep = (text.split('\n')[0].match(/;/g) || []).length >= (text.split('\n')[0].match(/,/g) || []).length ? ';' : ',';
   const rows = []; let row = [], cur = '', q = false;
@@ -4802,7 +4787,7 @@ function footerHTML() {
     <section class="f-col f-about"><a class="f-brand" href="#/"><img src="${logoSrc()}" alt=""><span><strong>${esc(i.nombreCorto)}</strong><small>${esc(i.nombre)}</small></span></a><p>${esc(i.descripcion)}</p>${soc ? `<div class="social f-social" aria-label="Redes sociales">${soc}</div>` : ''}</section>
     <nav class="f-col" aria-label="Enlaces del pie de página"><h2>Enlaces rápidos</h2><ul class="f-links">${links.map(([h, l]) => `<li><a href="${h}">${l}</a></li>`).join('')}</ul></nav>
     <section class="f-col"><h2>Contacto</h2><ul class="f-contact">${ci('map', 'Dirección', `<span>${esc(i.direccion)}</span>`)}${ci('phone', 'Teléfono' + (i.telefonoNota ? ' · ' + esc(i.telefonoNota) : ''), `<a href="tel:${esc(i.telefono.replace(/\D/g, ''))}">${esc(i.telefono)}</a>`)}${ci('mail', 'Correo', `<a href="mailto:${esc(i.correo)}">${esc(i.correo)}</a>`)}${ci('clock', 'Horario de atención', `<span>${esc(i.horario)}</span>`)}</ul></section>
-    <section class="f-col"><h2>Boletín informativo</h2><p>Recibe noticias, convocatorias y fechas de admisión en tu correo.</p><form class="newsletter" data-newsletter><label class="sr-only" for="nl">Correo electrónico</label><input id="nl" type="email" placeholder="tu@correo.com" required><button>Suscribirme</button></form>
+    <section class="f-col"><h2>Boletín informativo</h2><p>Registra tu interés en recibir el boletín institucional. El envío por correo se habilitará posteriormente.</p><form class="newsletter" data-newsletter style="flex-wrap:wrap"><details style="flex-basis:100%;color:#102b50;background:#fff;padding:8px"><summary>Verificación y privacidad</summary>${captchaHTML('cap-nl')}<label><input type="checkbox" name="acepto" required> Acepto la política de privacidad.</label></details><label class="sr-only" for="nl">Correo electrónico</label><input id="nl" type="email" placeholder="tu@correo.com" required><button>Suscribirme</button></form>
       <h2 class="f-h2b">Enlaces institucionales</h2><div class="f-logos"><a ${linkAttrs(ext('minedu') || 'https://www.gob.pe/minedu')}>MINEDU</a><a ${linkAttrs(ext('dre') || 'https://www.dreica.gob.pe/')}>DRE Ica</a><a href="#/servicios/libro-de-reclamaciones" class="f-lr">${ic('book')} Libro de Reclamaciones</a></div></section>
   </div>
   <div class="f-bottom"><div class="wrap"><span>© ${yearNow()} ${esc(i.nombre)}. Todos los derechos reservados.</span><nav aria-label="Enlaces legales"><a href="#/terminos-de-uso">Términos de uso</a><a href="#/politica-de-privacidad">Política de privacidad</a><a href="#/mapa-del-sitio">Mapa del sitio</a><a href="#/admin">Intranet</a></nav></div></div></footer>
@@ -4993,7 +4978,7 @@ function bindContactForm() {
     const m = { id: uid(), fecha: nowISO(), nombres: v.nombres.trim(), documento: v.documento, correo: v.correo.trim(), telefono: v.telefono, asunto: v.asunto, programa: v.programa, mensaje: v.mensaje.trim(), estado: 'Nuevo', historial: [] };
     coll('mensajes').unshift(m); audit('Registro', 'Mensajes de contacto', m.asunto, 'Mensaje recibido desde el portal'); mailOut(DB.config.correoContacto, 'Nuevo mensaje de contacto: ' + m.asunto, m.mensaje);
     if (!saveDB()) return;
-    f.reset(); modal({ title: 'Mensaje enviado', size: 'sm', body: `<div class="notice ok">Tu mensaje fue registrado correctamente. Te responderemos al correo <b>${esc(m.correo)}</b>.</div>` });
+    f.reset(); modal({ title: 'Mensaje enviado', size: 'sm', body: `<div class="notice ok">Tu mensaje fue registrado correctamente. El envío por correo está pendiente de habilitación.</div>` });
   };
 }
 function mailOut(para, asunto, cuerpo) {
@@ -5113,7 +5098,7 @@ R('becas', (path, q) => {
 /* ---------- TRANSPARENCIA ---------- */
 const transpSide = active => `<nav class="side-box" aria-label="Transparencia"><h2>Transparencia</h2><ul>${[['Documentos de Gestión', 'documentos-gestion'], ['Inversiones y Recursos Económicos', 'inversiones'], ['Licenciamiento', 'licenciamiento'], ['TUPA', 'tupa'], ['Estadísticas', 'estadisticas'], ['Convocatorias', 'convocatorias']].map(([l, s]) => `<li><a href="#/transparencia/${s}" ${s === active ? 'aria-current="page"' : ''}>${l}</a></li>`).join('')}</ul></nav>`;
 const tipoDoc = id => (coll('tiposDocumento').find(t => t.id === id) || {}).nombre || '';
-function docFile(d) { if (d.refModulo === 'admision') { const a = admVigente(); return a && a.reglamento; } return d.archivo; }
+function docFile(d) { if(d.estado==='Histórico'&&d.archivoRef)return d.archivoRef;if (d.refModulo === 'admision') { const a = admVigente(); return (a && a.reglamento)||d.archivoRef; } return d.archivo; }
 const DST = { page: 1, size: 5 };
 R('transparencia', p => ROUTES['transparencia/documentos-gestion'](p, new URLSearchParams()));
 R('transparencia/documentos-gestion', path => {
@@ -5201,13 +5186,13 @@ function bindReclamo() {
     const codigo = `LR-${y}-${pad(C[y], 6)}`; const fecha = nowISO();
     const r = { id: uid(), codigo, fecha, tipo: v.tipo, nombres: v.nombres.trim(), tipoDoc: v.tipoDoc, numDoc: v.numDoc.trim(), correo: v.correo.trim(), telefono: v.telefono.trim(), asunto: v.asunto.trim(), descripcion: v.descripcion.trim(), pedido: v.pedido.trim(), adjunto: adj, estado: 'Recibido', historial: [{ fecha, usuario: 'portal', estado: 'Recibido', nota: 'Registro desde el portal web' }], notas: [], respuesta: '', notifInst: 'Pendiente', notifUser: 'Pendiente', anulado: false };
     coll('reclamos').unshift(r);
-    if (!saveDB()) { C[y]--; DB.reclamos.shift(); return; }
+    if (!saveDB()) return;
       codigo = r.codigo; // se guarda antes de confirmar
     r.notifInst = mailOut(DB.config.correoReclamos, `[${codigo}] Nuevo ${v.tipo.toLowerCase()} registrado`, `${r.nombres} - ${r.asunto}: ${r.descripcion}`);
     r.notifUser = mailOut(r.correo, `Constancia de registro ${codigo}`, `Su ${v.tipo.toLowerCase()} fue registrado el ${fshort(fecha, true)} con el código ${codigo}.`);
     audit('Registro', 'Libro de reclamaciones', codigo, `${v.tipo} registrado desde el portal. Notificación institucional: ${r.notifInst}`); saveDB();
     f.reset(); $$('[data-c]', f).forEach(c => c.textContent = '0');
-    const m = modal({ title: 'Reclamación registrada', body: `<div class="notice ok">Tu ${esc(v.tipo.toLowerCase())} fue registrado correctamente el ${fdate(fecha, true)}.</div><p>Tu código de seguimiento es:</p><div class="code-box">${codigo}</div><p style="margin-top:12px">Hemos enviado una constancia de recepción a <b>${esc(r.correo)}</b>. Guarda este código para consultar el estado de tu reclamación.</p>`, foot: `<button class="btn sec" data-print>${ic('print').replace('<svg', '<svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"')} Descargar constancia</button><button class="btn" data-ok>Aceptar</button>` });
+    const m = modal({ title: 'Reclamación registrada', body: `<div class="notice ok">Tu ${esc(v.tipo.toLowerCase())} fue registrado correctamente el ${fdate(fecha, true)}.</div><p>Tu código de seguimiento es:</p><div class="code-box">${codigo}</div><p style="margin-top:12px">Puedes descargar tu constancia de recepción. El envío por correo está pendiente de habilitación. Guarda este código para consultar el estado de tu reclamación.</p>`, foot: `<button class="btn sec" data-print>${ic('print').replace('<svg', '<svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"')} Descargar constancia</button><button class="btn" data-ok>Aceptar</button>` });
     $('[data-ok]', m.el).onclick = m.close;
     $('[data-print]', m.el).onclick = () => downloadBlob(makePdf('Constancia de registro - Libro de Reclamaciones', [`Codigo de seguimiento: ${codigo}`, `Fecha de registro: ${fshort(fecha, true)}`, `Tipo: ${r.tipo}`, `Reclamante: ${r.nombres}`, `Documento: ${r.tipoDoc} ${maskDni(r.numDoc)}`, `Asunto: ${r.asunto}`, '', 'Detalle:', r.descripcion, '', 'Pedido:', r.pedido], inst().nombre.toUpperCase()), `Constancia_${codigo}.pdf`);
   };
@@ -5307,7 +5292,7 @@ R('servicios/mesa-de-partes', (path, q0) => {
         if (!showErrors(f, er)) return; if (rateLimited('mp', 30)) return toast('Espere unos segundos antes de registrar otro trámite.', 'err');
         const y = String(yearNow()); const C = DB.config.contadores.EXP; C[y] = (C[y] || 0) + 1; const numero = `EXP-${y}-${pad(C[y], 6)}`; const fecha = nowISO();
         const x = { id: uid(), numero, fecha, nombres: v.nombres.trim(), tipoDoc: v.tipoDoc, numDoc: v.numDoc.trim(), correo: v.correo.trim(), telefono: v.telefono, tipoTramite: v.tipoTramite, asunto: v.asunto.trim(), folios: +v.folios, archivo: { nombre: safeName(file.name, 'exp'), original: file.name, size: file.size, data: await readAsDataURL(file) }, area: 'MP', estado: 'Recibido', historial: [{ fecha, usuario: 'portal', estado: 'Recibido', nota: 'Registro virtual' }] };
-        x.archivo.sha256 = await sha256Of(x.archivo.data); coll('expedientes').unshift(x); expCargoCod(x); if (!saveDB()) { C[y]--; DB.expedientes.shift(); return; }
+        x.archivo.sha256 = await sha256Of(x.archivo.data); coll('expedientes').unshift(x); expCargoCod(x); if (!saveDB()) return;
         mailOut(x.correo, 'Cargo de recepción ' + numero, 'Su trámite fue registrado.'); audit('Registro', 'Mesa de partes', numero, x.tipoTramite); saveDB(); f.reset();
         const mReg = modal({ title: 'Trámite registrado', body: `<div class="notice ok">Tu trámite fue recibido el ${fdate(fecha, true)}.</div><p>Número de expediente:</p><div class="code-box">${numero}</div><p style="margin-top:10px">Código de verificación: <b class="mono">${esc(x.cargoCod || '—')}</b> · Plazo de atención: ${EXP_PLAZOS[x.tipoTramite] || 10} días hábiles.</p>${expEfectiva(fecha) ? '<div class="notice warn">Registrado fuera del horario de recepción: se considera recibido el ' + fdate(expEfectiva(fecha), true) + '.</div>' : ''}<p>Descarga y conserva tu cargo de recepción. Correo de contacto: <b>${esc(x.correo)}</b>.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${cargoBtn(x)}<a class="btn ghost" href="${esc('#/servicios/mesa-de-partes?exp=' + numero + '&c=' + (x.cargoCod || ''))}" data-close-modal>Ver seguimiento</a></div>` }); $('[data-close-modal]', mReg.el).onclick = () => mReg.close();
       };
@@ -5422,9 +5407,9 @@ function bindPublicChrome() {
     b.onclick = () => { const li = b.parentNode; const o = !li.classList.contains('open'); $$('.mainnav li.open').forEach(x => { x.classList.remove('open'); $('button', x).setAttribute('aria-expanded', 'false'); }); if (o) { li.classList.add('open'); b.setAttribute('aria-expanded', 'true'); } };
     b.parentNode.addEventListener('keydown', e => { if (e.key === 'Escape') { b.parentNode.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); b.focus(); } });
   });
-  document.addEventListener('click', e => { if (!e.target.closest('.mainnav li')) $$('.mainnav li.open').forEach(x => x.classList.remove('open')); }, { once: true });
+  if(!window.__publicNavOutside){window.__publicNavOutside=true;document.addEventListener('click', e => { if(!e.target.closest('.mainnav li'))$$('.mainnav li.open').forEach(x => {x.classList.remove('open');$('button.top',x)?.setAttribute('aria-expanded','false');}); });}
   $$('[data-search]').forEach(f => f.onsubmit = e => { e.preventDefault(); go('#/buscar?q=' + encodeURIComponent(f.q.value.trim())); });
-  const nl = $('[data-newsletter]'); if (nl) nl.onsubmit = e => { e.preventDefault(); const em = $('#nl').value; if (!reEmail.test(em)) return toast('Correo no válido', 'err'); coll('suscriptores').push({ correo: em, fecha: nowISO() }); if (!saveDB()) return; nl.reset(); toast('¡Gracias! Te suscribiste al boletín informativo.', 'ok'); };
+  const nl = $('[data-newsletter]'); if (nl) nl.onsubmit = e => { e.preventDefault(); const cap=checkCaptcha(nl,'cap-nl');if(cap)return toast(cap,'err'); const em = $('#nl').value; if (!reEmail.test(em)) return toast('Correo no válido', 'err'); coll('suscriptores').push({ correo: em, fecha: nowISO() }); if (!saveDB()) return; nl.reset(); toast('Tu suscripción quedó registrada. El envío por correo está pendiente de habilitación.', 'ok'); };
   // carrusel
   const slides = $$('.slide');
   if (slides.length > 1) {
@@ -5494,23 +5479,7 @@ function loginView() {
   <p style="font-size:12.5px;color:var(--muted);margin:14px 0 4px">Las cuentas son administradas por la institución. Tras 5 intentos fallidos la cuenta se bloquea 5 minutos.</p><div class="demo-users">${DEMO_USERS.map(([u, p, l]) => `<button type="button" data-du="${u}|${p}"><b>${u}</b> · ${l}</button>`).join('')}</div>
   <p style="text-align:center;margin:14px 0 0"><a href="#/">← Volver al portal</a></p></div></div>`;
 }
-function bindLogin() {
-  $$('[data-du]').forEach(b => b.onclick = () => { const [u, p] = b.dataset.du.split('|'); $('#lg-u').value = u; $('#lg-p').value = p; });
-  $('[data-login]').onsubmit = e => {
-    e.preventDefault(); const u = $('#lg-u').value.trim().toLowerCase(), p = $('#lg-p').value; const err = $('#lg-e');
-    const usr = coll('usuarios').find(x => x.usuario === u);
-    if (!usr) { err.textContent = 'Usuario o contraseña incorrectos.'; return; }
-    if (usr.estado !== 'Activo') { err.textContent = 'La cuenta está desactivada. Contacte al administrador.'; return; }
-    if (usr.bloqueadoHasta && Date.now() < usr.bloqueadoHasta) { err.textContent = `Cuenta bloqueada por intentos fallidos. Intente nuevamente en ${Math.ceil((usr.bloqueadoHasta - Date.now()) / 60000)} minuto(s).`; return; }
-    if (hashPass(u, p) !== usr.passHash) {
-      usr.intentos = (usr.intentos || 0) + 1;
-      if (usr.intentos >= 5) { usr.bloqueadoHasta = Date.now() + 5 * 60000; usr.intentos = 0; audit('Bloqueo de cuenta', 'Seguridad', u, '5 intentos fallidos'); err.textContent = 'Cuenta bloqueada durante 5 minutos por 5 intentos fallidos.'; }
-      else err.textContent = `Usuario o contraseña incorrectos. Intentos restantes: ${5 - usr.intentos}.`;
-      saveDB(); return;
-    }
-    usr.intentos = 0; usr.bloqueadoHasta = 0; usr.ultimoAcceso = nowISO(); setSession(usr); audit('Inicio de sesión', 'Sesión', u); saveDB(); go('#/admin/dashboard');
-  };
-}
+function bindLogin(){const f=$('[data-login]');if(f)f.onsubmit=e=>{e.preventDefault();$('#lg-e').textContent='Recarga la página para conectar con el servicio de autenticación.';};}
 
 /* ---------- Editor de texto enriquecido ---------- */
 function rteHTML(name, value, label) {
@@ -5613,9 +5582,9 @@ function bindFields(fields, work, root, rerender) {
   $$('[data-imgx]', root).forEach(b => b.onclick = async () => { if (await confirmBox('¿Retirar la imagen? Se usará la imagen institucional predeterminada.', { ok: 'Retirar' })) { work[b.dataset.imgx] = ''; rerender(); } });
   $$('[data-ff]', root).forEach(inp => inp.onchange = async () => {
     const f = inp.files[0]; if (!f) return; const n = inp.dataset.ff; const er = checkFile(f, 'pdf'); if (er) { inp.value = ''; return toast(er, 'err'); }
-    if (f.size > 2.5 * 1048576) { inp.value = ''; return toast('Use PDF menores de 2.5 MB (el almacenamiento del navegador es limitado). El sistema final admite hasta 10 MB.', 'err'); }
+
     if (work[n] && !await confirmBox(`Ya existe un documento vigente (${esc(work[n].original || work[n].nombre)}). ¿Reemplazarlo? La versión anterior quedará en el historial.`, { ok: 'Reemplazar', danger: false })) { inp.value = ''; return; }
-    work[n] = { nombre: safeName(f.name), original: f.name, size: f.size, data: await readAsDataURL(f), fecha: nowISO(), por: currentUser().usuario }; rerender();
+    work[n] = {...await portalUpload(f),fecha:nowISO(),por:currentUser().usuario}; rerender();
   });
   $$('[data-fv]', root).forEach(b => b.onclick = () => openDoc(work[b.dataset.fv]));
   $$('[data-fd]', root).forEach(b => b.onclick = () => downloadDoc(work[b.dataset.fd]));
@@ -5629,7 +5598,7 @@ function bindFields(fields, work, root, rerender) {
     $$('[data-rdel]', box).forEach(b => b.onclick = async () => { if (await confirmBox('¿Quitar esta fila?', { ok: 'Quitar' })) { work[f.n].splice(+b.dataset.rdel, 1); rerender(); } });
     $$('[data-rup]', box).forEach(b => b.onclick = () => { const i = +b.dataset.rup; if (i > 0) { const a = work[f.n]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; rerender(); } });
     $$('[data-rdn]', box).forEach(b => b.onclick = () => { const i = +b.dataset.rdn; const a = work[f.n]; if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; rerender(); } });
-    $$('[data-rf]', box).forEach(inp => inp.onchange = async () => { const fl = inp.files[0]; if (!fl) return; const er = checkFile(fl, 'pdf'); if (er) return toast(er, 'err');  const [i, c] = inp.dataset.rf.split('|'); work[f.n][+i][c] = { nombre: safeName(fl.name), original: fl.name, size: fl.size, data: await readAsDataURL(fl), fecha: nowISO() }; rerender(); });
+    $$('[data-rf]', box).forEach(inp => inp.onchange = async () => { const fl = inp.files[0]; if (!fl) return; const er = checkFile(fl, 'pdf'); if (er) return toast(er, 'err');  const [i, c] = inp.dataset.rf.split('|'); work[f.n][+i][c] = {...await portalUpload(fl),fecha:nowISO()}; rerender(); });
     $$('[data-rfx]', box).forEach(b => b.onclick = () => { const [i, c] = b.dataset.rfx.split('|'); work[f.n][+i][c] = null; rerender(); });
   });
   fields.filter(f => f.t === 'custom' && f.bind).forEach(f => f.bind(work, $(`[data-custom="${f.n}"]`, root), rerender));
@@ -5642,6 +5611,7 @@ function readSimple(fields, form, work) {
     if (f.t === 'checkbox') work[f.n] = !!(el && el.checked);
     else if (f.t === 'checks') work[f.n] = $$(`input[name="${f.n}"]:checked`, form).map(x => x.value);
     else if (f.t === 'lines') work[f.n] = el ? el.value.split('\n').map(s => s.trim()).filter(Boolean) : work[f.n];
+    else if(f.t==='datetime-local')work[f.n]=el&&el.value&&!isNaN(new Date(el.value))?new Date(el.value).toISOString():'';
     else if (f.t === 'number') work[f.n] = el && el.value !== '' ? +el.value : '';
     else if (f.t === 'rich') { if (work[f.n]) work[f.n] = sanitize(work[f.n]); }
     else if (['image', 'file', 'rows', 'custom', 'info'].includes(f.t)) { /* en vivo */ }
@@ -5651,7 +5621,7 @@ function readSimple(fields, form, work) {
 
 /* ---------- CRUD genérico ---------- */
 const SPECS = {};
-function isPubState(spec, s) { return s === (spec.pubState || 'Publicado'); }
+function isPubState(spec, s) { return s === (spec.pubState || 'Publicado') || (spec.coll==='documentos'&&s==='Histórico'); }
 function crudList(spec) {
   const st = ADM.state[spec.key] = ADM.state[spec.key] || { q: '', f: {}, page: 1, size: 10, trash: false };
   let rows = coll(spec.coll).filter(r => st.trash ? r.deleted : !r.deleted);
@@ -5682,14 +5652,14 @@ function crudList(spec) {
           if (spec.canDelete && !spec.canDelete(r)) return toast('No se puede eliminar este registro: el periodo está cerrado.', 'err');
           if (spec.beforeDelete) { const m = spec.beforeDelete(r); if (m) return toast(m, 'err'); }
           if (!await confirmBox(`Se enviará a la papelera: <b>${esc(lbl)}</b>. Dejará de mostrarse en el portal. Podrá restaurarlo luego.`, { ok: 'Eliminar' })) return;
-          r.deleted = true; r.delPor = currentUser().usuario; r.delEn = nowISO(); stamp(r); audit('Eliminación lógica', spec.title, lbl); saveDB(); toast('Enviado a la papelera.', 'ok'); return rer();
+          r.deleted = true; r.delPor = currentUser().usuario; r.delEn = nowISO(); stamp(r); audit('Eliminación lógica', spec.title, lbl); if(!saveDB())return; toast('Enviado a la papelera.', 'ok'); return rer();
         }
-        if (act === 'restore') { r.deleted = false; stamp(r); audit('Restauración', spec.title, lbl); saveDB(); toast('Registro restaurado.', 'ok'); return rer(); }
+        if (act === 'restore') { r.deleted = false; stamp(r); audit('Restauración', spec.title, lbl); if(!saveDB())return; toast('Registro restaurado.', 'ok'); return rer(); }
         if (act === 'hard') {
           if (spec.inUse) { const m = spec.inUse(r); if (m) return toast(m, 'err'); }
           if (!await confirmBox(`Eliminación DEFINITIVA de <b>${esc(lbl)}</b>. Esta acción no se puede deshacer.`, { ok: 'Continuar' })) return;
           if (!await confirmBox('Confirme nuevamente la eliminación definitiva.', { ok: 'Eliminar definitivamente', title: 'Confirmación adicional' })) return;
-          DB[spec.coll] = coll(spec.coll).filter(x => x.id !== id); audit('Eliminación definitiva', spec.title, lbl); saveDB(); toast('Eliminado definitivamente.', 'ok'); return rer();
+          DB[spec.coll] = coll(spec.coll).filter(x => x.id !== id); audit('Eliminación definitiva', spec.title, lbl); if(!saveDB())return; toast('Eliminado definitivamente.', 'ok'); return rer();
         }
         if (spec.onAct) spec.onAct(act, r, rer);
       });
@@ -5738,7 +5708,7 @@ function crudForm(spec, id) {
         if (Object.keys(er).length) { showErrors(form, er); const k = Object.keys(er).find(k => !form.querySelector(`[name="${k}"]`) && !form.querySelector(`[data-name="${k}"]`)); if (k) toast(er[k], 'err'); return; }
         // flujo de aprobación
         let msg = 'Cambios guardados.';
-        if (APPROVAL_MODS.includes(spec.mod) && isPubState(spec, work.estado) && !canFlag('approve')) { const prev = isNew ? null : byId(spec.coll, work.id); if (!prev || prev.estado !== work.estado) { work.estado = 'En revisión'; msg = 'Guardado y enviado a aprobación del Administrador.'; } }
+        if (APPROVAL_MODS.includes(spec.mod) && isPubState(spec, work.estado) && !canFlag('approve')) { const prev = isNew ? null : byId(spec.coll, work.id); if (!prev || prev.estado !== work.estado || JSON.stringify(prev)!==JSON.stringify(work)) { work.estado = 'En revisión'; msg = 'Guardado y enviado a aprobación del Administrador.'; } }
         if (!canFlag('publish') && isPubState(spec, work.estado)) { work.estado = 'Borrador'; msg = 'Su rol no puede publicar: se guardó como borrador.'; }
         delete work._preview;
         const prev = isNew ? null : byId(spec.coll, work.id);
@@ -5793,7 +5763,7 @@ SPECS.noticias = {
   rowActs: r => ib('star', 'star', r.destacada ? 'Quitar destacado' : 'Marcar como destacada') + ib('dup', 'copy', 'Duplicar como borrador'),
   onAct: (act, r, rer) => {
     if (act === 'star') { r.destacada = !r.destacada; stamp(r); audit(r.destacada ? 'Marcar destacada' : 'Quitar destacada', 'Noticias', r.titulo); saveDB(); rer(); }
-    if (act === 'dup') { const c = JSON.parse(JSON.stringify(r)); c.id = uid(); c.titulo = r.titulo + ' (copia ' + new Date().toLocaleTimeString('es-PE') + ')'; c.slug = slugify(c.titulo); c.estado = 'Borrador'; c.destacada = false; stamp(c, true); coll('noticias').push(c); audit('Creación (duplicado)', 'Noticias', c.titulo); saveDB(); toast('Borrador duplicado creado.', 'ok'); rer(); }
+    if (act === 'dup') { const c = JSON.parse(JSON.stringify(r)); c.id = uid(); c.titulo = r.titulo + ' (copia ' + new Date().toLocaleTimeString('es-PE') + ')'; c.slug = slugify(c.titulo); c.estado = 'Borrador'; c.destacada = false; stamp(c, true); coll('noticias').push(c); audit('Creación (duplicado)', 'Noticias', c.titulo); if(!saveDB())return; toast('Borrador duplicado creado.', 'ok'); rer(); }
   },
   preview: r => '#/noticias/' + (r.slug || slugify(r.titulo)),
   defaults: () => ({ fecha: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16), destacada: false, autor: currentUser().usuario, adjuntos: [], estado: 'Borrador' }),
@@ -5851,7 +5821,7 @@ SPECS.documentos = {
   onAct: (act, r, rer) => {
     if (act === 'ver') { const f = docFile(r); return f ? openDoc(f) : toast('Sin archivo', 'err'); }
     if (act === 'ver2') { const vs = coll('documentos').filter(d => d.grupo === r.grupo).sort((a, b) => String(b.version).localeCompare(String(a.version), undefined, { numeric: true })); return modal({ title: 'Historial de versiones: ' + esc(r.nombre), size: 'lg', body: `<div class="tbl-wrap"><table class="tbl light"><thead><tr><th>Versión</th><th>Vigencia</th><th>Fecha de publicación</th><th>Estado</th><th>Responsable</th></tr></thead><tbody>${vs.map(v => `<tr><td>${esc(v.version)}</td><td>${esc(v.vigencia)}</td><td>${fshort(v.fechaPub)}</td><td>${stBadge(v.deleted ? 'Eliminado' : v.estado)}</td><td>${esc(v.publicadoPor || v.modPor)}</td></tr>`).join('')}</tbody></table></div>` }); }
-    if (act === 'nv') { const c = JSON.parse(JSON.stringify(r)); c.id = uid(); const parts = String(r.version).split('.'); c.version = (+parts[0] + 1) + '.0'; c.estado = 'Borrador'; c.archivo = r.refModulo ? null : null; c.fechaPub = ''; stamp(c, true); coll('documentos').push(c); audit('Nueva versión (borrador)', 'Documentos de gestión', c.nombre + ' v' + c.version); saveDB(); toast('Se creó la versión ' + c.version + ' como borrador. Cargue el archivo y publíquela.', 'ok'); go('#/admin/documentos/' + c.id); }
+    if (act === 'nv') { const c = JSON.parse(JSON.stringify(r)); c.id = uid(); const major=Math.max(0,...coll('documentos').filter(v=>v.id===r.id||(r.grupo&&v.grupo===r.grupo)).map(v=>Number(String(v.version).match(/\d+/)?.[0]||0))); c.version=(major+1)+'.0'; c.estado = 'Borrador'; c.archivo = r.refModulo ? null : null; c.fechaPub = ''; stamp(c, true); coll('documentos').push(c); audit('Nueva versión (borrador)', 'Documentos de gestión', c.nombre + ' v' + c.version); if(!saveDB())return; toast('Se creó la versión ' + c.version + ' como borrador. Cargue el archivo y publíquela.', 'ok'); go('#/admin/documentos/' + c.id); }
   },
   defaults: () => ({ version: '1.0', vigencia: String(yearNow()), orden: alive('documentos').length + 1, refModulo: '' }),
   fields: w => [
@@ -5937,7 +5907,7 @@ function bindProgUd(w, box, rer) {
 }
 SPECS.locales = {
   key: 'locales', mod: 'locales', coll: 'locales', title: 'Campus y locales', singular: 'local', icon: 'map', states: ESTADOS, label: r => r.nombre, order: true, preview: () => '#/nosotros/campus-e-informes',
-  extraActs: () => `<a class="btn sec" href="#/admin/paginas/pg-campus">Editar página Campus e Informes</a><a class="btn sec" href="#/admin/mensajes">Mensajes de contacto</a>`,
+  extraActs: () => `${can('paginas') ? '<a class="btn sec" href="#/admin/paginas/pg-campus">Editar página Campus e Informes</a>' : ''}${can('mensajes') ? '<a class="btn sec" href="#/admin/mensajes">Mensajes de contacto</a>' : ''}`,
   cols: [{ l: 'Foto', f: r => thumb(r.foto) }, { l: 'Local', f: r => `<b>${esc(r.nombre)}</b><br><small>${esc(r.direccion)}</small>` }, { l: 'Coordenadas', f: r => `${r.lat}, ${r.lng}` }, { l: 'Estado', f: r => stBadge(r.estado) }],
   fields: [{ n: 'nombre', l: 'Nombre del local', req: true }, { n: 'telefono', l: 'Teléfono', req: true }, { n: 'direccion', l: 'Dirección (según partida registral)', req: true, full: true }, { n: 'correo', l: 'Correo', t: 'email' }, { n: 'horario', l: 'Horario de atención' }, { n: 'lat', l: 'Latitud', t: 'number', step: 'any', req: true }, { n: 'lng', l: 'Longitud', t: 'number', step: 'any', req: true }, { n: 'mapa', l: 'Vista previa de la ubicación', t: 'custom', render: w => `<iframe class="map" style="height:220px" title="Vista previa del mapa" src="https://www.openstreetmap.org/export/embed.html?bbox=${w.lng - .005},${w.lat - .005},${+w.lng + .005},${+w.lat + .005}&layer=mapnik&marker=${w.lat},${w.lng}"></iframe><button type="button" class="btn xs sec" data-mapr style="margin-top:6px">Actualizar vista previa con las coordenadas ingresadas</button>`, bind: (w, box, rer) => { $('[data-mapr]', box).onclick = () => rer(); } }, { n: 'foto', l: 'Foto del acceso principal', t: 'image', full: true }, { n: 'orden', l: 'Orden', t: 'number', side: true, min: 1 }],
   validate: w => (w.lat < -18.5 || w.lat > 0 || w.lng < -82 || w.lng > -68) ? { lat: 'Coordenadas fuera del territorio peruano.' } : {},
@@ -6027,7 +5997,7 @@ SPECS.becasper = {
   defaults: () => ({ anio: yearNow(), periodo: 'I', vigente: false }),
   fields: [{ n: 'anio', l: 'Año académico', t: 'number', req: true }, { n: 'periodo', l: 'Periodo', t: 'select', req: true, empty: false, opts: ['I', 'II'] }, { n: 'vigente', l: 'Marcar como periodo vigente (se muestra por defecto en el portal)', t: 'checkbox', full: true }, { n: 'info', t: 'info', html: () => 'Un periodo <b>Cerrado</b> se conserva como histórico y bloquea la edición de sus beneficiarios, salvo para el Administrador.' }],
   validate: w => alive('becasPeriodos').some(p => p.id !== w.id && p.anio == w.anio && p.periodo === w.periodo) ? { periodo: 'Ya existe ese año y periodo.' } : {},
-  afterSave: w => { if (w.vigente) coll('becasPeriodos').forEach(p => { if (p.id !== w.id) p.vigente = false; }); },
+  afterSave: w => { if (w.vigente && w.estado === 'Publicado') coll('becasPeriodos').forEach(p => { if (p.id !== w.id) p.vigente = false; }); },
 };
 SPECS.becastipos = {
   key: 'becastipos', mod: 'becas', coll: 'tiposBeca', title: 'Tipos de beca', singular: 'tipo de beca', icon: 'star', states: ['Activo', 'Inactivo'], pubState: 'Activo', label: r => r.nombre, tabs: () => becasTabs('t'), softDelete: false,
@@ -6090,7 +6060,7 @@ SPECS.paginas = {
   beforeSave: w => { w.slug = slugify(w.slug); if (/^<|>$/.test(w.contenido || '') === false && ['jerarquica', 'docentes', 'campus'].includes(w.clave)) w.contenido = String(w.contenido || '').replace(/<[^>]+>/g, ''); },
   afterSave: (w, isNew, prev) => { if (prev) { const snap = { titulo: prev.titulo, contenido: prev.contenido, imagen: prev.imagen, mensaje: prev.mensaje, estado: prev.estado, fecha: prev.modEn, por: prev.modPor }; w.versiones = [snap].concat(prev.versiones || []).slice(0, 10); } },
   sideExtra: w => (w.versiones || []).length ? `<hr style="border:0;border-top:1px solid var(--line);width:100%"><b>Versiones anteriores</b>${w.versiones.map((v, i) => `<span style="display:flex;justify-content:space-between;gap:6px;align-items:center">${fshort(v.fecha, true)} · ${esc(v.por)} <button type="button" class="btn xs ghost" data-restv="${i}">Restaurar</button></span>`).join('')}` : '',
-  afterForm: (w, isNew, rer) => { $$('[data-restv]').forEach(b => b.onclick = async () => { const v = w.versiones[+b.dataset.restv]; if (!await confirmBox(`¿Cargar la versión del ${fshort(v.fecha, true)} en el editor? Deberá guardar para aplicarla.`, { ok: 'Cargar versión', danger: false })) return; Object.assign(w, { titulo: v.titulo, contenido: v.contenido, imagen: v.imagen, mensaje: v.mensaje }); rer(); toast('Versión cargada en el editor. Revise y guarde.'); }); },
+  afterForm: (w, isNew, rer) => { $$('[data-restv]').forEach(b => b.onclick = async () => { const v = w.versiones[+b.dataset.restv]; if (!await confirmBox(`¿Cargar la versión del ${fshort(v.fecha, true)} en el editor? Deberá guardar para aplicarla.`, { ok: 'Cargar versión', danger: false })) return; Object.assign(w, { titulo: v.titulo, contenido: v.contenido, imagen: v.imagen, mensaje: v.mensaje }); route(); toast('Versión cargada en el editor. Revise y guarde.'); }); },
 };
 /* ---------- Admisión ---------- */
 SPECS.admision = {
@@ -6112,7 +6082,7 @@ SPECS.admision = {
     { n: 'vigente', l: 'Proceso vigente (se muestra por defecto en el portal)', t: 'checkbox', side: true },
   ],
   validate: w => { const e = {}; if (!(w.anio >= 2000 && w.anio <= 2100)) e.anio = 'Año no válido.'; if (w.estado === 'Borrador' && w.vigente) e.vigente = 'Un proceso en borrador no puede marcarse como vigente.'; return e; },
-  afterSave: w => { if (w.vigente) coll('admisiones').forEach(a => { if (a.id !== w.id && a.vigente) { a.vigente = false; stamp(a); } }); if (w.estado === 'Cerrado') w.vigente = false; },
+  afterSave: w => { if (w.vigente && w.estado === 'Publicado') coll('admisiones').forEach(a => { if (a.id !== w.id && a.vigente) { a.vigente = false; stamp(a); } }); if (w.estado === 'Cerrado') w.vigente = false; },
 };
 function resHTML(w) {
   return `<div class="notice" style="margin-top:0">Cargue un archivo solo para los turnos que correspondan. El botón “Ver Resultados” aparece en el portal únicamente cuando existe el archivo.</div><div class="tbl-wrap"><table class="tbl light subtbl"><thead><tr><th>N.º</th><th>Programa de estudio</th><th>Resultado turno mañana</th><th>Resultado turno tarde</th></tr></thead><tbody>${sortO(alive('programas')).map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.nombre)}</td>${['M', 'T'].map(t => { const r = ((w.resultados || {})[p.id] || {})[t]; return `<td style="min-width:200px">${r ? `<span class="file-chip"><span class="ft">PDF</span>${esc(clamp(r.original || r.nombre, 26))}</span><div style="display:flex;gap:4px;margin-top:4px"><button type="button" class="btn xs ghost" data-rv="${p.id}|${t}">Ver</button><label class="btn xs sec" style="cursor:pointer">Reemplazar<input type="file" accept=".pdf" hidden data-rr="${p.id}|${t}"></label><button type="button" class="btn xs ghost" data-rx="${p.id}|${t}">Retirar</button></div>` : `<label class="btn xs ghost" style="cursor:pointer">${ic('upload').replace('<svg', '<svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"')} Cargar PDF<input type="file" accept=".pdf" hidden data-rr="${p.id}|${t}"></label>`}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>${(w.historial || []).length ? `<details style="margin-top:8px"><summary style="cursor:pointer;font-size:13px">Historial de resultados reemplazados o retirados (${w.historial.length})</summary><ul style="font-size:12.5px">${w.historial.map(h => `<li>${fshort(h.fecha, true)} · ${esc(h.accion)} · ${esc(h.programa)} turno ${h.turno === 'M' ? 'mañana' : 'tarde'} · ${esc(h.archivo)} · ${esc(h.por)}</li>`).join('')}</ul></details>` : ''}`;
@@ -6122,11 +6092,11 @@ function bindRes(w, box, rer) {
   const pn = id => (byId('programas', id) || {}).nombre;
   $$('[data-rv]', box).forEach(b => b.onclick = () => { const [p, t] = b.dataset.rv.split('|'); openDoc(w.resultados[p][t]); });
   $$('[data-rr]', box).forEach(inp => inp.onchange = async () => {
-    const f = inp.files[0]; if (!f) return; const [p, t] = inp.dataset.rr.split('|'); const er = checkFile(f, 'pdf'); if (er) return toast(er, 'err'); if (f.size > 2.5 * 1048576) return toast('Use PDF menores de 2.5 MB.', 'err');
+    const f = inp.files[0]; if (!f) return; const [p, t] = inp.dataset.rr.split('|'); const er = checkFile(f, 'pdf'); if (er) return toast(er, 'err');
     const cur = (w.resultados[p] || {})[t];
     if (cur && !await confirmBox(`Ya existe un resultado para ${esc(pn(p))} – turno ${t === 'M' ? 'mañana' : 'tarde'}. ¿Reemplazarlo? El anterior quedará en el historial.`, { ok: 'Reemplazar', danger: false })) { inp.value = ''; return; }
     if (cur) w.historial.unshift({ fecha: nowISO(), accion: 'Reemplazo', programa: pn(p), turno: t, archivo: cur.original || cur.nombre, por: currentUser().usuario });
-    w.resultados[p] = w.resultados[p] || {}; w.resultados[p][t] = { nombre: safeName(f.name, 'res'), original: f.name, size: f.size, data: await readAsDataURL(f), fecha: nowISO(), por: currentUser().usuario }; rer();
+    w.resultados[p] = w.resultados[p] || {}; w.resultados[p][t] = {...await portalUpload(f),fecha:nowISO(),por:currentUser().usuario}; rer();
   });
   $$('[data-rx]', box).forEach(b => b.onclick = async () => { const [p, t] = b.dataset.rx.split('|'); if (!await confirmBox(`¿Retirar el resultado de ${esc(pn(p))} – turno ${t === 'M' ? 'mañana' : 'tarde'}? El botón dejará de mostrarse en el portal.`, { ok: 'Retirar' })) return; const cur = w.resultados[p][t]; w.historial.unshift({ fecha: nowISO(), accion: 'Retiro', programa: pn(p), turno: t, archivo: cur.original || cur.nombre, por: currentUser().usuario }); delete w.resultados[p][t]; rer(); });
 }
@@ -6138,7 +6108,7 @@ SPECS.matricula = {
   sort: (a, b) => String(b.periodo).localeCompare(a.periodo), preview: () => '#/matricula',
   cols: [{ l: 'Periodo', f: r => `<b>${esc(r.periodo)}</b>` }, { l: 'Título', f: r => esc(r.titulo) }, { l: 'Inicio de clases', f: r => fshort(r.inicioClases + 'T12:00') }, { l: 'Ítems', cls: 'num', f: r => (r.items || []).filter(i => !i.deleted).length }, { l: 'Vigente', f: r => r.vigente ? '<span class="badge ok">Vigente</span>' : '' }, { l: 'Estado', f: r => stBadge(r.estado) }],
   rowActs: () => ib('copy', 'copy', 'Crear nuevo periodo copiando esta estructura'),
-  onAct: async (a, r) => { if (a !== 'copy') return; const p = await promptBox('Identificación del nuevo periodo académico (ej.: 2027-I):', { title: 'Nuevo periodo a partir de ' + r.periodo, ok: 'Crear periodo' }); if (!p) return; if (coll('matriculas').some(m => normTitle(m.periodo) === normTitle(p))) return toast('Ya existe un periodo con esa identificación.', 'err'); const c = JSON.parse(JSON.stringify(r)); Object.assign(c, { id: uid(), periodo: p.trim(), titulo: 'Matrícula Regular ' + p.trim(), estado: 'Borrador', vigente: false, docTasas: null, docVersiones: [], cronograma: [] }); c.items = c.items.filter(i => !i.deleted).map(i => Object.assign(i, { id: uid() })); stamp(c, true); coll('matriculas').push(c); audit('Creación (copia de estructura)', 'Matrícula', 'Matrícula ' + c.periodo, 'Copiado de ' + r.periodo); saveDB(); toast('Periodo creado como borrador. El periodo original no se modificó.', 'ok'); go('#/admin/matricula/' + c.id); },
+  onAct: async (a, r) => { if (a !== 'copy') return; const p = await promptBox('Identificación del nuevo periodo académico (ej.: 2027-I):', { title: 'Nuevo periodo a partir de ' + r.periodo, ok: 'Crear periodo' }); if (!p) return; if (coll('matriculas').some(m => normTitle(m.periodo) === normTitle(p))) return toast('Ya existe un periodo con esa identificación.', 'err'); const c = JSON.parse(JSON.stringify(r)); Object.assign(c, { id: uid(), periodo: p.trim(), titulo: 'Matrícula Regular ' + p.trim(), estado: 'Borrador', vigente: false, docTasas: null, docVersiones: [], cronograma: [] }); c.items = c.items.filter(i => !i.deleted).map(i => Object.assign(i, { id: uid() })); stamp(c, true); coll('matriculas').push(c); audit('Creación (copia de estructura)', 'Matrícula', 'Matrícula ' + c.periodo, 'Copiado de ' + r.periodo); if(!saveDB())return; toast('Periodo creado como borrador. El periodo original no se modificó.', 'ok'); go('#/admin/matricula/' + c.id); },
   defaults: () => ({ items: [], cronograma: [], vigente: false }), versioned: ['docTasas'],
   fields: w => [
     { n: 'periodo', l: 'Periodo académico', req: true, unique: 'norm', ro: () => !!byId('matriculas', w.id), ph: '2027-I' }, { n: 'titulo', l: 'Título principal', pubReq: true }, { n: 'inicioClases', l: 'Fecha de inicio de clases', t: 'date', pubReq: true },
@@ -6149,7 +6119,7 @@ SPECS.matricula = {
     { n: 'vigente', l: 'Periodo vigente (se muestra en el portal)', t: 'checkbox', side: true },
   ],
   validate: w => { const e = {}; SECC.forEach(([s]) => { const seen = {}; (w.items || []).filter(i => i.seccion === s && !i.deleted).forEach(i => { const k = normTitle(i.texto); if (!k) e.items = 'Hay ítems vacíos.'; if (seen[k]) e.items = `Requisito duplicado en la misma sección: “${clamp(i.texto, 50)}”.`; seen[k] = 1; }); }); if (w.vigente && w.estado === 'Borrador') e.vigente = 'Un periodo en borrador no puede ser vigente.'; return e; },
-  afterSave: w => { if (w.vigente) coll('matriculas').forEach(m => { if (m.id !== w.id) m.vigente = false; }); if (w.estado === 'Cerrado') w.vigente = false; },
+  afterSave: w => { if (w.vigente && w.estado === 'Publicado') coll('matriculas').forEach(m => { if (m.id !== w.id) m.vigente = false; }); if (w.estado === 'Cerrado') w.vigente = false; },
 };
 function itemsHTML(w) {
   return `<div class="grid g3">${SECC.map(([s, l, icn]) => { const its = (w.items || []).map((x, i) => ({ x, i })).filter(o => o.x.seccion === s).sort((a, b) => a.x.orden - b.x.orden); return `<div class="panel" style="margin:0"><h2 style="font-size:14px">${ic(icn).replace('<svg', '<svg style="width:17px;height:17px;stroke:var(--link);fill:none;stroke-width:2"')} ${l}</h2><div class="pb" style="display:grid;gap:6px">${its.map(({ x, i }) => `<div style="display:flex;gap:4px;align-items:flex-start;${x.deleted ? 'opacity:.5' : ''}"><textarea class="inp" style="min-height:54px;font-size:13px" data-it="${i}" aria-label="Ítem" ${x.deleted ? 'disabled' : ''}>${esc(x.texto)}</textarea><div style="display:grid;gap:2px">${x.deleted ? `<button type="button" class="icon-btn" data-ires="${i}" title="Restaurar">${ic('restore')}</button>` : `<button type="button" class="icon-btn" data-iup="${i}" title="Subir">${ic('up')}</button><button type="button" class="icon-btn" data-ipub="${i}" title="${x.estado === 'Publicado' ? 'Despublicar' : 'Publicar'}" style="${x.estado === 'Publicado' ? '' : 'color:var(--warn)'}">${ic(x.estado === 'Publicado' ? 'eye' : 'lock')}</button><button type="button" class="icon-btn del" data-idel="${i}" title="Eliminar">${ic('trash')}</button>`}</div></div>`).join('') || '<small style="color:var(--muted)">Sin ítems.</small>'}<button type="button" class="btn xs sec" data-iadd="${s}">+ Agregar ítem</button></div></div>`; }).join('')}</div>`;
@@ -6172,7 +6142,7 @@ function singletonForm({ title, sub, icon, crumbs, tabs = '', fields, get, onSav
     html, after: () => {
       const form = $('[data-sf]'); const rer = () => { readSimple(fields, form, work); route(); };
       bindFields(fields, work, form, rer);
-      form.onsubmit = e => { e.preventDefault(); readSimple(fields, form, work); const er = {}; fields.forEach(f => { const v = work[f.n]; if (f.req && (v == null || v === '')) er[f.n] = 'Obligatorio.'; if (v && f.t === 'email' && !reEmail.test(v)) er[f.n] = 'Correo no válido.'; if (v && f.t === 'url' && !/^https?:\/\//.test(v)) er[f.n] = 'Debe iniciar con https://'; }); const v2 = onSave(work, er); if (v2 === false) return; if (!showErrors(form, er)) return; audit('Modificación', title, title); if (saveDB()) { ADM.work = null; toast('Cambios guardados.', 'ok'); route(); } };
+      form.onsubmit = e => { e.preventDefault(); readSimple(fields, form, work); const er = {}; fields.forEach(f => { const v = work[f.n]; if (f.req && (v == null || v === '')) er[f.n] = 'Obligatorio.'; if (v && f.t === 'email' && !reEmail.test(v)) er[f.n] = 'Correo no válido.'; if (v && f.t === 'url' && !/^https?:\/\//.test(v)) er[f.n] = 'Debe iniciar con https://'; }); const v2 = onSave(structuredClone(work), er); if (v2 === false) return; if (!showErrors(form, er)) return; audit('Modificación', title, title); if (saveDB()) { ADM.work = null; toast('Cambios guardados.', 'ok'); route(); } };
     }
   };
 }
@@ -6201,7 +6171,7 @@ CUSTOM.portada = () => singletonForm({
     { n: 'cifras', l: 'Cifras institucionales (use auto:anios, auto:programas, auto:matriculados o auto:egresados para calcularlas desde los datos)', t: 'rows', cols: [{ n: 'label', l: 'Etiqueta' }, { n: 'valor', l: 'Valor' }, { n: 'corte', l: 'Año de corte' }] },
     { n: 'beneficios', l: '¿Por qué estudiar aquí? (hasta 8)', t: 'rows', cols: [{ n: 't', l: 'Título' }, { n: 'd', l: 'Descripción' }, { n: 'i', l: 'Ícono', t: 'select', opts: ['grad', 'users', 'flask', 'briefcase', 'award', 'building', 'target', 'globe', 'monitor', 'star'] }] },
   ],
-  onSave: (w, er) => { (w.accesos || []).forEach(a => { if (a.enlace && !/^(#\/|https?:\/\/|ext:)/.test(a.enlace)) er.accesos = 'Enlace no válido: “' + a.enlace + '”. No use “#” vacío ni javascript:.'; }); (w.cifras || []).forEach(c => { if (!c.corte) er.cifras = 'Cada cifra debe indicar su año de corte.'; }); if ((w.beneficios || []).length > 8) er.beneficios = 'Máximo 8 beneficios.'; if (Object.keys(er).length) return; DB.config.home = w; },
+  onSave: (w, er) => { (w.accesos || []).forEach(a => { if (a.enlace && !/^(#\/|https?:\/\/|ext:)/.test(a.enlace)) er.accesos = 'Enlace no válido: “' + a.enlace + '”. No use “#” vacío ni javascript:.'; }); (w.cifras || []).forEach(c => { if (!c.corte) er.cifras = 'Cada cifra debe indicar su año de corte.'; }); if ((w.beneficios || []).length > 8 && JSON.stringify(w.beneficios)!==JSON.stringify(DB.config.home.beneficios)) er.beneficios = 'Máximo 8 beneficios. Reduzca la lista antes de modificarla.'; if (Object.keys(er).length) return; DB.config.home = w; },
 });
 CUSTOM.config = () => singletonForm({
   title: 'Configuración general', icon: 'gear', sub: 'Datos institucionales, contacto, redes, SEO, correos y parámetros protegidos.',
@@ -6235,7 +6205,7 @@ CUSTOM.estadisticas = (parts, q) => {
     + `<div class="chips">${years.map(a => `<a class="chip" href="#/admin/estadisticas?anio=${a}" aria-current="${a === y}">${a}</a>`).join('')}</div><form data-stf class="panel"><h2>Año ${y}</h2><div class="tbl-wrap" style="border:0"><table class="tbl light subtbl"><thead><tr><th>Programa</th>${K.map(k => `<th>${k[1]}</th>`).join('')}</tr></thead><tbody>${sortO(alive('programas')).map(p => { const s = st.find(x => x.anio === y && x.programaId === p.id) || {}; return `<tr><td>${esc(p.nombre)}</td>${K.map(([k, l]) => `<td><input class="inp" type="number" min="0" style="width:90px" value="${s[k] ?? ''}" data-st="${p.id}|${k}" aria-label="${l} ${esc(p.nombre)}"></td>`).join('')}</tr>`; }).join('')}</tbody></table></div><div class="pb" style="text-align:right"><button class="btn">Guardar año ${y}</button></div></form>`;
   return {
     html, after: () => {
-      $('[data-ny]').onclick = async () => { const a = +(await promptBox('Año a registrar:', { value: String(yearNow() + 1) })); if (!a || a < 2000 || a > 2100) return; if (years.includes(a)) return toast('El año ya existe.', 'err'); sortO(alive('programas')).forEach(p => st.push({ id: uid(), anio: a, programaId: p.id })); audit('Creación', 'Estadísticas', 'Año ' + a); saveDB(); go('#/admin/estadisticas?anio=' + a); };
+      $('[data-ny]').onclick = async () => { const a = +(await promptBox('Año a registrar:', { value: String(yearNow() + 1) })); if (!a || a < 2000 || a > 2100) return; if (years.includes(a)) return toast('El año ya existe.', 'err'); sortO(alive('programas')).forEach(p => st.push({ id: uid(), anio: a, programaId: p.id })); audit('Creación', 'Estadísticas', 'Año ' + a); if(!saveDB())return; go('#/admin/estadisticas?anio=' + a); };
       $('[data-stf]').onsubmit = e => { e.preventDefault(); let bad = false; $$('[data-st]').forEach(i => { if (i.value !== '' && (+i.value < 0 || !Number.isInteger(+i.value))) { bad = true; i.style.borderColor = 'var(--err)'; } }); if (bad) return toast('Ingrese números enteros positivos.', 'err'); $$('[data-st]').forEach(i => { const [p, k] = i.dataset.st.split('|'); let r = st.find(x => x.anio === y && x.programaId === p); if (!r) { r = { id: uid(), anio: y, programaId: p }; st.push(r); } r[k] = i.value === '' ? null : +i.value; }); audit('Modificación', 'Estadísticas', 'Año ' + y); if (saveDB()) toast('Estadísticas del año ' + y + ' guardadas.', 'ok'); };
     }
   };
@@ -6364,8 +6334,8 @@ CUSTOM.dashboard = (parts, q) => {
   const CM = [['noticias', 'Noticias', alive('noticias').filter(n => n.estado === 'Publicada').length, '#/admin/noticias'], ['documentos', 'Documentos de gestión', alive('documentos').filter(d => d.estado === 'Publicado').length, '#/admin/documentos'], ['docentes', 'Docentes', alive('personas').filter(p => p.tipo === 'Docente' && p.estado === 'Publicado').length, '#/admin/docentes'], ['becas', 'Becarios', alive('becarios').length, '#/admin/becas'], ['tupa', 'Conceptos TUPA', alive('tupa').length, '#/admin/tupa'], ['eventos', 'Eventos', alive('eventos').filter(e => e.estado === 'Publicado').length, '#/admin/eventos'], ['convocatorias', 'Convocatorias', alive('convocatorias').length, '#/admin/convocatorias'], ['egresados', 'Egresados destacados', alive('egresados').length, '#/admin/egresados'], ['programas', 'Programas de estudio', alive('programas').filter(p => p.estado === 'Publicado').length, '#/admin/programas'], ['slides', 'Diapositivas del carrusel', alive('slides').filter(x => x.estado === 'Publicado').length, '#/admin/slides'], ['paginas', 'Páginas institucionales', alive('paginas').filter(x => x.estado === 'Publicada').length, '#/admin/paginas']].filter(x => can(x[0] === 'slides' ? 'portada' : x[0])).map(([, k, v, h]) => ({ k, v, h })).sort((a, b) => b.v - a.v);
   const cmCard = CM.length ? `<div class="panel db-card"><h2><span>Contenido publicado</span><small class="db-h2s">registros por módulo</small></h2><div class="pb">${hbars(CM)}</div></div>` : '';
   // agenda
-  const ag = alive('eventos').filter(e => e.estado === 'Publicado' && e.fecha.slice(0, 10) >= today).map(e => ({ f: e.fecha.slice(0, 10), t: e.titulo, k: 'Evento', h: '#/admin/eventos/' + e.id }));
-  const adv = coll('admisiones').find(a => a.vigente); if (adv) (adv.cronograma || []).forEach(c => { const f = parseDMY(c.fecha); if (f >= today && !ag.some(a => a.f === f && a.k === 'Evento')) ag.push({ f, t: c.actividad, k: 'Admisión', h: '#/admin/admision/' + adv.id }); });
+  const ag = alive('eventos').filter(e => e.estado === 'Publicado' && e.fecha.slice(0, 10) >= today).map(e => ({ f: e.fecha.slice(0, 10), t: e.titulo, k: 'Evento', h: can('eventos') ? '#/admin/eventos/' + e.id : '#/eventos' }));
+  const adv = coll('admisiones').find(a => a.vigente); if (adv) (adv.cronograma || []).forEach(c => { const f = parseDMY(c.fecha); if (f >= today && !ag.some(a => a.f === f && a.k === 'Evento')) ag.push({ f, t: c.actividad, k: 'Admisión', h: can('admision') ? '#/admin/admision/' + adv.id : '#/admision' }); });
   const mv = coll('matriculas').find(m => m.vigente); if (mv) (mv.cronograma || []).forEach(c => { const f = parseDMY(c.fecha); if (f >= today) ag.push({ f, t: c.actividad, k: 'Matrícula', h: '#/admin/matricula/' + mv.id }); });
   ag.sort((a, b) => a.f.localeCompare(b.f));
   const agCard = `<div class="panel db-card"><h2><span>Próximas fechas</span><small class="db-h2s">eventos y cronogramas</small></h2><ul class="db-agenda">${ag.slice(0, 6).map(a => { const d = new Date(a.f + 'T12:00:00'); const dd = Math.round((d - new Date(today + 'T12:00:00')) / 864e5); return `<li><span class="db-date"><b>${d.getDate()}</b><small>${MES3[d.getMonth()]}</small></span><a href="${a.h}">${esc(a.t)}</a><span class="db-tag">${a.k}</span><small class="db-in">${dd === 0 ? 'Hoy' : dd === 1 ? 'Mañana' : 'En ' + dd + ' días'}</small></li>`; }).join('') || '<li class="db-empty">No hay fechas próximas registradas.</li>'}</ul></div>`;
@@ -6448,8 +6418,8 @@ function inbox({ key, collName, title, sub, icon, states, filterExtra = [], sear
     $$('tr[data-id] [data-act]').forEach(b => b.onclick = async () => {
       const r = byId(collName, b.closest('tr').dataset.id);
       if (b.dataset.act === 'open') return go(`#/admin/${key}/${r.id}`);
-      if (b.dataset.act === 'del') { if (!await confirmBox('El registro se enviará a la papelera.', { ok: 'Eliminar' })) return; r.deleted = true; stamp(r); audit('Eliminación lógica', title, r.asunto || r.codigo); saveDB(); toast('Enviado a la papelera.', 'ok'); return rer(); }
-      if (b.dataset.act === 'restore') { r.deleted = false; stamp(r); audit('Restauración', title, r.asunto || r.codigo); saveDB(); toast('Restaurado.', 'ok'); return rer(); }
+      if (b.dataset.act === 'del') { if (!await confirmBox('El registro se enviará a la papelera.', { ok: 'Eliminar' })) return; r.deleted = true; stamp(r); audit('Eliminación lógica', title, r.asunto || r.codigo); if(!saveDB())return; toast('Enviado a la papelera.', 'ok'); return rer(); }
+      if (b.dataset.act === 'restore') { r.deleted = false; stamp(r); audit('Restauración', title, r.asunto || r.codigo); if(!saveDB())return; toast('Restaurado.', 'ok'); return rer(); }
     });
   };
   return { html, after: bind, rows };
@@ -6470,7 +6440,7 @@ function mensajeDetalle(id) {
   if (m.estado === 'Nuevo') { m.estado = 'Leído'; m.historial = m.historial || []; m.historial.push({ fecha: nowISO(), usuario: currentUser().usuario, estado: 'Leído' }); audit('Lectura', 'Mensajes de contacto', m.asunto); saveDB(); }
   const html = admHead(m.asunto, `Recibido el ${fdate(m.fecha, true)}`, `<a class="btn ghost" href="#/admin/mensajes">${sic('back')} Volver a la bandeja</a>`, 'mail', [['Mensajes de contacto', '#/admin/mensajes'], ['Detalle']])
     + `<div class="edit-grid"><div class="panel"><h2>Mensaje</h2><div class="pb"><dl class="kv"><dt>Nombres</dt><dd>${esc(m.nombres)}</dd><dt>Correo</dt><dd><a href="mailto:${esc(m.correo)}">${esc(m.correo)}</a></dd><dt>Teléfono</dt><dd>${esc(m.telefono || '—')}</dd>${m.documento ? `<dt>Documento</dt><dd>${esc(canFlag('viewDni') ? m.documento : maskDni(m.documento))}</dd>` : ''}<dt>Programa de interés</dt><dd>${esc((progById(m.programa) || {}).nombre || '—')}</dd></dl><div class="card cb" style="margin-top:12px;white-space:pre-wrap">${esc(m.mensaje)}</div>
-    <h3 style="margin-top:16px">Responder</h3><textarea class="inp" id="mr" rows="4" placeholder="Escriba la respuesta que se enviará al correo del remitente"></textarea><p style="margin-top:8px"><button class="btn" data-reply>${sic('send')} Enviar respuesta y marcar atendido</button></p></div></div>
+    <h3 style="margin-top:16px">Responder</h3><textarea class="inp" id="mr" rows="4" placeholder="Respuesta institucional; el envío por correo está pendiente.">${esc(m.respuesta || '')}</textarea><p style="margin-top:8px"><button class="btn" data-reply>${sic('send')} Guardar respuesta y marcar atendido</button></p></div></div>
     <div><div class="panel"><h2>Estado</h2><div class="pb" style="display:grid;gap:8px">${stBadge(m.estado)}<div class="field"><label for="mst">Cambiar estado</label><select id="mst">${['Nuevo', 'Leído', 'Atendido'].map(s => `<option ${s === m.estado ? 'selected' : ''}>${s}</option>`).join('')}</select></div><button class="btn sec" data-st>Actualizar estado</button></div></div><div class="panel"><h2>Historial</h2><div class="pb">${histHTML(m.historial)}</div></div></div></div>`;
   return {
     html, after: () => {
@@ -6483,7 +6453,7 @@ function mensajeDetalle(id) {
 
 /* ---------- Libro de reclamaciones ---------- */
 const LR_STATES = ['Recibido', 'En atención', 'Atendido'];
-const lrTabs = a => tabsBar([['l', 'Reclamaciones', '#/admin/reclamos'], ['n', 'Notificaciones enviadas', '#/admin/reclamos/notificaciones']], a);
+const lrTabs = a => tabsBar([['l', 'Reclamaciones', '#/admin/reclamos'], ['n', 'Correo pendiente', '#/admin/reclamos/notificaciones']], a);
 CUSTOM.reclamos = (parts) => {
   if (parts[2] === 'notificaciones') return lrNotif();
   if (parts[2]) return reclamoDetalle(parts[2]);
@@ -6502,7 +6472,7 @@ function reclamoDetalle(id) {
   const isAdm = currentUser().rol === 'admin';
   const html = admHead(`${r.tipo} ${r.codigo}`, `Registrado el ${fdate(r.fecha, true)} · ${r.anulado ? '<span class="badge err">Anulado</span>' : stBadge(r.estado)}`, `<button class="btn sec" data-pdf>${sic('print')} Hoja de reclamación (PDF)</button><a class="btn ghost" href="#/admin/reclamos">${sic('back')} Volver</a>`, 'book', [['Libro de reclamaciones', '#/admin/reclamos'], [r.codigo]])
     + `<div class="edit-grid"><div style="display:grid;gap:16px"><div class="panel"><h2>Registro original <span class="badge gray">${sic('lock', 12)} Solo lectura</span></h2><div class="pb"><dl class="kv"><dt>Código</dt><dd><b>${esc(r.codigo)}</b></dd><dt>Fecha y hora</dt><dd>${fdate(r.fecha, true)}</dd><dt>Tipo</dt><dd>${esc(r.tipo)}</dd><dt>Reclamante</dt><dd>${esc(r.nombres)}</dd><dt>Documento</dt><dd>${esc(r.tipoDoc)} ${dniCell(r.numDoc)}</dd><dt>Correo</dt><dd>${esc(r.correo)}</dd><dt>Teléfono</dt><dd>${esc(r.telefono || '—')}</dd><dt>Asunto</dt><dd>${esc(r.asunto)}</dd></dl><h3>Descripción del hecho</h3><div class="card cb" style="white-space:pre-wrap">${esc(r.descripcion)}</div><h3>Pedido</h3><div class="card cb" style="white-space:pre-wrap">${esc(r.pedido)}</div>${r.adjunto ? `<p><button class="btn sm sec" data-adj>${sic('download')} Adjunto: ${esc(r.adjunto.original || r.adjunto.nombre)} (${fsize(r.adjunto.size)})</button></p>` : '<p style="color:var(--muted)">Sin archivo adjunto.</p>'}</div></div>
-    <div class="panel"><h2>Respuesta institucional</h2><div class="pb">${r.respuesta ? `<div class="notice ok" style="white-space:pre-wrap">${esc(r.respuesta)}<br><small>Respondido por ${esc(r.atendidoPor || '—')} el ${fshort(r.atendidoEn, true)} · Notificación al usuario: ${esc(r.notifUser)}</small></div>` : ''}${r.anulado ? '' : `<textarea class="inp" id="lr-resp" aria-label="Respuesta al reclamante" rows="5" placeholder="Respuesta que se enviará al correo del reclamante">${esc(r.respuesta || '')}</textarea><p style="margin-top:8px"><button class="btn ok" data-resp>${sic('send')} Registrar respuesta, notificar y marcar atendido</button></p>`}</div></div>
+    <div class="panel"><h2>Respuesta institucional</h2><div class="pb">${r.respuesta ? `<div class="notice ok" style="white-space:pre-wrap">${esc(r.respuesta)}<br><small>Respondido por ${esc(r.atendidoPor || '—')} el ${fshort(r.atendidoEn, true)} · Notificación al usuario: ${esc(r.notifUser)}</small></div>` : ''}${r.anulado ? '' : `<textarea class="inp" id="lr-resp" aria-label="Respuesta al reclamante" rows="5" placeholder="Respuesta institucional; el envío por correo está pendiente.">${esc(r.respuesta || '')}</textarea><p style="margin-top:8px"><button class="btn ok" data-resp>${sic('send')} Guardar respuesta y marcar atendido</button></p>`}</div></div>
     <div class="panel"><h2>Notas internas <small style="font-weight:400;color:var(--muted)">(no visibles para el ciudadano)</small></h2><div class="pb">${(r.notas || []).map(n => `<div class="card cb" style="margin-bottom:8px"><small style="color:var(--muted)">${esc(n.usuario)} · ${fshort(n.fecha, true)}</small><br>${esc(n.texto)}</div>`).join('') || '<p style="color:var(--muted)">Sin notas.</p>'}<div style="display:flex;gap:8px"><input class="inp" id="lr-nota" aria-label="Nueva nota interna" placeholder="Agregar nota interna"><button class="btn sec" data-nota>Agregar</button></div></div></div></div>
     <div style="display:grid;gap:16px;align-content:start"><div class="panel"><h2>Gestión</h2><div class="pb" style="display:grid;gap:10px">${r.anulado ? `<div class="notice err">Registro anulado por ${esc(r.anuladoPor)}: ${esc(r.motivoAnulacion)}</div>` : `<div class="field"><label for="lr-st">Estado</label><select id="lr-st">${LR_STATES.map(s => `<option ${s === r.estado ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="field"><label for="lr-sn">Comentario del cambio</label><input id="lr-sn" class="inp"></div><button class="btn" data-st>Actualizar estado</button>${isAdm ? `<button class="btn danger" data-anular>Anular registro</button><small style="color:var(--muted)">La anulación no elimina el registro; queda en el historial y la auditoría.</small>` : ''}`}</div></div>
     <div class="panel"><h2>Notificaciones</h2><div class="pb meta-list"><span>Al correo institucional: ${stBadge(r.notifInst)}</span>${r.notifInst === 'Error' ? `<button class="btn sm gold" data-retry>${sic('restore')} Reintentar envío</button>` : ''}<span>Constancia al ciudadano: ${stBadge(r.notifUser)}</span><span style="font-size:12px">Destino: ${esc(DB.config.correoReclamos)}</span></div></div>
@@ -6577,30 +6547,7 @@ CUSTOM.auditoria = () => {
 };
 
 /* ---------- Copias de seguridad ---------- */
-CUSTOM.respaldo = () => {
-  let used = 0; try { used = (localStorage.getItem(STORE_KEY) || '').length * 2; } catch (e) { }
-  const cap = 5 * 1048576; const pct = Math.min(100, Math.round(used / cap * 100));
-  const counts = [['Noticias', 'noticias'], ['Documentos', 'documentos'], ['Programas', 'programas'], ['Docentes y personal', 'personas'], ['Becarios', 'becarios'], ['Reclamos', 'reclamos'], ['Mensajes', 'mensajes'], ['Auditoría', 'auditoria']];
-  const html = admHead('Copias de seguridad', 'Exportación e importación completa de la información del portal.', '', 'database', [['Copias de seguridad']])
-    + `<div class="grid g2" style="align-items:start"><div class="panel"><h2>Exportar copia</h2><div class="pb"><p>Descarga un archivo JSON con todo el contenido, configuración, usuarios (contraseñas cifradas) y auditoría.</p><button class="btn" data-exp>${sic('download')} Descargar copia de seguridad</button><p style="font-size:12.5px;color:var(--muted);margin-top:10px">En producción las copias se programan automáticamente en el servidor (base de datos y archivos), con retención y restauración verificadas, según los TDR.</p></div></div>
-    <div class="panel"><h2>Restaurar copia</h2><div class="pb"><p>Reemplaza toda la información actual por la del archivo seleccionado.</p><input type="file" id="rs-f" aria-label="Archivo de copia de seguridad (JSON)" accept=".json,application/json"><p style="margin-top:10px"><button class="btn danger" data-imp>${sic('upload')} Restaurar</button></p></div></div>
-    <div class="panel"><h2>Almacenamiento usado</h2><div class="pb"><div style="background:var(--soft);border-radius:999px;height:12px;overflow:hidden" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Espacio utilizado"><div style="width:${pct}%;height:100%;background:${pct > 80 ? 'var(--err)' : 'var(--blue)'}"></div></div><p>${fsize(used)} de aprox. ${fsize(cap)} disponibles en este navegador (${pct} %).</p><table class="tbl light"><tbody>${counts.map(([l, c]) => `<tr><td>${l}</td><td class="num"><b>${num(coll(c).length)}</b></td></tr>`).join('')}</tbody></table></div></div>
-    <div class="panel"><h2>Restablecer datos de demostración</h2><div class="pb"><p>Elimina todos los cambios hechos en este navegador y vuelve a cargar el contenido de ejemplo.</p><button class="btn sec" data-reset>${sic('restore')} Restablecer datos</button></div></div></div>`;
-  return {
-    html, after: () => {
-      $('[data-exp]').onclick = () => { audit('Copia de seguridad exportada', 'Respaldo', 'JSON completo'); saveDB(); downloadText(JSON.stringify(DB), `respaldo_portal_${new Date().toISOString().slice(0, 10)}.json`, 'application/json'); };
-      $('[data-imp]').onclick = async () => {
-        const f = $('#rs-f').files[0]; if (!f) return toast('Seleccione el archivo de respaldo.', 'err'); const er = checkFile(f, 'json'); if (er) return toast(er, 'err');
-        let data; try { data = JSON.parse(await readAsText(f)); } catch (e) { return toast('El archivo no es un JSON válido.', 'err'); }
-        if (!data || data.__v == null || !data.config || !Array.isArray(data.usuarios)) return toast('El archivo no corresponde a una copia de este portal.', 'err');
-        if (!await confirmBox('Se reemplazará TODA la información actual por la del respaldo. ¿Continuar?', { ok: 'Restaurar' })) return;
-        const me = currentUser().usuario; DB = data; DB.__v = SEED_VERSION; applyTheme(); audit('Copia de seguridad restaurada', 'Respaldo', f.name); saveDB();
-        const u = coll('usuarios').find(x => x.usuario === me); setSession(u && u.estado === 'Activo' ? u : null); toast('Copia restaurada.', 'ok'); route();
-      };
-      $('[data-reset]').onclick = async () => { if (!await confirmBox('Se perderán todos los cambios realizados en este navegador.', { ok: 'Restablecer' })) return; resetDB(); applyTheme(); setSession(byId('usuarios', 'u1')); audit('Restablecimiento de datos de demostración', 'Respaldo'); saveDB(); toast('Datos de demostración restablecidos.', 'ok'); route(); };
-    }
-  };
-};
+CUSTOM.respaldo = () => ({html:admHead('Respaldos y restauración','Copias completas en el servidor.','','database')+`<a class="btn" href="/respaldos.php">Administrar respaldos y restauración</a>`});
 
 /* ---------- Enrutador del panel ---------- */
 const MOD_OF = { tupacfg: 'tupa', becasimport: 'becas', becasrep: 'becas', popup: 'portada', portada: 'portada' };
@@ -6642,9 +6589,9 @@ CUSTOM.temas = (parts) => {
     <div class="tm-grid">${keys.map(k => { const t = T[k], on = k === act; return `<article class="tm-item${on ? ' on' : ''}">${themeMock(t)}<div class="tm-body"><h3>${esc(t.label)} ${on ? '<span class="badge ok">Activo</span>' : ''}${t.base ? '' : ' <span class="badge gray">Personalizado</span>'}</h3><p>${esc(t.desc || '')}</p><div class="tm-acts">${on ? '' : `<button class="btn sm" data-act="${k}">${sic('check', 14)} Activar</button>`}<a class="btn sm sec" href="#/admin/temas/${k}">${sic('edit', 14)} Editar</a><button class="btn sm ghost" data-dup="${k}" title="Duplicar">${sic('copy', 14)}<span class="sr-only">Duplicar ${esc(t.label)}</span></button>${!t.base && !on ? `<button class="btn sm ghost" data-del="${k}" title="Eliminar">${sic('trash', 14)}<span class="sr-only">Eliminar ${esc(t.label)}</span></button>` : ''}</div></div></article>`; }).join('')}</div>`;
   return {
     html, after: () => {
-      $$('[data-act]').forEach(b => b.onclick = () => { const k = b.dataset.act; DB.config.tema = k; applyTheme(); audit('Activación de tema', 'Temas y apariencia', T[k].label); saveDB(); toast('Tema «' + T[k].label + '» activado en todo el portal.', 'ok'); route(); });
-      $$('[data-dup]').forEach(b => b.onclick = () => { const src = T[b.dataset.dup]; let label = src.label + ' (copia)', n = 2; while (Object.values(T).some(t => t.label === label)) label = src.label + ' (copia ' + n++ + ')'; let k = slugify(label) || 'tema', i = 2; while (T[k] || k === 'nuevo') k = slugify(label) + '-' + i++; T[k] = Object.assign({}, src, { label, base: false }); audit('Creación', 'Temas y apariencia', label, 'Duplicado de ' + src.label); saveDB(); toast('Tema duplicado. Ya puede editarlo.', 'ok'); go('#/admin/temas/' + k); });
-      $$('[data-del]').forEach(b => b.onclick = async () => { const k = b.dataset.del; if (!await confirmBox(`¿Eliminar el tema <b>${esc(T[k].label)}</b>? Esta acción no se puede deshacer.`, { ok: 'Eliminar' })) return; const l = T[k].label; delete T[k]; audit('Eliminación', 'Temas y apariencia', l); saveDB(); toast('Tema eliminado.', 'ok'); route(); });
+      $$('[data-act]').forEach(b => b.onclick = () => { const k = b.dataset.act; DB.config.tema = k; audit('Activación de tema', 'Temas y apariencia', T[k].label); if(!saveDB())return; applyTheme(); toast('Tema «' + T[k].label + '» activado en todo el portal.', 'ok'); route(); });
+      $$('[data-dup]').forEach(b => b.onclick = () => { const src = T[b.dataset.dup]; let label = src.label + ' (copia)', n = 2; while (Object.values(T).some(t => t.label === label)) label = src.label + ' (copia ' + n++ + ')'; let k = slugify(label) || 'tema', i = 2; while (T[k] || k === 'nuevo') k = slugify(label) + '-' + i++; T[k] = Object.assign({}, src, { label, base: false }); audit('Creación', 'Temas y apariencia', label, 'Duplicado de ' + src.label); if(!saveDB())return; toast('Tema duplicado. Ya puede editarlo.', 'ok'); go('#/admin/temas/' + k); });
+      $$('[data-del]').forEach(b => b.onclick = async () => { const k = b.dataset.del; if (!await confirmBox(`¿Eliminar el tema <b>${esc(T[k].label)}</b>? Esta acción no se puede deshacer.`, { ok: 'Eliminar' })) return; const l = T[k].label; delete T[k]; audit('Eliminación', 'Temas y apariencia', l); if(!saveDB())return; toast('Tema eliminado.', 'ok'); route(); });
     }
   };
 };
@@ -6710,8 +6657,9 @@ function temaEditor(key) {
         T[k] = data; audit(isNew ? 'Creación' : 'Modificación', 'Temas y apariencia', label, prev && prev !== label ? 'Antes: ' + prev : '');
         const activate = b.dataset.save === '1';
         if (activate) { DB.config.tema = k; audit('Activación de tema', 'Temas y apariencia', label); }
+        if(!saveDB())return;
         if (k === DB.config.tema) applyTheme();
-        saveDB(); ADM.work = null; toast(activate ? 'Tema guardado y activado en todo el portal.' : k === DB.config.tema ? 'Tema guardado. El portal ya muestra los cambios.' : 'Tema guardado.', 'ok'); go('#/admin/temas');
+        ADM.work = null; toast(activate ? 'Tema guardado y activado en todo el portal.' : k === DB.config.tema ? 'Tema guardado. El portal ya muestra los cambios.' : 'Tema guardado.', 'ok'); go('#/admin/temas');
       });
     }
   };
@@ -6746,7 +6694,8 @@ function ixWrap(inner) { const l = document.getElementById('ix-layer'); if (l) l
 const businessDaysLeft = (fromISO, days) => { const d = new Date(String(fromISO).slice(0, 10) + 'T12:00:00'); let k = 0; while (k < days) { d.setDate(d.getDate() + 1); if (![0, 6].includes(d.getDay())) k++; } const t = new Date(); t.setHours(12, 0, 0, 0); let n = 0; const s = t <= d ? 1 : -1; const c = new Date(t); while (c.toDateString() !== d.toDateString()) { c.setDate(c.getDate() + s); if (![0, 6].includes(c.getDay())) n += s; } return { due: d, left: n }; };
 const IXHOST = {
   loadAcad: () => DB.academico || null,
-  saveAcad: a => { DB.academico = a; saveDB(); },
+  saveAcad: a => { DB.academico = a; return saveDB(); },
+  openBackups: () => {location.href='/respaldos.php';},
   toast: m => toast(m),
   audit: (a, m, d) => audit(a, m, d),
   head: (title, desc, actions, code) => { const t = String(title).replace(/<[^>]+>/g, ''), c = code || ''; const grp = /administrativa/.test(c) ? 'Servicios' : /Configuraci/.test(c) ? 'Configuración y seguridad' : 'Gestión académica'; const icon = { 'Programación de horarios': 'calendar', 'Maestro de alumnos': 'users', 'Constancias y certificados': 'award', 'Grados y títulos': 'grad', 'Bolsa laboral': 'briefcase', 'Configuración académica': 'gear' }[t] || 'grad'; return admHead(t, desc || '', actions || '', icon, [[grp], [t]]); },
@@ -6763,7 +6712,7 @@ const IXHOST = {
   },
   addUser: u => { const usuario = String(u.u).toLowerCase(); if (coll('usuarios').some(x => x.usuario === usuario)) return; coll('usuarios').push({ id: uid(), usuario, nombre: u.nom, rol: 'empresa', passHash: hashPass(usuario, u.pass), estado: 'Activo', intentos: 0, bloqueadoHasta: 0, ultimoAcceso: '', ixId: u.id, vin: u.vin, dni: u.dni || '' }); audit('Registro de cuenta', 'Usuarios', usuario, 'Empresa registrada desde la bolsa laboral'); saveDB(); },
   exps: () => coll('expedientes').map(x => ({ id: x.id, num: x.numero, dni: x.numDoc, estado: x.estado, fecha: String(x.fecha || '').slice(0, 10), tramN: x.tipoTramite, area: x.area || '' })),
-  go: v => go(v === 'login' ? '#/admin' : !currentUser() ? '#/admin' : v === 'inicio' ? '#/admin' : '#/admin/ix-' + v),
+  go: v => go(['mesa','reclamos','mensajes'].includes(v)?({'mesa':'#/admin/expedientes','reclamos':'#/admin/reclamos','mensajes':'#/admin/mensajes'}[v]):v === 'login' ? '#/admin' : !currentUser() ? '#/admin' : v === 'inicio' ? '#/admin' : '#/admin/ix-' + v),
   logout: () => { audit('Cierre de sesión', 'Sesión', (currentUser() || {}).usuario || ''); saveDB(); setSession(null); go('#/admin'); },
   verifyUrl: cod => location.href.split('#')[0] + '#/servicios/consulta-certificados?codigo=' + encodeURIComponent(cod),
   registerDoc: d => { if (coll('certificados').some(c => c.codigo === d.cod)) return; coll('certificados').unshift(stamp({ id: uid(), codigo: d.cod, dni: d.dni, nombres: d.nombres, programaId: d.prog || '', tipo: d.tipo, fecha: String(d.fecha).slice(0, 10), estado: 'Válido', origen: 'Módulos académicos' }, true)); },
@@ -6966,7 +6915,7 @@ async function fileBlob(meta) {
   if (meta.lineas || meta.titulo) return docBlob(meta);
   return null;
 }
-async function downloadMeta(meta) { const b = await fileBlob(meta); if (!b) return toast('El archivo no está disponible en este navegador (se guardó en otro equipo o se borraron los datos del sitio).', 'err'); downloadBlob(b, meta.original || meta.nombre); }
+async function downloadMeta(meta) { try { const b = await fileBlob(meta); if (!b) return toast('El archivo adjunto no está disponible. Solicita que vuelva a adjuntarse al registro.', 'err'); downloadBlob(b, meta.original || meta.nombre); } catch(error) { toast(error.message || 'No se pudo descargar el archivo. Revisa tu sesión y tus permisos.', 'err'); } }
 function checkUpload(file, exts, maxMB) {
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   if (!exts.includes(ext)) return `“${file.name}”: formato .${ext} no permitido. Formatos: ${exts.map(e => e.toUpperCase()).join(', ')}.`;
@@ -7021,7 +6970,7 @@ const S16 = n => sic(n, 16);
 /* =========================================================
    1.4 MESA DE PARTES VIRTUAL
    ========================================================= */
-const MPV_ESTADOS_PUB = { Recibido: 'Recibido por Mesa de Partes', Derivado: 'Derivado al área de destino', 'En proceso': 'En atención en el área', Observado: 'Observado (revise su correo)', Atendido: 'Atendido', Archivado: 'Archivado' };
+const MPV_ESTADOS_PUB = { Recibido: 'Recibido por Mesa de Partes', Derivado: 'Derivado al área de destino', 'En proceso': 'En atención en el área', Observado: 'Observado (revise el seguimiento)', Atendido: 'Atendido', Archivado: 'Archivado' };
 function horarioBox(compact) {
   const c = mpvCfg(); const now = new Date(); const r = recepcionDe(now.toISOString());
   const st = r.enHorario ? `<span class="pz-live ok">● En horario de atención: tu documento se recibe en este momento.</span>` : `<span class="pz-live off">● Fuera del horario de atención: puedes registrar tu documento; se considerará recibido el <b>${fdate(r.fecha, true)}</b>.</span>`;
@@ -7063,7 +7012,7 @@ function mpvConsulta() {
 }
 function mpvInfo() {
   const c = mpvCfg(); const as = areasAll().filter(a => a.activo);
-  return `<section class="card cb" style="padding:20px"><h2 style="font-size:18px;margin-top:0">¿Cómo funciona?</h2><ol class="pz-steps"><li><b>Registra</b> tus datos, el tipo de documento, el área de destino y adjunta tus archivos.</li><li><b>Recibe</b> al instante tu N.º de expediente (${esc(c.prefijo)}-AAAA-NNNNNN), tu N.º de documento (DOC-AAAA-NNNNNN) y el cargo de recepción en PDF.</li><li><b>Mesa de Partes</b> deriva tu documento al área competente; recibirás las notificaciones en tu correo.</li><li><b>Consulta</b> el estado en cualquier momento con tu N.º de expediente y tu DNI/RUC o el código de verificación.</li></ol>
+  return `<section class="card cb" style="padding:20px"><h2 style="font-size:18px;margin-top:0">¿Cómo funciona?</h2><ol class="pz-steps"><li><b>Registra</b> tus datos, el tipo de documento, el área de destino y adjunta tus archivos.</li><li><b>Recibe</b> al instante tu N.º de expediente (${esc(c.prefijo)}-AAAA-NNNNNN), tu N.º de documento (DOC-AAAA-NNNNNN) y el cargo de recepción en PDF.</li><li><b>Mesa de Partes</b> deriva tu documento al área competente. Consulta las novedades en el seguimiento; el envío por correo está pendiente de habilitación.</li><li><b>Consulta</b> el estado en cualquier momento con tu N.º de expediente y tu DNI/RUC o el código de verificación.</li></ol>
    <h3>Tipos de documento admitidos y plazos referenciales</h3><div class="tbl-wrap"><table class="tbl light no-rt"><thead><tr><th>Tipo de documento</th><th class="num">Plazo (días hábiles)</th></tr></thead><tbody>${c.tipos.map(t => `<tr><td>${esc(t)}</td><td class="num">${c.plazos[t] || 10}</td></tr>`).join('')}</tbody></table></div>
    <h3>Recepción fuera del horario</h3><p>Puedes registrar documentos las 24 horas. Los presentados después de las ${fmt12(c.horaFin)}, en sábado, domingo o feriado se consideran recibidos el <b>siguiente día hábil a las ${fmt12(c.horaIni)}</b>; los presentados antes de las ${fmt12(c.horaIni)} de un día hábil, ese mismo día a las ${fmt12(c.horaIni)}. El cargo indica la fecha y hora exacta de presentación y la de recepción administrativa.</p>
    <h3>Áreas receptoras</h3><div class="tbl-wrap"><table class="tbl light"><thead><tr><th>Nivel</th><th>Área / cargo / órgano</th><th>Correo institucional</th></tr></thead><tbody>${as.map(a => `<tr><td>${esc(a.nivel || '')}</td><td>${esc(a.nombre)}</td><td><a href="mailto:${esc(a.correo)}">${esc(a.correo)}</a></td></tr>`).join('')}</tbody></table></div></section>`;
@@ -7123,7 +7072,7 @@ function bindMpv(q0) {
         tipoTramite: v.tipoTramite, docRef: (v.docRef || '').trim(), asunto: v.asunto.trim(), folios: +v.folios, observaciones: (v.observaciones || '').trim(), archivos, archivo: archivos[0], areaDestino: v.areaDestino, area: 'MP', estado: 'Recibido',
         historial: [{ fecha, usuario: 'portal', estado: 'Recibido', nota: `Presentado por la Mesa de Partes Virtual. Recepción administrativa: ${fshort(rec.fecha, true)}${rec.enHorario ? '' : ' (fuera del horario de atención)'}. Área de destino: ${areaName(v.areaDestino)}.` }] };
       expCargoCod(x); coll('expedientes').unshift(x);
-      if (!saveDB()) { C.MPV[y]--; C.DOC[y]--; DB.expedientes.shift(); return; }
+      if (!saveDB()) return;
       numero = x.numero; numDocumento = x.numDocumento;
       mailOut(x.correo, `Cargo de recepción ${numero}`, `Su documento ${numDocumento} (${x.tipoTramite}) fue registrado el ${fshort(fecha, true)}; recepción administrativa: ${fshort(rec.fecha, true)}. Código de verificación: ${x.cargoCod}.`);
       mailOut(c.correo, `[${numero}] Nuevo documento: ${x.tipoTramite}`, `${x.nombres} · ${x.asunto} · Destino: ${areaName(x.areaDestino)}`);
@@ -7164,7 +7113,11 @@ cargoExp = async function (id) {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(90); doc.text('N.° DE EXPEDIENTE', M + 5, y + 6.5);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(16.5); doc.setTextColor(...NAVY); doc.text(x.numero, M + 5, y + 14);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(90); doc.text('N.° DE DOCUMENTO', M + 5, y + 20); doc.text('CÓDIGO DE VERIFICACIÓN', M + 52, y + 20);
-  doc.setFont('courier', 'bold'); doc.setFontSize(10.5); doc.setTextColor(25); doc.text(x.numDocumento || '—', M + 5, y + 25.5); doc.text(x.cargoCod || '—', M + 52, y + 25.5);
+  doc.setFont('courier', 'bold'); doc.setFontSize(10.5); doc.setTextColor(25); doc.text(x.numDocumento || '—', M + 5, y + 25.5);
+  // Conserva completo el código de cargos anteriores y reserva el espacio del sello.
+  const verificationCode = x.cargoCod || '—', verificationWidth = W - M - 66 - 4 - (M + 52);
+  const verificationSize = Math.min(10.5, 10.5 * verificationWidth / Math.max(doc.getTextWidth(verificationCode), 1));
+  doc.setFontSize(verificationSize); doc.text(verificationCode, M + 52, y + 25.5);
   const sx = W - M - 66, sy = y + 2.5; doc.setDrawColor(...NAVY); doc.setLineWidth(.9); doc.rect(sx, sy, 62, 25); doc.setLineWidth(.25); doc.rect(sx + 1.2, sy + 1.2, 59.6, 22.6);
   doc.setTextColor(...NAVY); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.text('IESTP "PISCO"', sx + 31, sy + 5, { align: 'center' });
   doc.setFontSize(10.5); doc.text('MESA DE PARTES VIRTUAL', sx + 31, sy + 10, { align: 'center' });
@@ -7191,7 +7144,7 @@ cargoExp = async function (id) {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(50);
   [`La recepción no implica la conformidad con el contenido del documento. El trámite será atendido por el área de destino dentro del plazo de ${c.plazos[x.tipoTramite] || EXP_PLAZOS[x.tipoTramite] || 10} días hábiles, contados desde la fecha de recepción.`,
    `Consulte el estado escaneando el código QR o en Mesa de Partes Virtual › Consultar expediente, con el N.° ${x.numero} y su documento de identidad o el código ${x.cargoCod}.`,
-   'Las notificaciones se enviarán al correo electrónico registrado.'].forEach(s => { const t = doc.splitTextToSize('• ' + s, tw); doc.text(t, tx, ty); ty += 3.6 * t.length + .6; });
+   'El envío de notificaciones por correo está pendiente de habilitación; consulte el seguimiento del expediente.'].forEach(s => { const t = doc.splitTextToSize('• ' + s, tw); doc.text(t, tx, ty); ty += 3.6 * t.length + .6; });
   pdfPie(doc);
   downloadBlob(doc.output('blob'), 'cargo_' + x.numero + '.pdf'); audit('Descarga de cargo', 'Mesa de partes', x.numero); saveDB();
   toast('Cargo de recepción descargado.', 'ok');
@@ -7225,8 +7178,8 @@ expDetalle = function (id) {
       <h3 style="margin-top:14px">Asunto</h3><div class="card cb" style="white-space:pre-wrap">${esc(x.asunto)}</div>${x.observaciones ? `<p><b>Observaciones:</b> ${esc(x.observaciones)}</p>` : ''}
       <h3 style="margin-top:14px">Archivos adjuntos (${archivos.length})</h3>${archivos.length ? `<ul class="pz-files">${archivos.map((a, i) => `<li>${S16('file')} <span>${esc(a.original || a.nombre)}</span> <small>${fsize(a.size)}</small><button class="btn xs sec" data-dl="${i}">${sic('download', 13)} Descargar</button>${a.sha256 ? `<code title="SHA-256">${esc(a.sha256.slice(0, 16))}…</code>` : ''}</li>`).join('')}</ul>` : '<p>Sin archivos.</p>'}</div></div>
       <div class="panel"><h2>Historial y seguimiento</h2><div class="pb">${histHTML(x.historial)}</div></div></div>
-    <div style="display:grid;gap:16px;align-content:start"><div class="panel"><h2>Derivar a un área</h2><div class="pb" style="display:grid;gap:10px"><div class="field"><label for="xa">Área receptora</label><select id="xa">${areaOptions(x.area === 'MP' ? (x.areaDestino || '') : x.area, { placeholder: 'Seleccione el área' })}</select></div><div class="field"><label for="xan">Proveído / indicación</label><input id="xan" class="inp" placeholder="Ej.: Para su atención y trámite correspondiente"></div><label class="check"><input type="checkbox" id="xam" checked> Notificar al correo del área y al remitente</label><button class="btn" data-xa>${sic('send')} Derivar expediente</button></div></div>
-      <div class="panel"><h2>Actualizar estado</h2><div class="pb" style="display:grid;gap:10px"><div class="field"><label for="xs">Nuevo estado</label><select id="xs">${EXP_STATES.map(s => `<option ${s === x.estado ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="field"><label for="xn">Nota / respuesta</label><textarea id="xn" class="inp" rows="3"></textarea></div><label class="check"><input type="checkbox" id="xm" checked> Notificar al remitente por correo</label><button class="btn sec" data-xs>Guardar estado</button></div></div>
+    <div style="display:grid;gap:16px;align-content:start"><div class="panel"><h2>Derivar a un área</h2><div class="pb" style="display:grid;gap:10px"><div class="field"><label for="xa">Área receptora</label><select id="xa">${areaOptions(x.area === 'MP' ? (x.areaDestino || '') : x.area, { placeholder: 'Seleccione el área' })}</select></div><div class="field"><label for="xan">Proveído / indicación</label><input id="xan" class="inp" placeholder="Ej.: Para su atención y trámite correspondiente"></div><label class="check"><input type="checkbox" id="xam" disabled> Correo pendiente de configuración</label><button class="btn" data-xa>${sic('send')} Derivar expediente</button></div></div>
+      <div class="panel"><h2>Actualizar estado</h2><div class="pb" style="display:grid;gap:10px"><div class="field"><label for="xs">Nuevo estado</label><select id="xs">${EXP_STATES.map(s => `<option ${s === x.estado ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="field"><label for="xn">Nota / respuesta</label><textarea id="xn" class="inp" rows="3"></textarea></div><label class="check"><input type="checkbox" id="xm" disabled> Correo pendiente de configuración</label><button class="btn sec" data-xs>Guardar estado</button></div></div>
       <div class="panel"><h2>Plazo</h2><div class="pb meta-list"><span>Tipo: ${esc(x.tipoTramite)} · ${(mpvCfg().plazos[x.tipoTramite] || EXP_PLAZOS[x.tipoTramite] || 10)} días hábiles</span><span>Vence: <b>${fdate(expPlazo(x).due)}</b></span><span>${expSem(x)}</span></div></div></div></div>`;
   return {
     html, after: () => {
@@ -7236,10 +7189,10 @@ expDetalle = function (id) {
       $('[data-xa]').onclick = () => {
         const v = $('#xa').value; if (!v) return toast('Seleccione el área.', 'err'); if (v === x.area) return toast('El expediente ya se encuentra en esa área.', 'err');
         const a = areaOf(v); const prov = $('#xan').value.trim(); const n = `Derivado a ${areaName(v)}${prov ? ': ' + prov : ''}`;
-        x.area = v; if (!x.areaDestino || x.areaDestino === 'MP') x.areaDestino = v; if (['Recibido', 'Observado'].includes(x.estado)) x.estado = 'Derivado';
+        x.area = v; if (['Recibido', 'Observado'].includes(x.estado)) x.estado = 'Derivado';
         x.historial.push({ fecha: nowISO(), usuario: me, estado: x.estado, nota: n });
         if ($('#xam').checked) { if (a) mailOut(a.correo, `[${x.numero}] Expediente derivado: ${x.tipoTramite}`, `${x.nombres} · ${x.asunto}${prov ? ' · Proveído: ' + prov : ''}`); mailOut(x.correo, `Expediente ${x.numero}: derivado`, `Su documento fue derivado a ${areaName(v)}.`); }
-        audit('Derivación', 'Mesa de partes', x.numero, n); stamp(x); if (saveDB()) { toast('Expediente derivado' + (a ? ' y notificado a ' + a.correo : '') + '.', 'ok'); route(); }
+        audit('Derivación', 'Mesa de partes', x.numero, n); stamp(x); if (saveDB()) { toast('Expediente derivado. El envío por correo está pendiente de configuración.', 'ok'); route(); }
       };
       $('[data-xs]').onclick = () => {
         const v = $('#xs').value, n = $('#xn').value.trim(); if (v === x.estado && !n) return toast('Seleccione otro estado o escriba una nota.', 'err'); if (['Observado', 'Atendido'].includes(v) && !n) return toast(v === 'Observado' ? 'Indique la observación.' : 'Registre la respuesta o el detalle de la atención.', 'err');
@@ -7321,13 +7274,13 @@ function lrForm() {
 function lrPage(path, q0) {
   const c = lrCfg(); const i = inst(); const t0 = q0 && q0.get && q0.get('tab'); const cur = t0 === 'consulta' || (q0 && q0.get && q0.get('rcl')) ? 'c' : t0 === 'info' ? 'i' : 'r';
   const body = `${svNav('libro-de-reclamaciones')}${svHead('lr', [['clock', `Reclamos: ${c.plazoReclamo} días hábiles`], ['clock', `Quejas: ${c.plazoQueja} días hábiles`], ['file', 'Constancia en PDF']])}
-   ${svSteps([['Registra', 'Elige reclamo o queja y describe lo sucedido.'], ['Recibe tu código', 'RCL-AAAA-NNNNN y constancia en tu correo.'], ['Atención', 'El responsable lo deriva al área competente.'], ['Respuesta', 'Te respondemos por correo dentro del plazo.']])}
+   ${svSteps([['Registra', 'Elige reclamo o queja y describe lo sucedido.'], ['Recibe tus códigos', 'Seguimiento RCL, verificación y constancia PDF con QR.'], ['Atención', 'El responsable lo deriva al área competente.'], ['Respuesta', 'Consulta la respuesta en el portal dentro del plazo.']])}
    ${svTabs([['r', 'edit', 'Registrar reclamo o queja'], ['c', 'search', 'Consultar estado'], ['i', 'book', 'Información']], cur)}
    <div data-pane="r" ${cur === 'r' ? '' : 'hidden'}>${lrForm()}</div>
-   <div data-pane="c" ${cur === 'c' ? '' : 'hidden'}><section class="card cb pz-qf"><div class="pz-qf-h">${sic('search', 20)}<div><h2>Consultar el estado de mi reclamo o queja</h2><small>Ingresa el código de seguimiento de tu constancia y tu número de documento.</small></div></div><form data-lrq2 class="form-grid" novalidate><div class="field"><label for="lq2-c">Código de seguimiento</label><input id="lq2-c" name="codigo" placeholder="RCL-${yearNow()}-00001" autocomplete="off"></div><div class="field"><label for="lq2-d">N.º de documento del reclamante</label><input id="lq2-d" name="doc" inputmode="numeric" autocomplete="off"></div><div class="full"><button class="btn">${S16('search')} Consultar</button></div></form><div id="lq2-r" aria-live="polite"></div></section></div>
+   <div data-pane="c" ${cur === 'c' ? '' : 'hidden'}><section class="card cb pz-qf"><div class="pz-qf-h">${sic('search', 20)}<div><h2>Consultar el estado de mi reclamo o queja</h2><small>Ingresa el seguimiento RCL y el documento completo del reclamante, o el código de verificación de tu constancia.</small></div></div><form data-lrq2 class="form-grid" novalidate><div class="field"><label for="lq2-c">Código de seguimiento</label><input id="lq2-c" name="codigo" placeholder="RCL-${yearNow()}-00001" autocomplete="off"></div><div class="field"><label for="lq2-d">Documento del reclamante o código de verificación</label><input id="lq2-d" name="doc" maxlength="20" placeholder="DNI de 8 dígitos o verificación de 16 caracteres" autocomplete="off"></div><div class="full"><button class="btn">${S16('search')} Consultar</button></div></form><div id="lq2-r" aria-live="polite"></div></section></div>
    <div data-pane="i" ${cur === 'i' ? '' : 'hidden'}><section class="card cb pz-lr-inf">
      <div class="pz-lr-2"><div class="rec">${sic('file', 22)}<b>Reclamo</b><p>Disconformidad relacionada con el servicio educativo o con los trámites brindados por el instituto.</p><small>Plazo de respuesta: ${c.plazoReclamo} días hábiles</small></div><div class="que">${sic('alert', 22)}<b>Queja</b><p>Malestar o descontento respecto a la atención recibida: trato, demora, falta de información, etc.</p><small>Plazo de respuesta: ${c.plazoQueja} días hábiles</small></div></div>
-     <h3>Flujo de atención</h3><ol class="pz-flow"><li><b>Recibido</b><span>Registro y constancia enviada a tu correo.</span></li><li><b>Derivado</b><span>El responsable lo deriva al área competente.</span></li><li><b>En atención</b><span>El área evalúa y propone la respuesta.</span></li><li><b>Atendido</b><span>La respuesta se envía a tu correo.</span></li></ol>
+     <h3>Flujo de atención</h3><ol class="pz-flow"><li><b>Recibido</b><span>Registro y constancia PDF descargable.</span></li><li><b>Derivado</b><span>El responsable lo deriva al área competente.</span></li><li><b>En atención</b><span>El área evalúa y propone la respuesta.</span></li><li><b>Atendido</b><span>La respuesta queda disponible en el seguimiento del portal.</span></li></ol>
      <h3>Responsable de la atención</h3><p><b>${esc(c.responsable)}</b> · ${esc(c.cargo)}<br><a href="mailto:${esc(c.correo)}">${esc(c.correo)}</a></p>
      <h3>A tener en cuenta</h3><ul><li>El plazo se cuenta desde el día hábil siguiente al registro.</li><li>La formulación del reclamo no impide acudir a otras vías de solución de controversias.</li><li>Base normativa: Decreto Supremo N.º 042-2011-PCM, que obliga a las entidades públicas a contar con un Libro de Reclamaciones.</li></ul></section></div>
    <div class="pz-info3"><div>${ic('shield')}<b>Registro seguro</b><span>Tu información se registra de manera segura y protegida (Ley N.º 29733).</span></div><div>${ic('search')}<b>Seguimiento</b><span>Con tu código consultas el estado en cualquier momento.</span></div><div>${ic('mail')}<b>Notificación</b><span>Consulta el estado y la respuesta con tu código de seguimiento.</span></div></div>`;
@@ -7375,28 +7328,35 @@ function bindLr2(q0) {
         asunto: clamp(v.descripcion.trim().replace(/\s+/g, ' '), 80), descripcion: v.descripcion.trim(), pedido: v.pedido.trim(), adjunto: adj, estado: 'Recibido', plazoDias, vence: diasHabiles(fecha, plazoDias).due.toISOString(), responsable: { nombre: c.responsable, cargo: c.cargo, correo: c.correo }, area: '',
         historial: [{ fecha, usuario: 'portal', estado: 'Recibido', nota: `Registro desde el Libro de Reclamaciones Virtual. Responsable: ${c.responsable} (${c.cargo}).` }], notas: [], respuesta: '', notifInst: 'Pendiente', notifUser: 'Pendiente', anulado: false };
       coll('reclamos').unshift(r);
-      if (!saveDB()) { C[y]--; DB.reclamos.shift(); return; }
+      if (!saveDB()) return;
       codigo = r.codigo;
       r.notifInst = mailOut(c.correo, `[${codigo}] Nuevo ${v.tipo.toLowerCase()} registrado`, `${r.nombres} (${r.condicion}) - ${r.descripcion}`);
       if (DB.config.correoReclamos && DB.config.correoReclamos !== c.correo) mailOut(DB.config.correoReclamos, `[${codigo}] Copia: nuevo ${v.tipo.toLowerCase()}`, r.asunto);
       r.notifUser = mailOut(r.correo, `Constancia de registro ${codigo}`, `Su ${v.tipo.toLowerCase()} fue registrado el ${fshort(fecha, true)} con el código ${codigo}. Plazo máximo de respuesta: ${plazoDias} días hábiles (hasta el ${fshort(r.vence)}).`);
       audit('Registro', 'Libro de reclamaciones', codigo, `${v.tipo} registrado desde el portal. Notificación institucional: ${r.notifInst}`); saveDB();
       f.reset();
-      const m = modal({ title: `${v.tipo} registrado`, body: `<div class="notice ok">Tu ${esc(v.tipo.toLowerCase())} fue registrado correctamente el ${fdate(fecha, true)}.</div><p>Tu código de seguimiento es:</p><div class="code-box">${codigo}</div><dl class="kv" style="margin-top:12px"><dt>Responsable</dt><dd>${esc(c.responsable)} · ${esc(c.cargo)}</dd><dt>Plazo de respuesta</dt><dd>${plazoDias} días hábiles (hasta el ${fdate(r.vence)})</dd></dl><p>Puedes descargar tu constancia. Correo de contacto: <b>${esc(r.correo)}</b>. Guarda tu código para consultar el estado.</p>`, foot: `<button class="btn sec" data-print>${S16('print')} Descargar constancia (PDF)</button><button class="btn" data-ok>Aceptar</button>` });
+      const m = modal({ title: `${v.tipo} registrado`, body: `<div class="notice ok">Tu ${esc(v.tipo.toLowerCase())} fue registrado correctamente el ${fdate(fecha, true)}.</div><p>Tu código de seguimiento es:</p><div class="code-box">${codigo}</div><p>Código de verificación: <b class="mono">${esc(r.cargoCod || 'Pendiente de actualización')}</b></p><dl class="kv" style="margin-top:12px"><dt>Responsable</dt><dd>${esc(c.responsable)} · ${esc(c.cargo)}</dd><dt>Plazo de respuesta</dt><dd>${plazoDias} días hábiles (hasta el ${fdate(r.vence)})</dd></dl><p>Puedes descargar tu constancia. Correo de contacto: <b>${esc(r.correo)}</b>. Guarda tu código para consultar el estado.</p>`, foot: `<button class="btn sec" data-print>${S16('print')} Descargar constancia (PDF)</button><button class="btn" data-ok>Aceptar</button>` });
       $('[data-ok]', m.el).onclick = m.close; $('[data-print]', m.el).onclick = () => lrPdf(r, 'constancia');
     } catch (err) { console.error(err); toast('No se pudo registrar. Intente nuevamente.', 'err'); }
     finally { btn.disabled = false; }
   };
   const q = $('[data-lrq2]');
   const show = r => { $('#lq2-r').innerHTML = r ? `<div class="pz-track" role="status"><div class="pz-track-h"><div><b class="mono">${esc(r.codigo)}</b> · ${esc(r.tipo)}<br><small>Registrado el ${fdate(r.fecha, true)}</small></div>${stBadge(r.anulado ? 'Anulado' : r.estado)}</div>${svTrack(['Recibido', 'Derivado', 'En atención', 'Atendido'], r.anulado ? 'Anulado' : r.estado, { Recibido: 0, Derivado: 1, 'En atención': 2, Atendido: 3, Cerrado: 3, Anulado: 0 })}<dl class="kv"><dt>Plazo</dt><dd>${lrSem(r)} · vence ${fdate(lrPlazo(r).due)}</dd>${r.area ? `<dt>Área que atiende</dt><dd>${esc(areaName(r.area))}</dd>` : ''}${r.respuesta ? `<dt>Respuesta</dt><dd style="white-space:pre-wrap">${esc(r.respuesta)}</dd>` : ''}</dl><ol class="pz-tl">${(r.historial || []).map(h => `<li><span>${fshort(h.fecha, true)}</span><b>${esc(h.estado)}</b></li>`).join('')}</ol><div style="margin-top:12px"><button type="button" class="btn sm sec" data-lrpdf>${S16('download')} Descargar constancia (PDF)</button></div></div>` : `<div class="notice warn" role="status">No se encontró un registro con ese código y documento. Verifique los datos de su constancia.</div>`; const b = $('[data-lrpdf]'); if (b && r) b.onclick = () => lrPdf(r, 'constancia'); };
-  q.onsubmit = e => { e.preventDefault(); const cod = q.codigo.value.trim().toUpperCase(); const d = q.doc.value.trim(); show(portalLookup('reclamos', cod, d)); };
-  if (q0 && q0.get && q0.get('rcl')) { showTab('c'); q.codigo.value = q0.get('rcl'); }
+  const consult = () => { const cod=q.codigo.value.trim().toUpperCase(), d=q.doc.value.trim().toUpperCase(); const er={};
+    if(!/^(?:RCL|LR)-\d{4}-\d+$/i.test(cod))er.codigo='Ingresa el código de seguimiento completo, por ejemplo RCL-2026-00001.';
+    if(!/^[A-Z0-9-]{6,20}$/.test(d))er.doc='Ingresa el documento completo del reclamante (DNI de 8 dígitos, no folios como 01) o su código de verificación.';
+    if(!showErrors(q,er)){$('#lq2-r').innerHTML='';return;}
+    show(portalLookup('reclamos',cod,d)); };
+  q.onsubmit=e=>{e.preventDefault();consult();};
+  if(q0&&q0.get&&q0.get('rcl')){showTab('c');q.codigo.value=q0.get('rcl');if(q0.get('v')){q.doc.value=q0.get('v');consult();}}
+
 }
+const lrSeguimientoUrl = r => location.href.split('#')[0]+'#/servicios/libro-de-reclamaciones?tab=consulta&rcl='+encodeURIComponent(r.codigo)+(r.cargoCod?'&v='+encodeURIComponent(r.cargoCod):'');
 /* Constancia (ciudadano) y hoja de reclamación (panel) en PDF con membrete */
 async function lrPdf(r, kind) {
   const titulo = kind === 'constancia' ? `CONSTANCIA DE REGISTRO – ${r.tipo.toUpperCase()}` : `HOJA DE ${r.tipo.toUpperCase()} N.° ${r.codigo}`;
   const staff = kind !== 'constancia'; const docTxt = `${r.tipoDoc} ${staff && !canFlag('viewDni') ? maskDni(r.numDoc) : (staff ? r.numDoc : maskDni(r.numDoc))}`;
-  if (!hasPdf()) return downloadBlob(makePdf(titulo, [`Codigo: ${r.codigo}`, `Fecha: ${fshort(r.fecha, true)}`, `Reclamante: ${r.nombres}`, `Documento: ${docTxt}`, '', r.descripcion, '', 'Pedido: ' + r.pedido], inst().nombre.toUpperCase()), `${kind}_${r.codigo}.pdf`);
+  if (!hasPdf()) return downloadBlob(makePdf(titulo, [`Codigo: ${r.codigo}`, `Fecha: ${fshort(r.fecha, true)}`, `Reclamante: ${r.nombres}`, `Documento: ${docTxt}`, '', r.descripcion, '', 'Pedido: ' + r.pedido, 'Verificacion: '+(r.cargoCod||'Actualiza el portal para habilitarla'), 'Consulta: '+lrSeguimientoUrl(r)], inst().nombre.toUpperCase()), `${kind}_${r.codigo}.pdf`);
   const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' }); const M = 14; const W = 210;
   let y = await pdfMembrete(doc, 'LIBRO DE RECLAMACIONES VIRTUAL');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.setTextColor(...NAVY); doc.text(titulo, W / 2, y + 3, { align: 'center' }); y += 9;
@@ -7407,15 +7367,22 @@ async function lrPdf(r, kind) {
   sec('1. DATOS DEL USUARIO', [row('Nombres y apellidos', r.nombres), row('Documento', docTxt), row('Correo electrónico', r.correo), row('Teléfono', r.telefono), row('Condición', r.condicion), row('Programa de estudios', (progById(r.programaId) || {}).nombre)]);
   sec('2. DETALLE', [row('Tipo de registro', r.tipo), row('Fecha del hecho', r.fechaHecho ? fshort(r.fechaHecho + 'T12:00:00') : ''), row('Área o servicio', r.areaHecho ? areaName(r.areaHecho) : ''), row('Descripción de los hechos', r.descripcion), row('Pedido concreto', r.pedido), row('Evidencia adjunta', r.adjunto ? `${r.adjunto.original || r.adjunto.nombre} (${fsize(r.adjunto.size)})` : 'No adjunta')]);
   sec('3. ATENCIÓN', [row('Responsable institucional', `${(r.responsable || {}).nombre || lrCfg().responsable} – ${(r.responsable || {}).cargo || lrCfg().cargo}`), row('Correo del responsable', (r.responsable || {}).correo || lrCfg().correo), row('Estado', r.anulado ? 'Anulado' : r.estado)].concat(staff ? [row('Área derivada', r.area ? areaName(r.area) : 'Sin derivar'), row('Respuesta', r.respuesta)] : []));
-  if (y > 250) { doc.addPage(); y = 20; }
+  if (y > 232) { doc.addPage(); y = 20; }
+  const verificationUrl=lrSeguimientoUrl(r);doc.setDrawColor(...BLUE);doc.setLineWidth(.3);doc.roundedRect(M,y,W-2*M,42,2,2);
+  pdfQRp(doc,verificationUrl,M+3,y+3,34);
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...NAVY);doc.text('CÓDIGO DE VERIFICACIÓN',M+42,y+8);
+  doc.setFont('courier','bold');doc.setFontSize(11);doc.text(r.cargoCod||'Pendiente de actualización',M+42,y+15);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(50);doc.text(doc.splitTextToSize('Escanea el QR para consultar el estado de este reclamo o queja. También puedes ingresar su seguimiento y tu documento completo o este código de verificación en el Libro de Reclamaciones.',W-2*M-46),M+42,y+22);
+  y+=46;
+  if(y>267){doc.addPage();y=20;}
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(70);
-  doc.text(doc.splitTextToSize(`La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante las autoridades competentes. El instituto dará respuesta en un plazo no mayor de ${lrPlazoDias(r)} días hábiles al correo electrónico registrado. Consulte el estado en el portal con su código y documento.`, W - 2 * M), M, y + 4);
+  doc.text(doc.splitTextToSize(`La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante las autoridades competentes. El instituto dará respuesta en un plazo no mayor de ${lrPlazoDias(r)} días hábiles mediante el seguimiento del portal. El envío por correo está pendiente de habilitación. Consulte con el seguimiento y su documento o código de verificación.`, W - 2 * M), M, y + 4);
   pdfPie(doc, `Libro de Reclamaciones Virtual · ${lrCfg().correo} · ${inst().direccion}`);
   downloadBlob(doc.output('blob'), `${kind === 'constancia' ? 'Constancia' : 'Hoja'}_${r.codigo}.pdf`);
 }
 
 /* ---------- Panel del Libro de reclamaciones ---------- */
-const lrTabs2 = a => tabsBar([['d', 'Resumen', '#/admin/reclamos'], ['l', 'Bandeja de reclamos', '#/admin/reclamos/bandeja'], ['n', 'Notificaciones enviadas', '#/admin/reclamos/notificaciones'], ['c', 'Responsable y plazos', '#/admin/reclamos/config']], a);
+const lrTabs2 = a => tabsBar([['d', 'Resumen', '#/admin/reclamos'], ['l', 'Bandeja de reclamos', '#/admin/reclamos/bandeja'], ['n', 'Correo pendiente', '#/admin/reclamos/notificaciones'], ['c', 'Responsable y plazos', '#/admin/reclamos/config']], a);
 const baseReclamos = CUSTOM.reclamos, baseReclamoDet = reclamoDetalle;
 CUSTOM.reclamos = (parts) => {
   if (parts[2] === 'notificaciones') { const o = lrNotif(); o.html = o.html.replace(lrTabs('n'), lrTabs2('n')); return o; }
@@ -7490,6 +7457,7 @@ const empEstado = e => e.validada ? 'Aprobada' : (e.estadoVal === 'Rechazada' ? 
 const empBadge = e => { const s = empEstado(e); return `<span class="badge ${s === 'Aprobada' ? 'ok' : s === 'Rechazada' ? 'err' : 'warn'}">${s}</span>`; };
 const rucOk = r => { r = String(r || ''); if (!/^(10|15|17|20)\d{9}$/.test(r)) return false; const w = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]; const s = w.reduce((a, x, i) => a + x * +r[i], 0); let d = 11 - s % 11; if (d === 10) d = 0; if (d === 11) d = 1; return d === +r[10]; };
 const fdx = d => d ? fshort(String(d).length === 10 ? d + 'T12:00:00' : d) : '—';
+function canWriteAcademic(module) { const u=currentUser(); if(!u)return false; if(u.rol==='admin')return true; const key={alumnos:'ix-alumnos',bolsa:'ix-bolsa'}[module]; return !!key&&can(key)&&Number(XD().perms?.[IX_ROLE[u.rol]]?.[module]||0)>=2; }
 const bTabs = a => tabsBar([['p', 'Panel', '#/admin/ix-bolsa'], ['g', 'Convocatorias y postulaciones', '#/admin/ix-bolsa/gestion'], ['e', 'Validación de empresas', '#/admin/ix-bolsa/empresas'], ['r', 'Padrón de estudiantes y egresados', '#/admin/ix-bolsa/padron'], ['s', 'Seguimiento de egresados', '#/admin/ix-bolsa/egresados']], a);
 const bHead = (sub, crumb) => admHead('Bolsa laboral', sub, `<a class="btn ghost" href="#/servicios/bolsa-laboral" target="_blank">${sic('globe')} Ver bolsa pública</a>`, 'briefcase', [['Servicios'], ['Bolsa laboral', '#/admin/ix-bolsa']].concat(crumb ? [[crumb]] : []));
 const baseBolsa = CUSTOM['ix-bolsa'];
@@ -7514,12 +7482,12 @@ function bolsaPanel() {
   const posts = D.postulaciones.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))).slice(0, 5);
   const html = bHead('Gestión de la Bolsa Laboral del IESTP Pisco') + bTabs('p')
     + `<div class="pz-welcome"><div><h2>Bienvenido al panel de la Bolsa Laboral</h2><p>Conecta a estudiantes y egresados con empresas validadas por la ${esc(window.pzBolsaCfg().responsable)}.</p></div><a class="btn gold" href="#/admin/ix-bolsa/gestion">${sic('plus')} Nueva convocatoria</a></div>
-    <div class="pz-kpis">${K('users', 'var(--sky);color:var(--link)', est, 'Estudiantes', '#/admin/ix-alumnos', 'Regulares en el maestro')}${K('grad', 'var(--sky);color:var(--link)', egr, 'Egresados', '#/admin/ix-bolsa/egresados', 'Egresados y titulados')}${K('building', 'var(--sky);color:var(--link)', empA, 'Empresas', '#/admin/ix-bolsa/empresas', 'Aprobadas')}${K('briefcase', 'var(--sky);color:var(--link)', conv, 'Convocatorias', '#/admin/ix-bolsa/gestion', 'Vigentes')}
+    <div class="pz-kpis">${K('users', 'var(--sky);color:var(--link)', est, 'Estudiantes', can('ix-alumnos') ? '#/admin/ix-alumnos' : '#/admin/ix-bolsa/padron', 'Regulares en el maestro')}${K('grad', 'var(--sky);color:var(--link)', egr, 'Egresados', '#/admin/ix-bolsa/egresados', 'Egresados y titulados')}${K('building', 'var(--sky);color:var(--link)', empA, 'Empresas', '#/admin/ix-bolsa/empresas', 'Aprobadas')}${K('briefcase', 'var(--sky);color:var(--link)', conv, 'Convocatorias', '#/admin/ix-bolsa/gestion', 'Vigentes')}
       ${K('file', 'var(--sky);color:var(--link)', post, 'Postulaciones', '#/admin/ix-bolsa/gestion')}${K('clock', 'var(--sky);color:var(--link)', rev, 'En revisión', '#/admin/ix-bolsa/gestion')}${K('check', 'var(--sky);color:var(--link)', sel, 'Seleccionados', '#/admin/ix-bolsa/gestion')}${K('alert', 'var(--sky);color:var(--link)', empP, 'Empresas pendientes', '#/admin/ix-bolsa/empresas', 'Por validar')}</div>
     <div class="pz-dash"><div class="panel"><h2><span>Convocatorias recientes</span><a class="btn xs ghost" href="#/admin/ix-bolsa/gestion">Ver todas</a></h2><div class="tbl-wrap" style="border:0"><table class="tbl light"><thead><tr><th>Convocatoria</th><th>Empresa</th><th>Modalidad</th><th class="c">Estado</th><th class="num">Postulaciones</th></tr></thead><tbody>${ofs.map(o => `<tr><td><b>${esc(o.puesto)}</b><br><small style="color:var(--muted)">Publicado ${fdx(o.fecha)}</small></td><td>${esc(xemp(o.emp).nom)}</td><td>${esc(o.modal)}</td><td class="c">${stBadge(o.estado === 'Publicada' && o.limite < hoy ? 'Cerrada' : o.estado)}</td><td class="num">${D.postulaciones.filter(p => p.of === o.id).length}</td></tr>`).join('') || '<tr><td colspan="5"><div class="empty">Sin convocatorias.</div></td></tr>'}</tbody></table></div></div>
       <div class="panel"><h2><span>Empresas recientes</span><a class="btn xs ghost" href="#/admin/ix-bolsa/empresas">Ver</a></h2><div class="pb pz-emps">${emps.map(e => `<div>${ic('building')}<span><b>${esc(e.nom)}</b><small>RUC ${esc(e.ruc)}</small>${empBadge(e)}</span></div>`).join('') || '<p class="note">Sin empresas.</p>'}<a class="btn ghost sm" href="#/servicios/bolsa-laboral?registro=1" target="_blank" style="justify-self:stretch;text-align:center">${sic('plus')} Registrar empresa</a></div></div></div>
     <div class="panel" style="margin-top:16px"><h2><span>Últimas postulaciones</span><a class="btn xs ghost" href="#/admin/ix-bolsa/gestion">Ver todas</a></h2><div class="tbl-wrap" style="border:0"><table class="tbl light"><thead><tr><th>Postulante</th><th>Convocatoria</th><th>Fecha</th><th class="c">Estado</th></tr></thead><tbody>${posts.map(p => { const s = xest(p.est), o = D.ofertas.find(x => x.id === p.of) || {}; return `<tr><td><span class="pz-av">${esc(String(s.nom).split(' ').slice(0, 2).map(w => w[0]).join(''))}</span> <b>${esc(s.nom)}</b><br><small style="color:var(--muted);margin-left:36px">${s.estado === 'Regular' ? 'Estudiante' : esc(s.estado)}</small></td><td>${esc(o.puesto || '—')}</td><td>${fdx(p.fecha)}</td><td class="c">${stBadge(p.estado === 'Recibida' ? 'Recibido' : p.estado)}</td></tr>`; }).join('') || '<tr><td colspan="4"><div class="empty">Sin postulaciones.</div></td></tr>'}</tbody></table></div></div>
-    <h2 class="pz-h2">Acciones rápidas</h2><div class="pz-qa"><a href="#/admin/ix-alumnos">${ic('users')}<span>Registrar estudiante</span></a><a href="#/admin/ix-bolsa/padron">${ic('grad')}<span>Registrar egresados (padrón Excel)</span></a><a href="#/servicios/bolsa-laboral?registro=1" target="_blank">${ic('building')}<span>Registrar empresa</span></a><a href="#/admin/ix-bolsa/gestion">${ic('briefcase')}<span>Publicar convocatoria</span></a></div>`;
+    <h2 class="pz-h2">Acciones rápidas</h2><div class="pz-qa">${can('ix-alumnos') ? '<a href="#/admin/ix-alumnos">' + ic('users') + '<span>Registrar estudiante</span></a>' : ''}<a href="#/admin/ix-bolsa/padron">${ic('grad')}<span>Registrar egresados (padrón Excel)</span></a><a href="#/servicios/bolsa-laboral?registro=1" target="_blank">${ic('building')}<span>Registrar empresa</span></a><a href="#/admin/ix-bolsa/gestion">${ic('briefcase')}<span>Publicar convocatoria</span></a></div>`;
   return { html };
 }
 /* ---------- Validación de empresas ---------- */
@@ -7532,18 +7500,20 @@ function bolsaEmpresas() {
       <div class="tbl-wrap" style="border:0"><table class="tbl light"><thead><tr><th>Empresa</th><th>RUC</th><th>Contacto</th><th>Registro</th><th class="c">Estado</th><th class="c">Acciones</th></tr></thead><tbody>${rows.map(e => `<tr data-eid="${e.id}"><td><b>${esc(e.nom)}</b><br><small>${esc(e.sector)} · ${esc(e.ubic)}</small>${e.dir ? `<br><small>${esc(e.dir)}</small>` : ''}</td><td class="mono">${esc(e.ruc)}<br>${rucOk(e.ruc) ? '<span class="badge ok">Dígito verificador válido</span>' : '<span class="badge err">RUC no válido</span>'}</td><td>${esc(e.contacto)}${e.cargoC ? `<br><small>${esc(e.cargoC)}</small>` : ''}<br><small><a href="mailto:${esc(e.correo)}">${esc(e.correo)}</a>${e.tel ? ' · ' + esc(e.tel) : ''}</small></td><td>${fdx(e.fechaReg)}</td><td class="c">${empBadge(e)}${e.motivoRech ? `<br><small>${esc(clamp(e.motivoRech, 60))}</small>` : ''}${e.valPor ? `<br><small>por ${esc(e.valPor)}</small>` : ''}</td><td class="c" style="white-space:nowrap">${empEstado(e) !== 'Aprobada' ? `<button class="btn xs ok" data-eap>${sic('check', 13)} Aprobar</button>` : ''} ${empEstado(e) !== 'Rechazada' ? `<button class="btn xs danger" data-erj>${sic('x', 13)} ${empEstado(e) === 'Aprobada' ? 'Suspender' : 'Rechazar'}</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6"><div class="empty">No hay empresas en esta categoría.</div></td></tr>'}</tbody></table></div></div>
       <form class="panel" data-bcfg><h2>Criterios y responsable</h2><div class="pb" style="display:grid;gap:10px"><div class="field"><label for="bc-r">Responsable de la aprobación</label><input id="bc-r" name="responsable" value="${esc(c.responsable)}"></div><div class="field"><label for="bc-j">Cargo</label><input id="bc-j" name="jefe" value="${esc(c.jefe)}"></div><div class="field"><label for="bc-c">Correo</label><input id="bc-c" name="correo" type="email" value="${esc(c.correo)}"></div><div class="field"><label for="bc-k">Criterios de validación (uno por línea)</label><textarea id="bc-k" name="criterios" rows="8">${esc(c.criterios.join('\n'))}</textarea></div><button class="btn sec">Guardar criterios</button><p class="note">Los criterios se muestran en el formulario público de registro de empresas.</p></div></form></div>`;
   const act = async (e, ok) => {
+    if(!canWriteAcademic('bolsa'))return toast('Tu perfil dispone de consulta de empresas.', 'warn');
     const me = currentUser(); const u = coll('usuarios').find(x => x.vin === 'emp:' + e.id);
     let motivo = '';
     if (!ok) { motivo = await promptBox(`Motivo ${empEstado(e) === 'Aprobada' ? 'de la suspensión' : 'del rechazo'} de ${e.nom} (se enviará a la empresa):`, { title: 'Rechazar empresa', ok: 'Confirmar', textarea: true }); if (motivo == null) return; if (motivo.trim().length < 5) return toast('Indique el motivo.', 'err'); }
     e.validada = ok; e.estadoVal = ok ? 'Aprobada' : 'Rechazada'; e.motivoRech = ok ? '' : motivo.trim(); e.valPor = me.usuario; e.fechaVal = new Date().toISOString().slice(0, 10);
     if (u && u.ixId) IX.notifyTo('u:' + u.ixId, ok ? 'Tu empresa fue aprobada: ya puedes publicar convocatorias' : 'Tu solicitud de empresa no fue aprobada: ' + e.motivoRech, 'bolsa');
     mailOut(e.correo, ok ? 'Cuenta de empresa aprobada - Bolsa laboral IESTP Pisco' : 'Cuenta de empresa no aprobada - Bolsa laboral IESTP Pisco', ok ? `La empresa ${e.nom} fue validada por la ${c.responsable}. Ingrese con su RUC y contraseña.` : `Motivo: ${e.motivoRech}`);
-    IX.logAct(ok ? 'Aprobar empresa' : 'Rechazar empresa', 'Bolsa laboral', `${e.nom} (RUC ${e.ruc})${ok ? '' : ' · ' + e.motivoRech}`); IX.persist(); toast(ok ? `${e.nom} aprobada y notificada.` : `${e.nom} rechazada y notificada.`, 'ok'); route();
+    IX.logAct(ok ? 'Aprobar empresa' : 'Rechazar empresa', 'Bolsa laboral', `${e.nom} (RUC ${e.ruc})${ok ? '' : ' · ' + e.motivoRech}`); if(!IX.persist())return false; toast(ok ? `${e.nom} aprobada. El correo está pendiente de configuración.` : `${e.nom} rechazada. El correo está pendiente de configuración.`, 'ok'); route();
   };
   return { html, after: () => {
     $$('[data-ef]').forEach(b => b.onclick = () => { st.f = b.dataset.ef; route(); });
     $$('[data-eid]').forEach(tr => { const e = D.empresas.find(x => String(x.id) === tr.dataset.eid); const a = $('[data-eap]', tr), r = $('[data-erj]', tr); if (a) a.onclick = () => { if (!rucOk(e.ruc)) toast('Atención: el RUC no supera la validación del dígito verificador.', 'err'); act(e, true); }; if (r) r.onclick = () => act(e, false); });
-    const f = $('[data-bcfg]'); f.onsubmit = ev => { ev.preventDefault(); if (!reEmail.test(f.correo.value)) return toast('Correo no válido.', 'err'); Object.assign(c, { responsable: f.responsable.value.trim(), jefe: f.jefe.value.trim(), correo: f.correo.value.trim(), criterios: f.criterios.value.split('\n').map(s => s.trim()).filter(Boolean) }); audit('Configuración', 'Bolsa laboral', 'Criterios de validación de empresas'); if (saveDB()) { toast('Criterios guardados.', 'ok'); route(); } };
+    if(!canWriteAcademic('bolsa'))$$('[data-eap],[data-erj]').forEach(b=>b.disabled=true);
+    const f = $('[data-bcfg]'); const cfgEdit=['admin','atencion'].includes(currentUser()?.rol); if(!cfgEdit)$$('input,textarea,button',f).forEach(el=>el.disabled=true); f.onsubmit = ev => { ev.preventDefault(); if(!cfgEdit)return; if (!reEmail.test(f.correo.value)) return toast('Correo no válido.', 'err'); Object.assign(c, { responsable: f.responsable.value.trim(), jefe: f.jefe.value.trim(), correo: f.correo.value.trim(), criterios: f.criterios.value.split('\n').map(s => s.trim()).filter(Boolean) }); audit('Configuración', 'Bolsa laboral', 'Criterios de validación de empresas'); if (saveDB()) { toast('Criterios guardados.', 'ok'); route(); } };
   } };
 }
 /* ---------- Padrón Excel de estudiantes y egresados ---------- */
@@ -7599,16 +7569,18 @@ function bolsaPadron() {
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px"><button class="btn ghost" data-pdx>Descartar</button><button class="btn" data-pdi ${ok.length ? '' : 'disabled'}>${sic('upload')} Importar ${ok.length} registro(s) válidos</button></div>` : ''}` : ''}</div></div>`;
   return { html, after: () => {
     $('[data-tpl]').onclick = padronTemplate;
-    $('#pd-f').onchange = async ev => { const file = ev.target.files[0]; if (!file) return; const e0 = checkUpload(file, ['xlsx', 'xls', 'csv'], 10); if (e0) { $('#pd-msg').innerHTML = `<div class="notice err">${esc(e0)}</div>`; return; }
+    $('#pd-f').disabled=!canWriteAcademic('alumnos'); if(!canWriteAcademic('alumnos'))$('#pd-msg').textContent='Tu perfil dispone de consulta. La importación requiere permiso de edición del maestro de alumnos.';
+    $('#pd-f').onchange = async ev => { if(!canWriteAcademic('alumnos'))return; const file = ev.target.files[0]; if (!file) return; const e0 = checkUpload(file, ['xlsx', 'xls', 'csv'], 10); if (e0) { $('#pd-msg').innerHTML = `<div class="notice err">${esc(e0)}</div>`; return; }
       try { const rows = await readSheet(file); const r = parsePadron(rows); PADRON_PREV = Object.assign({ nombre: file.name }, r); } catch (err) { PADRON_PREV = { nombre: file.name, items: [], error: 'No se pudo leer el archivo: ' + (err.message || err) }; } route(); };
     const x = $('[data-pdx]'); if (x) x.onclick = () => { PADRON_PREV = null; route(); };
-    const im = $('[data-pdi]'); if (im) im.onclick = async () => {
+    const im = $('[data-pdi]'); if(im&&!canWriteAcademic('alumnos'))im.disabled=true; if (im) im.onclick = async () => {
+      if(!canWriteAcademic('alumnos'))return;
       if (!await confirmBox(`Se importarán ${ok.length} registro(s): ${ok.filter(i => !i.existe).length} nuevos y ${ok.filter(i => i.existe).length} actualizaciones. ¿Continuar?`, { ok: 'Importar', danger: false, title: 'Importar padrón' })) return;
       let nN = 0, nU = 0; const per = D.cfg.periodo;
       ok.forEach(i => { const progId = D.progMap[i.pid]; const data = { nom: i.nom, prog: progId, estado: i.estado, fnac: i.fnac, dom: i.dom, anioEgreso: i.anio, labora: i.labora, areaLab: i.areaLab, origen: 'Padrón Excel', actualizado: new Date().toISOString().slice(0, 10) }; if (i.correo) data.correo = i.correo; if (i.tel) data.tel = i.tel;
         const ex = D.estudiantes.find(e => e.dni === i.dni);
         if (ex) { Object.assign(ex, data); nU++; } else { D.estudiantes.push(Object.assign({ id: IX.nextIdOf('estudiantes'), dni: i.dni, periodo: i.anio && +i.anio > 1980 ? `${+i.anio - 3}-I` : per, ciclo: i.estado === 'Regular' ? 'VI' : 'VI', sec: 'A', turno: 'Mañana', correo: '', tel: '' }, data)); nN++; } });
-      IX.logAct('Importar padrón Excel', 'Bolsa laboral', `${PADRON_PREV.nombre}: ${nN} nuevos, ${nU} actualizados`); IX.persist(); PADRON_PREV = null;
+      IX.logAct('Importar padrón Excel', 'Bolsa laboral', `${PADRON_PREV.nombre}: ${nN} nuevos, ${nU} actualizados`); if(!IX.persist())return false; PADRON_PREV = null;
       toast(`Padrón importado: ${nN} nuevo(s) y ${nU} actualizado(s).`, 'ok'); go('#/admin/ix-bolsa/egresados');
     };
   } };
@@ -7649,15 +7621,7 @@ R('servicios/bolsa-laboral', (path, q) => {
     $('[data-olv]').onclick = e => { e.preventDefault(); modal({ title: 'Recuperar contraseña', body: `<p>Por seguridad, la contraseña se restablece en la institución.</p><ul><li><b>Estudiantes y egresados:</b> Secretaría Académica (${esc(inst().correo)}).</li><li><b>Empresas:</b> ${esc(window.pzBolsaCfg().responsable)} (${esc(window.pzBolsaCfg().correo)}).</li></ul>` }); };
     const openReg = () => { const b = $('[data-tab="pubbolsa:empresa"]'); if (b) b.click(); setTimeout(() => { const t = $('#bl-ofertas'); t && t.scrollIntoView({ behavior: 'smooth' }); }, 60); };
     $('[data-reg]').onclick = openReg; if (q && q.get && q.get('registro')) setTimeout(openReg, 50);
-    f.onsubmit = e => { e.preventDefault(); const err = $('#bl-e'); err.textContent = ''; const t = f.tipo.value, u = f.u.value.trim().toLowerCase(), p = f.p.value;
-      if (!t) { err.textContent = 'Seleccione el tipo de usuario.'; return; } if (!u || !p) { err.textContent = 'Ingrese su usuario y contraseña.'; return; }
-      const usr = coll('usuarios').find(x => x.usuario === u);
-      if (!usr || hashPass(u, p) !== usr.passHash) { if (usr) { usr.intentos = (usr.intentos || 0) + 1; if (usr.intentos >= 5) { usr.bloqueadoHasta = Date.now() + 5 * 60000; usr.intentos = 0; } saveDB(); } err.textContent = 'Usuario o contraseña incorrectos.'; return; }
-      if (usr.estado !== 'Activo') { err.textContent = 'La cuenta está desactivada.'; return; }
-      if (usr.bloqueadoHasta && Date.now() < usr.bloqueadoHasta) { err.textContent = 'Cuenta bloqueada temporalmente por intentos fallidos.'; return; }
-      if (usr.rol !== t) { err.textContent = `La cuenta no corresponde al tipo de usuario “${f.tipo.options[f.tipo.selectedIndex].text}”.`; return; }
-      try { if (f.rec.checked) localStorage.setItem('pz_bl_user', JSON.stringify([t, u])); else localStorage.removeItem('pz_bl_user'); } catch (e2) { }
-      usr.intentos = 0; usr.bloqueadoHasta = 0; usr.ultimoAcceso = nowISO(); setSession(usr); audit('Inicio de sesión', 'Sesión', u, 'Desde la Bolsa Laboral'); saveDB(); go('#/admin/ix-bolsa'); };
+    f.onsubmit=e=>{e.preventDefault();$('#bl-e').textContent='Recarga la página para conectar con el servicio de autenticación.';};
   } };
 });
 
@@ -8037,7 +8001,7 @@ function pzSyncCerts(A) {
   return ch;
 }
 window.pzSyncCerts = pzSyncCerts;
-if (typeof IXHOST === 'object' && IXHOST.saveAcad) { const _sv = IXHOST.saveAcad; IXHOST.saveAcad = a => { try { pzSyncCerts(a); } catch (e) { console.error(e); } _sv(a); }; }
+if (typeof IXHOST === 'object' && IXHOST.saveAcad) { const _sv = IXHOST.saveAcad; IXHOST.saveAcad = a => { try { pzSyncCerts(a); } catch (e) { console.error(e); } return _sv(a); }; }
 if (typeof SPECS === 'object' && SPECS.certificados) { const S0 = SPECS.certificados;
   S0.sub = 'Registro único que alimenta la consulta pública de autenticidad (por código o DNI). Las certificaciones modulares, los títulos y las constancias emitidas en el módulo académico se agregan y actualizan automáticamente; desde aquí se pueden anular.';
   const tf = S0.fields.find(f => f.n === 'tipo'); if (tf && Array.isArray(tf.opts)) { const base = tf.opts.slice(); tf.opts = () => [...new Set([...base, 'Certificado modular', ...coll('certificados').map(c => c.tipo).filter(Boolean)])]; }
@@ -8065,12 +8029,12 @@ R('servicios/consulta-certificados', (path, q) => {
      <dl><dt>Tipo de documento</dt><dd>${esc(d.tipo)}</dd>${d.det ? `<dt>${/T[ií]tulo/.test(d.tipo) ? 'Resolución' : 'Detalle'}</dt><dd>${esc(d.det)}</dd>` : ''}<dt>Código</dt><dd class="mono">${esc(d.cod)}</dd>${d.titular ? `<dt>Titular</dt><dd><b>${esc(d.titular)}</b></dd>` : ''}${d.dni ? `<dt>DNI</dt><dd class="mono">${esc(maskDni(d.dni))}</dd>` : ''}${d.prog ? `<dt>Programa de estudios</dt><dd>${esc(d.prog)}</dd>` : ''}<dt>Fecha de emisión</dt><dd>${esc(d.fecha)}</dd>${d.motivo ? `<dt>Motivo de anulación</dt><dd>${esc(d.motivo)}</dd>` : ''}${d.origen ? `<dt>Registro</dt><dd>${esc(d.origen)}</dd>` : ''}<dt>Verificado el</dt><dd>${fdate(new Date().toISOString(), true)}</dd></dl></article>`;
   const DOCT = { cert: 'Constancia de certificación modular', titulo: 'Reporte de validación de título', cargo: 'Cargo de recepción de documento', reclamo: 'Hoja de reclamación', horario: 'Horario académico' };
   const fx = x => x ? fdate(String(x).slice(0, 10) + 'T12:00:00') : '—';
-  const show = (t, v) => {
+  const show = (t, v, records = []) => {
     try { if (pzSyncCerts()) saveDB(); } catch (e) { }
     const pn = id => id ? (progById(id) || {}).nombre || '' : '';
-    let rs = alive('certificados').filter(c => t === 'codigo' ? String(c.codigo).toUpperCase() === v : c.dni === v)
+    let rs = records.filter(c => t === 'codigo' ? String(c.codigo).toUpperCase() === v : c.dni === v)
       .map(c => ({ ok: c.estado === 'Válido', tipo: c.tipo, det: c.detalle || '', cod: c.codigo, titular: c.nombres, dni: c.dni, prog: pn(c.programaId), f: c.fecha, fecha: fx(c.fecha), motivo: c.estado !== 'Válido' ? c.motivo || '' : '', origen: c.origen || '' }));
-    if (!rs.length && t === 'codigo' && IX && IX.db) { const d = (XD().docs || []).find(x => String(x.cod).toUpperCase() === v); if (d) rs.push({ ok: d.valido !== false, tipo: DOCT[d.tipo] || d.tipo, det: '', cod: d.cod, titular: d.persona, dni: '', prog: '', f: d.fecha, fecha: fx(d.fecha), origen: 'Módulo académico' }); }
+    if (!rs.length && records.length && t === 'codigo' && IX && IX.db) { const d = (XD().docs || []).find(x => String(x.cod).toUpperCase() === v); if (d) rs.push({ ok: d.valido !== false, tipo: DOCT[d.tipo] || d.tipo, det: '', cod: d.cod, titular: d.persona, dni: '', prog: '', f: d.fecha, fecha: fx(d.fecha), origen: 'Módulo académico' }); }
     const ord = x => /T[ií]tulo/.test(x.tipo) ? 0 : /^Certificado/.test(x.tipo) ? 1 : 2;
     rs.sort((a, b) => ord(a) - ord(b) || String(b.f).localeCompare(String(a.f)));
     /* solicitudes de certificados o constancias en trámite por la Mesa de Partes Virtual (solo para DNI) */
@@ -8089,8 +8053,9 @@ R('servicios/consulta-certificados', (path, q) => {
     const f = $('[data-cq]');
     const sync = () => { const dni = f.t.value === 'dni'; $('[data-cql]', f).textContent = dni ? 'DNI del titular' : 'Código de verificación'; f.v.placeholder = dni ? 'Ej.: 72345678' : 'Ej.: CERT-2025-000123'; f.v.inputMode = dni ? 'numeric' : 'text'; $('[data-cqh]', f).textContent = dni ? 'Se listan todos los documentos emitidos a nombre del titular.' : 'Figura en la parte inferior del documento, junto al código QR.'; };
     $$('[name=t]', f).forEach(x => x.onchange = sync);
-    if (pre) { portalLookup('certificados', pre, ''); show('codigo', pre); }
-    f.onsubmit = e => { e.preventDefault(); const v = f.v.value.trim().toUpperCase(); const er = {}; if (!v) er.v = f.t.value === 'dni' ? 'Ingrese el DNI del titular.' : 'Ingrese el código de verificación.'; else if (f.t.value === 'dni' && !/^\d{8}$/.test(v)) er.v = 'El DNI debe tener 8 dígitos.'; const cap = checkCaptcha(f, 'cap-cq'); if (cap) er.captcha = cap; if (!showErrors(f, er)) return; portalLookup('certificados', v, '', f.t.value); show(f.t.value, v); };
+    const lookup = (t, v) => { const result = portalLookup('certificados', v, '', t); show(t, v, result ? (Array.isArray(result) ? result : [result]) : []); };
+    if (pre) lookup('codigo', pre);
+    f.onsubmit = e => { e.preventDefault(); const v = f.v.value.trim().toUpperCase(); const er = {}; if (!v) er.v = f.t.value === 'dni' ? 'Ingrese el DNI del titular.' : 'Ingrese el código de verificación.'; else if (f.t.value === 'dni' && !/^\d{8}$/.test(v)) er.v = 'El DNI debe tener 8 dígitos.'; const cap = checkCaptcha(f, 'cap-cq'); if (cap) er.captcha = cap; if (!showErrors(f, er)) return; lookup(f.t.value, v); };
   } };
 });
 
@@ -8355,7 +8320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       X.empresas.forEach((e, i) => { if (!e.fechaReg) { e.fechaReg = new Date(Date.now() - (20 - i * 6) * 86400000).toISOString().slice(0, 10); e.estadoVal = e.validada ? 'Aprobada' : 'Pendiente'; e.tel = e.tel || '056' + (532100 + i * 17); e.dir = e.dir || e.ubic; e.cargoC = e.cargoC || 'Jefe(a) de Recursos Humanos'; ch = true; } });
       X.cfg.docs = X.cfg.docs || {};
       if (!X.cfg.docsLogoInit) { const lg = await logoPng(); if (lg) { X.cfg.docs.logoIzq = { src: lg, w: 240, h: 310 }; X.cfg.docsLogoInit = true; ch = true; } }
-      if (ch) IX.persist();
+      if (ch) if(!IX.persist())return false;
       try { if (window.pzSyncCerts && pzSyncCerts(X)) saveDB(); } catch (e) { console.error(e); } }
     route();
   } catch (e) { console.error(e); }

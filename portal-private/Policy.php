@@ -64,7 +64,9 @@ final class PortalPolicy
             if($key==='estudiantes')return $est!==null&&(int)($row['id']??0)===$est;
             if(in_array($key,['certs','notas','titulos','perfilesLab','postulaciones'],true))return $est!==null&&(int)($row['est']??0)===$est;
             if($key==='docs'){
-                $source=($row['tipo']??'')==='cert'?'certs':'titulos';$reference=self::find($data['academico'][$source]??[],'id',$row['ref']??null);return $est!==null&&$reference&&(int)$reference['est']===$est;
+                if(($row['tipo']??'')==='cert')return $est!==null&&(int)($row['ref']??0)===$est&&self::find($data['academico']['certs']??[],'est',$est)!==null;
+                if(($row['tipo']??'')!=='titulo')return false;
+                $reference=self::find($data['academico']['titulos']??[],'id',$row['ref']??null);return $est!==null&&$reference&&(int)$reference['est']===$est;
             }
             if($key==='sesiones'){
                 $student=self::find($data['academico']['estudiantes']??[],'id',$est);
@@ -162,7 +164,7 @@ final class PortalPolicy
                 if(!is_array($value))throw new PortalError(422,'Configuración no válida.');
                 foreach($value as $setting=>$settingValue){
                     if(self::equal($settingValue,$visible['config'][$setting]??null))continue;
-                    $allowed=$role==='admin'||($role==='imagen'&&in_array($setting,['home','popup','temas','tema'],true))||($role==='atencion'&&in_array($setting,['bolsa','lr','mpv','correoReclamos'],true));
+                    $allowed=$role==='admin'||($role==='imagen'&&in_array($setting,['home','popup','temas','tema'],true))||($role==='atencion'&&$setting==='bolsa');
                     if(!$allowed)throw new PortalError(403,'Tu rol no puede modificar esa configuración.');
                     $out['config'][$setting]=$settingValue;
                 }
@@ -251,11 +253,13 @@ final class PortalPolicy
                 'academico.postulaciones'=>['estado','observacion','nota'],
                 'academico.ofertas'=>['id','emp','puesto','desc','req','modal','ubic','vac','prog','requisitos','descripcion','beneficios','limite','fecha','estado'],default=>[]};
             if(array_diff($changes,$allowed))throw new PortalError(403,'La empresa no puede modificar esos campos.');
+            if($path==='academico.ofertas'&&($new['estado']??'')==='Publicada'&&array_diff($changes,['estado']))throw new PortalError(403,'Los cambios de una oferta publicada deben enviarse nuevamente a validación.');
             if($path==='academico.ofertas'&&($new['estado']??'')!==($old['estado']??'')&&!in_array($new['estado']??'',['Por validar','Cerrada'],true))throw new PortalError(403,'La publicación necesita validación institucional.');
         }
         if(in_array($role,['estudiante','egresado'],true)&&$path==='academico.postulaciones'&&($old!==null||($new['estado']??'')!=='Recibida'))throw new PortalError(403,'Solo puedes registrar tu propia postulación.');
+        if($path==='documentos'&&($new['estado']??'')==='Histórico'&&!in_array($old['estado']??'',['Publicado','Histórico'],true))throw new PortalError(403,'La publicación de documentos históricos también requiere aprobación del administrador.');
         $publish=self::definitions()['roles'][$role]['publish']??false;
         if(!str_starts_with($path,'academico.')&&in_array($new['estado']??'',['Publicado','Publicada'],true)&&!$publish&&($old['estado']??'')!==$new['estado'])throw new PortalError(403,'Tu rol no puede publicar contenido.');
-        if(in_array($path,['documentos','admisiones','convocatorias'],true)&&in_array($new['estado']??'',['Publicado','Publicada'],true)&&($old['estado']??'')!==$new['estado'])throw new PortalError(403,'La publicación requiere aprobación del administrador.');
+        if(in_array($path,['documentos','admisiones','convocatorias'],true)&&in_array($new['estado']??'',['Publicado','Publicada','Histórico'],true)&&(($old['estado']??'')!==$new['estado']||array_diff($changes,['modEn','modPor','estado','observacion'])))throw new PortalError(403,'La publicación requiere aprobación del administrador.');
     }
 }

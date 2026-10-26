@@ -4,6 +4,7 @@ const portalBootstrap=window.PORTAL_BOOTSTRAP;
 let portalRevision=portalBootstrap.revision;
 let portalBaseline=structuredClone(portalBootstrap.data);
 const portalPasswords=new Map();
+const portalProofs=Object.create(null);
 const portalSent=new WeakMap();
 const portalKnown=new Set(['mensajes','reclamos','expedientes','suscriptores'].flatMap(t=>(portalBootstrap.data[t]||[]).map(r=>t+':'+r.id)));
 function portalRequest(method,url,body) {
@@ -16,7 +17,14 @@ function portalRequest(method,url,body) {
 function portalMerge(target,source) {
   for(const key of Object.keys(target))if(!(key in source))delete target[key];
   for(const [key,value] of Object.entries(source)){
-    if(Array.isArray(value)){if(Array.isArray(target[key]))target[key].splice(0,target[key].length,...value);else target[key]=value;}
+    if(['__proto__','prototype','constructor'].includes(key))continue;
+    if(Array.isArray(value)){
+      if(!Array.isArray(target[key]))target[key]=[];
+      const identity=r=>!r||typeof r!=='object'||Array.isArray(r)?null:r.id!==undefined?'id:'+r.id:r.fileId?'file:'+r.fileId:r.cod!==undefined?'cod:'+r.cod:r.est!==undefined?'est:'+r.est+'|'+(r.ud??'')+'|'+(r.periodo??''):r.doc!==undefined?'doc:'+r.doc:null;
+      const old=new Map(target[key].map(r=>[identity(r),r]).filter(([id])=>id!==null));
+      const rows=value.map(row=>{const id=identity(row),existing=id!==null?old.get(id):null;if(existing&&row&&typeof row==='object'){portalMerge(existing,row);return existing;}return row;});
+      target[key].splice(0,target[key].length,...rows);
+    }
     else if(value&&typeof value==='object'){if(!target[key]||typeof target[key]!=='object'||Array.isArray(target[key]))target[key]={};portalMerge(target[key],value);}
     else target[key]=value;
   }
@@ -25,6 +33,9 @@ function portalLookup(type,reference,document,mode='codigo'){
   try{
     const result=portalRequest('POST','/api/consultas/'+type,{reference,document,mode});
     const records=result.records||[result.record];
+    if(mode==='dni')for(const record of records)if(record)record.dni=reference;
+    // Una consulta pública no reemplaza registros completos de una sesión administrativa por proyecciones sin adjuntos o datos privados.
+    if(currentUser())return result.record||records;
     if(mode==='dni')DB[type]=DB[type].filter(r=>r.dni!==reference);
     for(const record of records){if(!record)continue;if(mode==='dni')record.dni=reference;Object.defineProperty(record,'__serverSaved',{value:true});
       const i=DB[type].findIndex(r=>r.id===record.id);if(i<0)DB[type].push(record);else DB[type][i]=record;}
@@ -39,7 +50,7 @@ function portalAccountOperations(){
   if(currentUser()?.rol!=='admin')return [];
   const before=new Map((portalBaseline.usuarios||[]).map(r=>[r.id,r]));const ops=[];
   for(const row of DB.usuarios||[]){const old=before.get(row.id);const fields=portalAccountFields(row);const password=portalPasswords.get(row.id);
-    if(!old||password||JSON.stringify(fields)!==JSON.stringify(portalAccountFields(old))){ops.push({action:old?'update':'create',id:row.server_id,account:{...fields,...(password?{password}:{} )}});}
+    if(!old||password||JSON.stringify(fields)!==JSON.stringify(portalAccountFields(old))){ops.push({action:old?'update':'create',id:row.server_id,account:{...fields,...(password?{password}:{} )},...(old?{expected:portalAccountFields(old)}:{})});}
     else if(old.bloqueadoHasta&&!row.bloqueadoHasta)ops.push({action:'unlock',id:row.server_id});
   }return ops;
 }
@@ -56,24 +67,40 @@ function portalNormalizeAutomaticChanges(){
   if(!['admin','secretaria'].includes(currentUser()?.rol))DB.certificados=structuredClone(portalBaseline.certificados);
   for(const key of ['nombre','siglas','director','direccion','web'])DB.academico.cfg[key]=portalBaseline.academico.cfg[key];
 }
+function portalPatch(before,after){
+ const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);const result=[];
+ const key=(path,row)=>row&&row.id!==undefined?'id:'+row.id:path.endsWith('perfilesLab')?'est:'+row.est:path.endsWith('perfilesDoc')?'doc:'+row.doc:path.endsWith('estadisticas')?(row.anio||'')+'|'+(row.programaId||''):null;
+ const add=(path,a,b)=>{if(same(a,b))return;const name=path.join('.');
+  if(Array.isArray(a)&&Array.isArray(b)&&[...a,...b].every(r=>r&&typeof r==='object'&&key(name,r)!==null)){
+    const old=new Map(a.map(r=>[key(name,r),r])),next=new Map(b.map(r=>[key(name,r),r]));const changes=[];
+    for(const id of new Set([...old.keys(),...next.keys()]))if(!same(old.get(id),next.get(id)))changes.push({key:id,before:old.get(id)||null,after:next.get(id)||null});if(changes.length)result.push({path,kind:'rows',changes});
+  }else if(a&&b&&!Array.isArray(a)&&!Array.isArray(b)&&typeof a==='object'&&typeof b==='object'){
+    const changes=[];for(const k of new Set([...Object.keys(a),...Object.keys(b)]))if(!same(a[k],b[k]))changes.push({key:k,before:a[k]??null,after:b[k]??null,remove:!(k in b)});if(changes.length)result.push({path,kind:'object',changes});
+  }else result.push({path,kind:'value',before:a??null,after:b??null});
+ };
+ for(const k of Object.keys(after)){if(['usuarios','auditoria','visitas','correos','__v'].includes(k))continue;if(k==='academico'){for(const sub of Object.keys(after[k]))if(!['usuarios','bitacora'].includes(sub))add([k,sub],before[k][sub],after[k][sub]);}else add([k],before[k],after[k]);}return result;
+}
 saveDB=function(){
   try{
-    if(!currentUser()||!location.hash.startsWith('#/admin')){
+    {
       for(const type of ['mensajes','reclamos','expedientes','suscriptores'])for(const record of DB[type]||[]){
         if(record.__serverSaved||portalKnown.has(type+':'+record.id))continue;
         if(!portalSent.has(record))portalSent.set(record,crypto.randomUUID());
-        const result=portalRequest('POST','/api/solicitudes/'+type,{record,idempotency_key:portalSent.get(record)});
-        Object.assign(record,result.record);Object.defineProperty(record,'__serverSaved',{value:true});portalKnown.add(type+':'+record.id);
-      }return true;
+        const result=portalRequest('POST','/api/solicitudes/'+type,{record,idempotency_key:portalSent.get(record),proof:portalProofs[type]});
+        for(const key of ({mensajes:['contact'],reclamos:['lr','lr2'],expedientes:['mp','mpv']}[type]||[]))RATE[key]=Date.now();
+        Object.assign(record,result.record);Object.defineProperty(record,'__serverSaved',{value:true});portalKnown.add(type+':'+record.id);portalBaseline[type].unshift(structuredClone(result.record));if(currentUser()){portalRevision=result.revision;if(result.counters){DB.config.contadores=structuredClone(result.counters);portalBaseline.config.contadores=structuredClone(result.counters);}}
+      }
     }
+    if(!currentUser()||!location.hash.startsWith('#/admin'))return true;
     portalNormalizeAutomaticChanges();
     const accounts=portalAccountOperations();
     if(!accounts.length&&JSON.stringify(DB)===JSON.stringify(portalBaseline))return true;
-    const result=portalRequest('PUT','/api/portal',{data:DB,revision:portalRevision,accounts});
+    const patch=portalPatch(portalBaseline,DB);if(!patch.length&&!accounts.length)return true;
+    const result=portalRequest('PUT','/api/portal',{patch,revision:portalRevision,accounts});
     portalRevision=result.revision;
     if(result.normalized){result.normalized.usuarios=result.users||DB.usuarios;portalMerge(DB,result.normalized);}
     portalBootstrap.user=result.user;portalPasswords.clear();portalBaseline=structuredClone(DB);return true;
-  }catch(error){toast(error.message,'err');return false;}
+  }catch(error){if(ADM.work&&ADM.workKey&&SPECS[ADM.workKey]){const col=SPECS[ADM.workKey].coll;DB[col]=DB[col].map(r=>r===ADM.work?structuredClone(r):r);}portalMerge(DB,structuredClone(portalBaseline));toast(error.message,'err');return false;}
 };
 resetDB=function(){toast('El restablecimiento se realiza desde la copia de seguridad del servidor.','warn');};
 mailOut=function(){return 'Omitido';};
@@ -93,12 +120,12 @@ const portalUserValidate=SPECS.usuarios.validate;
 SPECS.usuarios.validate=function(work){const errors=portalUserValidate(work);if(work.pass1&&[...work.pass1].length<12)errors.pass1='La contraseña necesita al menos 12 caracteres.';return errors;};
 SPECS.usuarios.afterSave=function(work){if(work.pass1)portalPasswords.set(work.id,work.pass1);delete work.pass1;delete work.pass2;};
 const portalOriginalAdmin=renderAdmin;
-renderAdmin=function(parts,query){if(currentUser()?.rol==='admin'&&parts[1]==='respaldo')return {html:admHead('Copias de seguridad','Copia completa del contenido, usuarios y archivos guardados en MySQL.','','download')+`<section class="panel"><div class="pb"><p>Guarda esta copia SQL en un lugar privado. Incluye datos personales y contraseñas protegidas de las cuentas.</p><form method="post" action="/backup.php"><input type="hidden" name="_csrf" value="${esc(portalBootstrap.csrf)}"><button class="btn">Descargar copia completa de MySQL</button></form><p>Para restaurarla, conserva primero una copia actual e importa el SQL desde phpMyAdmin en hPanel. Conserva también portal-private/config.php y los archivos del sitio.</p></div></section>`};if(currentUser()&&parts[1]==='perfil'){location.href='/accounts.php';return {html:''};}return portalOriginalAdmin(parts,query);};
+renderAdmin=function(parts,query){if(currentUser()?.rol==='admin'&&parts[1]==='respaldo')return {html:admHead('Respaldos y restauración','Crea, restaura y programa copias completas de contenido, cuentas y archivos.','','download')+`<section class="panel"><div class="pb"><a class="btn" href="/respaldos.php">Administrar respaldos y restauración</a><p>Las copias se guardan en la carpeta privada del portal.</p></div></section>`};if(currentUser()&&parts[1]==='perfil'){location.href='/accounts.php';return {html:''};}const out=portalOriginalAdmin(parts,query);if(currentUser()?.rol==='admin'&&parts[1]==='auditoria')out.html=`<p><a class="btn" href="/auditoria.php">Consultar y exportar el historial completo</a></p>`+out.html;return out;};
 IXHOST.createStudentAccount=function(student){try{const result=portalRequest('POST','/api/cuentas',{action:'student',student_id:student.id});DB.usuarios.push(result.user);portalBaseline.usuarios=structuredClone(DB.usuarios);return {usuario:result.user.usuario,pass:result.temporary_password,rolLabel:ROLES[result.user.rol].label};}catch(error){return {error:error.message};}};
 IXHOST.defaultPermissions=function(){return portalBootstrap.data.academico.perms;};
 IXHOST.registerCompany=function(values){return portalRequest('POST','/api/empresas',{...values,password:values.pass});};
 async function portalUpload(file){
-  const body=new FormData();body.append('file',file);
+  const body=new FormData();body.append('file',file);if(!currentUser()){const purpose=document.querySelector('#cap-mpv,#cap-mp')?'expedientes':'reclamos';body.append('purpose',purpose);body.append('proof',JSON.stringify(portalProofs[purpose]||{}));}
   const response=await fetch(portalURL('/api/archivos'),{method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':portalBootstrap.csrf},body});const data=await response.json();
   if(!response.ok)throw new Error(data.message||'No se pudo subir el archivo.');return data.file;
 }
@@ -129,5 +156,11 @@ document.addEventListener('DOMContentLoaded',()=>{const style=document.createEle
 // El acceso desde Bolsa laboral usa la misma sesión PHP que el resto de la intranet.
 document.addEventListener('submit',async event=>{
  const form=event.target;if(!form.matches('[data-blog]'))return;event.preventDefault();event.stopImmediatePropagation();
- try{const values=new FormData(form);portalRequest('POST','/api/session',{username:values.get('u'),password:values.get('p')});location.href='/#/admin/ix-bolsa';location.reload();}catch(error){toast(error.message,'err');}
+ try{const values=new FormData(form);if(!values.get('tipo'))throw new Error('Selecciona el tipo de usuario.');portalRequest('POST','/api/session',{username:values.get('u'),password:values.get('p'),role:values.get('tipo')});location.href='/#/admin/ix-bolsa';location.reload();}catch(error){toast(error.message,'err');}
 },true);
+
+const portalDownloadBlob=downloadBlob;
+downloadBlob=function(blob,filename){if(currentUser())fetch(portalURL('/api/eventos'),{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':portalBootstrap.csrf},body:JSON.stringify({action:'Exportar',filename:String(filename||'archivo').slice(0,200),size:blob?.size||0})}).catch(()=>{});return portalDownloadBlob(blob,filename);};
+
+const portalProgramFields=SPECS.programas.fields;
+SPECS.programas.fields=function(work){const fields=typeof portalProgramFields==='function'?portalProgramFields(work):portalProgramFields;for(const f of fields)if(f.n==='codigo'){f.unique='norm';f.hint='Código único del programa, compartido con la gestión académica.';}return fields;};

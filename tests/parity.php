@@ -2,7 +2,7 @@
 declare(strict_types=1);
 ob_start();require dirname(__DIR__).'/portal-private/bootstrap.php';
 $path=getenv('PORTAL_CONFIG_FILE');if(!$path||!str_ends_with($path,'config.test.php'))throw new RuntimeException('Se exige config.test.php.');$config=require $path;if(!str_ends_with($config['db_name'],'_test'))throw new RuntimeException('Se exige una base _test.');
-$app=portal_app();$db=$app->db();foreach(['pisco_files','pisco_visits','pisco_schema','pisco_users','pisco_rate_limits','pisco_state'] as $table)$db->exec('DROP TABLE IF EXISTS '.$table);
+$app=portal_app();$db=$app->db();foreach(['pisco_audit','pisco_settings','pisco_files','pisco_visits','pisco_schema','pisco_users','pisco_rate_limits','pisco_state'] as $table)$db->exec('DROP TABLE IF EXISTS '.$table);
 $count=0;
 function ok(bool $x,string $label):void{global $count;if(!$x)throw new RuntimeException('FALLO: '.$label);$count++;echo "OK $label\n";}
 function denied(int $status,callable $f,string $label):void{try{$f();}catch(PortalError $e){if($e->status!==$status)throw new RuntimeException($label.': '.$e->status.' '.$e->getMessage());ok(true,$label);return;}throw new RuntimeException('FALLO sin rechazo: '.$label);}
@@ -17,7 +17,7 @@ change(function(&$d){$a=&$d['academico'];
  foreach([[1001,'70001001',1,'Regular'],[1002,'70001002',2,'Regular'],[1003,'70001003',1,'Egresado']] as [$id,$dni,$prog,$state])$a['estudiantes'][]=['id'=>$id,'dni'=>$dni,'nom'=>'Alumno de prueba '.$id,'prog'=>$prog,'periodo'=>$a['cfg']['periodo'],'ciclo'=>'VI','sec'=>'B','turno'=>'Tarde','estado'=>$state,'correo'=>'alumno'.$id.'@example.test','tel'=>'999111222'];
  $a['uds'][]=['id'=>9001,'cod'=>'UD-TEST','nombre'=>'Unidad de prueba','prog'=>1,'ciclo'=>'VI','horas'=>1,'cred'=>1];
  $a['docentes'][]=['id'=>9001,'per'=>'d4','nom'=>'Docente de prueba','dni'=>'70009999','tel'=>'999111222','correo'=>'docente@example.test','cond'=>'Contratado','esp'=>'Prueba','uds'=>[9001],'dias'=>['Lun','Mar','Mié','Jue','Vie'],'desde'=>'07:00','hasta'=>'22:00'];
- $a['ambientes'][]=['id'=>9001,'cod'=>'AULA-TEST','nombre'=>'Aula de prueba','tipo'=>'Aula','cap'=>30,'prog'=>1];
+ $a['ambientes'][]=['id'=>9001,'cod'=>'AULA-TEST','nombre'=>'Aula de prueba','ubic'=>'Pabellón de prueba','tipo'=>'Aula','cap'=>30,'prog'=>1];
  $a['sesiones'][]=['id'=>9001,'per'=>$a['cfg']['periodo'],'prog'=>1,'ciclo'=>'VI','sec'=>'B','turno'=>'Tarde','ud'=>9001,'doc'=>9001,'amb'=>9001,'dia'=>'Vie','ini'=>'16:00','fin'=>'17:00'];
  $a['modulos'][]=['id'=>9001,'prog'=>1,'cod'=>'MOD-TEST','nombre'=>'Módulo de prueba','ciclos'=>'VI'];
 });
@@ -26,10 +26,10 @@ $student=$app->accountOperation(['action'=>'student','student_id'=>1001]);ok($st
 $app->accountOperation(['action'=>'update','id'=>$student['user']['server_id'],'account'=>['username'=>'70001001','name'=>'Alumno 1001','email'=>'alumno1001@example.test','password'=>PASS,'role'=>'estudiante','vin'=>'est:1001']]);
 foreach(['imagen','secretaria','coordinador','transparencia','atencion','directivo','docente','egresado'] as $role){$profile=match($role){'coordinador'=>['programaId'=>'apsti'],'docente'=>['vin'=>'doc:9001','personaId'=>'d4'],'egresado'=>['vin'=>'est:1003'],default=>[]};$app->createAccount(['username'=>$role,'name'=>'Rol '.$role,'email'=>$role.'@example.test','password'=>PASS,'role'=>$role,...$profile]);}
 $app->createAccount(['username'=>'70001002','name'=>'Otro alumno','email'=>'alumno1002@example.test','password'=>PASS,'role'=>'estudiante','vin'=>'est:1002']);
-$app->logout();$companyInput=['ruc'=>ruc('2012345678'),'nom'=>'Empresa de prueba','sector'=>'Servicios','ubic'=>'Pisco','dir'=>'Calle de prueba 123','contacto'=>'Contacto de prueba','cargoC'=>'Responsable','correo'=>'empresa@example.test','tel'=>'999111222','web'=>'','password'=>PASS,'role'=>'admin'];
+$app->logout();$companyInput=['declaration'=>true,'ruc'=>ruc('2012345678'),'nom'=>'Empresa de prueba','sector'=>'Servicios','ubic'=>'Pisco','dir'=>'Calle de prueba 123','contacto'=>'Contacto de prueba','cargoC'=>'Responsable','correo'=>'empresa@example.test','tel'=>'999111222','web'=>'','password'=>PASS,'role'=>'admin'];
 $registered=$app->registerCompany($companyInput);$companyId=$registered['company']['id'];$companyUsername=$registered['username'];
 $app->login(['username'=>$companyUsername,'password'=>PASS]);ok($app->user()['rol']==='empresa','Registro público no permite escalar a administrador');
-$app->logout();$otherCompany=$app->registerCompany([...$companyInput,'ruc'=>ruc('2012345679'),'correo'=>'otraempresa@example.test']);
+$app->logout();$otherCompany=$app->registerCompany(['declaration'=>true,...$companyInput,'ruc'=>ruc('2012345679'),'correo'=>'otraempresa@example.test']);
 foreach(['admin','imagen','secretaria','coordinador','transparencia','atencion','directivo','docente','70001001','egresado',$companyUsername] as $username){$app->logout();$app->login(['username'=>$username,'password'=>PASS]);ok($app->user()['usuario']===$username,'Inicio de sesión del perfil '.$username);}
 actor('70001001');$b=$app->bootstrap();ok(array_column($b['data']['academico']['estudiantes'],'id')===[1001],'Alumno solo recibe su registro académico');
 denied(403,fn()=>change(function(&$d){$d['academico']['estudiantes'][0]['estado']='Titulado';}),'Alumno no puede cambiar su estado académico');

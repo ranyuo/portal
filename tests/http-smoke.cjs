@@ -60,8 +60,8 @@ const fixture=JSON.parse(fs.readFileSync(process.env.PISCO_TEST_CREDENTIALS,'utf
   await guest.locator('[name=nombres]').fill('Prueba PHP Hostinger');await guest.locator('[name=correo]').fill('prueba-php@example.test');
   await guest.locator('[name=asunto]').selectOption({label:'Información de programas de estudio'});
   await guest.locator('[name=mensaje]').fill('Mensaje de prueba desde PHP nativo y MySQL.');
-  await guest.locator('[name=captcha]').fill(await guest.locator('#cap-c').getAttribute('data-ans'));
-  await guest.locator('[name=acepto]').check();await guest.getByRole('button',{name:'Enviar mensaje',exact:true}).click();
+  await guest.locator('#cap-c [name=captcha]').fill(String((await guest.locator('#cap-c b').innerText()).split('+').reduce((a,n)=>a+Number(n.trim()),0)));
+  await guest.locator('[data-contact] [name=acepto]').check();await guest.getByRole('button',{name:'Enviar mensaje',exact:true}).click();
   await guest.getByRole('heading',{name:'Mensaje enviado',exact:true}).waitFor();
   await admin.reload();await admin.waitForFunction(()=>DB?.mensajes?.length>0);
   assert.ok(await admin.evaluate(()=>DB.mensajes.some(m=>m.correo==='prueba-php@example.test')));

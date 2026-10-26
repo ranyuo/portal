@@ -57,6 +57,7 @@ final class PortalFiles
         $disposition=isset($_GET['download'])||!in_array($meta['type'],['application/pdf','image/png','image/jpeg','image/webp','image/gif'],true)?'attachment':'inline';
         header('Content-Disposition: '.$disposition."; filename*=UTF-8''".rawurlencode($meta['original']));
         header("Content-Security-Policy: default-src 'none'; sandbox");
+        PortalAudit::write($app,isset($_GET['download'])?'Descargar archivo':'Consultar archivo','Archivos',$id,['nombre'=>$meta['original']]);
         echo $data;exit;
     }
 }
