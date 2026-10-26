@@ -2228,7 +2228,7 @@ const pill = (t,c) => `<span class="pill ${c}">${esc(t)}</span>`;
 const EST_CLS = {"Recibido":"p-info","Derivado":"p-info","En evaluación":"p-warn","Observado":"p-bad","En atención":"p-warn","Atendido":"p-ok","Respondido":"p-ok","Cerrado":"p-mut","Publicada":"p-ok","Por validar":"p-warn","Rechazada":"p-bad","Cerrada":"p-mut","En revisión":"p-warn","Recibida":"p-info","Seleccionado":"p-ok","No seleccionado":"p-mut","Regular":"p-info","Egresado":"p-ok","Titulado":"p-brand","Retirado":"p-mut","Activo":"p-ok","Inactivo":"p-mut","Nombrado":"p-brand","Contratado":"p-info"};
 const estPill = e => pill(e, EST_CLS[e] || "p-mut");
 function toast(msg){ HOST.toast(msg) }
-function genCode(){ const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = ""; for(let i=0;i<8;i++){ if(i===4) s += "-"; s += A[Math.floor(Math.random()*A.length)] } return s }
+function genCode(){ return [...crypto.getRandomValues(new Uint8Array(12))].map(v=>v.toString(16).padStart(2,"0")).join("").toUpperCase(); }
 
 /* ---------- roles, permisos, sesión ---------- */
 const ROLES = { admin:"Administrador general", dir:"Directivo", acad:"Responsable académico", adm:"Responsable administrativo", doc:"Docente", est:"Estudiante", egr:"Egresado", emp:"Empresa" };
@@ -2359,7 +2359,7 @@ function readFields(fields, root, col, selfId){
     let v;
     if(f.t === "multi"){ v = [...root.querySelectorAll(`input[name="${f.k}"]:checked`)].map(x => f.num ? +x.value : x.value) }
     else if(f.t === "bool") v = root.querySelector(`[name="${f.k}"]`).checked;
-    else if(f.t === "file"){ const inp = root.querySelector(`[name="${f.k}"]`); v = [...(inp.files||[])].map(x => ({n:x.name, s:x.size})) }
+    else if(f.t === "file"){ const inp = root.querySelector(`[name="${f.k}"]`); v = inp._portalFiles || []; if(inp.files.length && !inp._portalFiles) errs[f.k] = "Espera a que se cargue el archivo en el servidor." }
     else {
       v = root.querySelector(`[name="${f.k}"]`).value.trim();
       if(f.t === "textarea" && f.lines) v = v.split("\n").map(x => x.trim()).filter(Boolean);
@@ -2824,7 +2824,7 @@ function renderLogin(){
       <button class="btn" type="submit" style="justify-content:center">Ingresar</button>
     </form>
     <button class="btn sec" data-act="toPublic" style="justify-content:center">Consultas públicas sin cuenta (títulos, trámites, reclamos…)</button>
-    <div class="stack" style="gap:8px"><h3>Cuentas de demostración</h3><p class="note">Contraseña de todas las cuentas: <span class="mono">Ica2026*</span>. Toque una para ingresar.</p>
+    <div class="stack" style="gap:8px"><h3>Cuentas de demostración</h3><p class="note">Las cuentas y contraseñas son administradas por la institución.</p>
       <div class="demo">${demo.map(u => `<button type="button" data-act="demoLogin" data-id="${u.id}"><b>${esc(ROLES[u.rol])}</b><small>${esc(u.nom)}</small><span class="mono">${esc(u.u)}</span></button>`).join("")}</div>
       <p class="note">Todos los nombres, documentos y cifras son ficticios y sirven solo para la demostración.</p></div>
   </section></div>`;
@@ -3373,7 +3373,7 @@ function seguimiento(){
   const x = q ? HOST.exps().find(e => e.cod === q || e.num === q) : null;
   return `<section class="panel"><div><h2>Seguimiento de trámite</h2><p class="note">Ingrese el código de seguimiento o el número de expediente que figura en su cargo.</p></div>
   <form class="f" data-form="mq"><div class="fld"><label for="mq">Código o N.º de expediente</label><input id="mq" name="mq" value="${esc(S.ui.mq||"")}" placeholder="Ej.: PX7K-29QD"></div><div class="fld" style="align-self:end"><button class="btn">Consultar</button></div></form>
-  ${!q ? `<p class="note">Pruebe con PX7K-29QD o EXP-2026-000233.</p>` : ""}</section>
+  ${!q ? `<p class="note">Ingrese los datos de su cargo de recepción.</p>` : ""}</section>
   ${q ? (x ? `<section class="ficha"><div class="panel-h"><div><h2 class="mono">${x.num}</h2><span class="note">${esc(tram(x.tramite).nombre)}</span></div>${estPill(x.estado)}</div>
     <dl class="dl"><dt>Asunto</dt><dd>${esc(x.asunto)}</dd><dt>Presentado</dt><dd>${fd(x.fecha)}</dd><dt>Área actual</dt><dd>${esc(areaN(x.area))}</dd><dt>Plazo</dt><dd>${fd(plazoExp(x).due)} ${semaforo(x.estado, plazoExp(x).due, plazoExp(x).left)}</dd></dl><h3>Historial</h3>${timeline(x)}</section>` : `<div class="alert warn">No se encontró un expediente con “${esc(S.ui.mq)}”. Revise el código de su cargo.</div>`) : ""}`;
 }
@@ -3458,7 +3458,7 @@ function verPerfilLab(estId){
   openModal({title:"Perfil profesional", wide:true, body:`<div class="prof"><div class="avatar lg">${initials(e.nom)}</div><div><h2>${esc(e.nom)}</h2><span class="note">${esc(prog(e.prog).nombre)} · ${e.estado}</span><br><span class="note">${esc(e.correo||"")} · ${esc(e.tel||"")}</span></div></div>
   ${p.resumen ? `<p>${esc(p.resumen)}</p>` : ""}
   <div class="grid2"><div class="stack" style="gap:8px"><h3>Competencias</h3><div class="chips">${p.competencias.map(c => `<span class="chip">${esc(c)}</span>`).join("") || '<span class="note">—</span>'}</div><h3>Certificaciones modulares</h3><div class="chips">${cs.map(c => `<span class="chip m">${esc(byId(DB.modulos,c.mod).nombre)}</span>`).join("") || '<span class="note">—</span>'}</div></div>
-  <div class="stack" style="gap:8px"><h3>Experiencia</h3>${p.exp.length ? `<div class="timeline">${p.exp.map(x => `<div>${esc(x)}</div>`).join("")}</div>` : '<span class="note">Sin experiencia registrada.</span>'}<h3>Currículo</h3>${p.cv ? `<span class="chip">📎 ${esc(p.cv.n)} · ${kb(p.cv.s)}</span>` : '<span class="note">No adjuntó CV.</span>'}</div></div>`});
+  <div class="stack" style="gap:8px"><h3>Experiencia</h3>${p.exp.length ? `<div class="timeline">${p.exp.map(x => `<div>${esc(x)}</div>`).join("")}</div>` : '<span class="note">Sin experiencia registrada.</span>'}<h3>Currículo</h3>${p.cv ? `<span class="chip">📎 ${esc(p.cv.n)} · ${kb(p.cv.s)}</span>${p.cv.fileId ? `<a class="btn sm" href="${esc(p.cv.url)}&download=1" target="_blank" rel="noopener">Descargar CV</a>` : ""}` : '<span class="note">No adjuntó CV.</span>'}</div></div>`});
 }
 function editPerfilLab(){
   const e = myEst(), p = perfilLab(e.id);
@@ -3527,7 +3527,7 @@ function registroEmpresa(){
   const crit = (window.pzBolsaCfg ? window.pzBolsaCfg() : {criterios:[], responsable:"Unidad de Bienestar y Empleabilidad", correo:""});
   return `<section class="panel"><div><h2>Registro de empresas e instituciones</h2><p class="note">El registro es libre y gratuito. La cuenta queda <b>pendiente de validación</b> hasta que la ${esc(crit.responsable)} verifique los datos; luego podrá publicar convocatorias.</p></div>
   <div class="alert info" style="margin:10px 0"><b>Criterios de validación</b><ul style="margin:6px 0 0;padding-left:18px">${crit.criterios.map(c => `<li>${esc(c)}</li>`).join("")}</ul><span class="note">Responsable de la aprobación: ${esc(crit.responsable)}${crit.correo ? ` · ${esc(crit.correo)}` : ""}</span></div>
-  <form class="f" data-form="regEmp" novalidate><p>Para registrar tu empresa, comunícate con la Unidad de Bienestar y Empleabilidad del instituto.</p>
+  <form class="f" data-form="regEmp" novalidate>${EMP_REG_FIELDS().map(f => fieldHtml(f,"")).join("")}${fieldHtml({k:"pass",l:"Contraseña para la intranet",t:"password",req:true,pat:[/^.{12,}$/,"Mínimo 12 caracteres."]},"")}
   <div class="fld wide"><label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" id="empDecl"> <span>Declaro bajo juramento que la empresa se encuentra con RUC <b>activo y habido</b>, que los datos registrados son verídicos y que las ofertas que publique cumplirán la normativa laboral vigente.</span></label><span class="err" id="empDeclErr"></span></div>
   <div class="fld"><button class="btn" type="submit">Crear cuenta de empresa</button></div></form></section>`;
 }
@@ -3764,7 +3764,7 @@ function verificarDoc(){
   const q = (S.ui.vq || "").trim().toUpperCase(), d = q ? DB.docs.find(x => x.cod === q) : null;
   return `<section class="panel"><div><h2>Verificar autenticidad de un documento</h2><p class="note">Ingrese el código de verificación impreso al pie de la constancia, reporte, cargo u hoja de reclamación.</p></div>
   <form class="f" data-form="vq"><div class="fld"><label for="vq">Código de verificación</label><input id="vq" name="vq" value="${esc(S.ui.vq||"")}" placeholder="XXXX-XXXX"></div><div class="fld" style="align-self:end"><button class="btn">Verificar</button></div></form>
-  ${!q ? `<p class="note">${DB.docs.length ? `Último código emitido en esta demostración: <span class="mono">${DB.docs[0].cod}</span>.` : "Emita una constancia desde la intranet para obtener un código y verificarlo aquí."}</p>` : ""}</section>
+  ${!q ? `<p class="note">${DB.docs.length ? `Último código emitido: <span class="mono">${DB.docs[0].cod}</span>.` : "Emita una constancia desde la intranet para obtener un código y verificarlo aquí."}</p>` : ""}</section>
   ${q ? (d ? `<div class="alert ok"><b>Documento auténtico.</b> ${esc(DOC_T[d.tipo])} emitido el ${fd(d.fecha)} a nombre de ${esc(d.persona)}.</div>` : S.ui.vqr && String(S.ui.vqr.c).toUpperCase() === q ? `<section class="ficha"><div class="panel-h"><h2>Datos leídos del código QR</h2>${pill("Código " + q,"p-info")}</div><dl class="dl"><dt>Documento</dt><dd>${esc(DOC_T[S.ui.vqr.t] || S.ui.vqr.t)}</dd><dt>A nombre de</dt><dd>${esc(S.ui.vqr.p)}</dd><dt>Emitido</dt><dd>${esc(fd(S.ui.vqr.f))}</dd></dl><div class="alert info">En esta versión los documentos se registran en el navegador donde se emitieron, por eso este dispositivo no puede confirmarlo contra el registro. En el sistema final, esta consulta se hace contra la base de datos del instituto.</div></section>` : `<div class="alert bad"><b>Código no registrado.</b> El código “${esc(q)}” no corresponde a ningún documento emitido por la institución.</div>`) : ""}`;
 }
 
@@ -3884,11 +3884,7 @@ const ACTIONS = {
   readAll(){ myNotifs().forEach(n => { if(!n.leido.includes(S.user.id)) n.leido.push(S.user.id) }); save(); render() },
   openNotif(id){ const n = byId(DB.notifs,+id); if(!n.leido.includes(S.user.id)) n.leido.push(S.user.id); save(); S.ui.dd = null; go(lvl(n.go) ? n.go : "inicio") },
   logout(){ logout() },
-  changePass(){ S.ui.dd = null; render();
-    const fields = [{k:"a",l:"Contraseña actual",t:"password",req:true},{k:"b",l:"Nueva contraseña",t:"password",req:true,pat:[/^.{8,}$/,"Mínimo 8 caracteres."]},{k:"c",l:"Repita la nueva contraseña",t:"password",req:true}];
-    openModal({title:"Cambiar contraseña", body:`<div class="f" style="grid-template-columns:1fr">${fields.map(f => fieldHtml(f,"")).join("")}</div>`, onSubmit:form => {
-      const {vals, errs} = readFields(fields, form); if(vals.a && vals.a !== S.user.pass) errs.a = "La contraseña actual no es correcta."; if(vals.b && vals.c && vals.b !== vals.c) errs.c = "Las contraseñas no coinciden.";
-      if(!showErrs(form, errs)) return false; S.user.pass = vals.b; log("Cambiar contraseña","Seguridad",S.user.u); save(); toast("Contraseña actualizada."); return true }}) },
+  changePass(){ location.href = "/accounts.php"; },
   /* horarios */
   newSes(id){ const [dia, ini, fin] = id.split("|"); sesForm(null, {dia, ini, fin}) },
   editSes(id){ sesForm(byId(DB.sesiones,+id)) },
@@ -3949,8 +3945,8 @@ const ACTIONS = {
   closeDoc(){ S.ui.dsel = null; render() },
   editDoc(id){ editDoc(+id) },
   /* sistema */
-  resetPass(id){ window.location.assign("/accounts.php"); },
-  resetPerms(){ confirmBox("Restaurar permisos","Se restaurará la matriz de permisos por defecto para todos los roles.","Restaurar",() => { DB.perms = seed().perms; log("Restaurar permisos","Usuarios","Matriz por defecto"); save(); toast("Permisos restaurados."); render() }) },
+  resetPass(id){ location.hash = "#/admin/usuarios/server-" + id; },
+  resetPerms(){ confirmBox("Restaurar permisos","Se restaurará la matriz de permisos por defecto para todos los roles.","Restaurar",() => { DB.perms = structuredClone(HOST.defaultPermissions()); log("Restaurar permisos","Usuarios","Matriz por defecto"); save(); toast("Permisos restaurados."); render() }) },
   backup(){ log("Respaldo","Sistema","Descarga de respaldo completo"); save(); saveFile(`respaldo_intranet_${fileStamp()}.json`, JSON.stringify(DB, null, 1)) },
   resetDemo(){ confirmBox("Restablecer datos de demostración","Se borrarán todos los cambios hechos en esta demostración y se cargarán los datos iniciales.","Restablecer",() => { const uid = S.user.id; DB = seed(); rebuildSlots(); applyAp(); save(); S.user = byId(HOST.users(),uid); S.ui = {}; S.tab = {}; S.q = {}; if(!S.user) logout(); else { toast("Datos de demostración restablecidos."); go("inicio") } }) }
 };
@@ -3980,7 +3976,7 @@ const CHANGES = {
     if(!/^image\/(png|jpeg|svg\+xml|webp)$/.test(f.type)){ toast("El archivo debe ser una imagen PNG, JPG, SVG o WEBP."); el.value = ""; return }
     if(f.size > 300 * 1024){ toast(`La imagen pesa ${Math.round(f.size/1024)} KB. Use una de hasta 300 KB.`); el.value = ""; return }
     const rd = new FileReader(); rd.onload = () => { log("Cambiar apariencia","Configuración",`Logo: ${f.name}`); setAp({logo:String(rd.result)}, "Logo actualizado.") }; rd.onerror = () => toast("No se pudo leer la imagen. Intente con otro archivo."); rd.readAsDataURL(f) },
-  postEst(el){ const p = byId(DB.postulaciones,+el.dataset.id); p.estado = el.value; const u = HOST.users().find(z => z.vin === "est:"+p.est); if(u) notify("u:"+u.id,`Tu postulación a “${byId(DB.ofertas,p.of).puesto}” está: ${p.estado}`,"bolsa"); log("Actualizar postulación","Bolsa laboral",`${est(p.est).dni} → ${p.estado}`); save(); toast("Estado de la postulación actualizado. Se notificó al postulante."); render() },
+  postEst(el){ const p = byId(DB.postulaciones,+el.dataset.id); p.estado = el.value; const u = HOST.users().find(z => z.vin === "est:"+p.est); if(u) notify("u:"+u.id,`Tu postulación a “${byId(DB.ofertas,p.of).puesto}” está: ${p.estado}`,"bolsa"); log("Actualizar postulación","Bolsa laboral",`${est(p.est).dni} → ${p.estado}`); save(); toast("Estado de la postulación actualizado. El postulante puede consultar el estado en su intranet."); render() },
   perm(el){ const [r,k] = el.dataset.id.split("|"); DB.perms[r][k] = +el.value; log("Cambiar permiso","Usuarios",`${ROLES[r]} · ${k} → ${["Sin acceso","Consulta","Gestión"][+el.value]}`); save(); toast(`Permiso actualizado para ${ROLES[r]}.`); render() },
   restore(el){ const f = el.files && el.files[0]; if(!f) return; const rd = new FileReader();
     rd.onload = () => { let data; try{ data = JSON.parse(rd.result) }catch(e){ toast("El archivo no es un respaldo válido."); return }
@@ -4015,7 +4011,7 @@ const FORMS = {
     const x = Object.assign({id:nextId(DB.reclamos), num, fecha:today(), resp:"", respuesta:"", estado:"Recibido"}, vals);
     DB.reclamos.unshift(x); notify("r:adm",`Nuevo ${x.tipo.toLowerCase()} ${num} (${x.area})`,"reclamos"); notify("r:admin",`Nuevo ${x.tipo.toLowerCase()} ${num}`,"reclamos");
     log("Registrar","Reclamos",num); save(); render();
-    docRec(x.id); toast(`${x.tipo} ${num} registrado. Se envió la constancia a ${x.correo}.`);
+    docRec(x.id); toast(`${x.tipo} ${num} registrado. La constancia está disponible para descargar.`);
   },
   exp(form){
     const fields = EXPF(), {vals, errs} = readFields(fields, form);
@@ -4026,19 +4022,15 @@ const FORMS = {
     HOST.exps().unshift(x); notify("r:adm",`Expediente ${x.num} recibido: ${tram(x.tramite).nombre}`,"mesa"); notify("r:admin",`Expediente ${x.num} recibido`,"mesa");
     log("Registrar","Mesa de partes",x.num); save(); render(); docCargo(x.id); toast(`Documento recibido: ${x.num}. Guarde su código de seguimiento.`);
   },
-  regEmp(form){ toast("El registro de empresas se coordina con la Unidad de Bienestar y Empleabilidad."); return;
-    const fields = [...EMP_REG_FIELDS(), {k:"pass",l:"",req:true,pat:[/^.{8,}$/,"Mínimo 8 caracteres."]}];
-    const {vals, errs} = readFields(fields, form, DB.empresas);
-    if(vals.ruc && !errs.ruc && !rucValido(vals.ruc)) errs.ruc = "El RUC no es válido (dígito verificador incorrecto).";
-    if(vals.ruc && HOST.users().some(u => u.u === vals.ruc)) errs.ruc = "Ya existe una cuenta con este RUC.";
-    const decl = form.querySelector("#empDecl"); $("#empDeclErr").textContent = decl && decl.checked ? "" : "Debe aceptar la declaración jurada.";
-    if(!showErrs(form, errs) || !(decl && decl.checked)) return;
-    const e = {id:nextId(DB.empresas), ruc:vals.ruc, nom:vals.nom, sector:vals.sector, ubic:vals.ubic, dir:vals.dir, contacto:vals.contacto, cargoC:vals.cargoC, correo:vals.correo, tel:vals.tel, web:vals.web || "", validada:false, estadoVal:"Pendiente", fechaReg:today()};
-    DB.empresas.push(e); const u = {id:nextId(HOST.users()), u:e.ruc, nom:e.nom, rol:"emp", pass:vals.pass, estado:"Activo", dni:e.ruc, area:"", vin:"emp:"+e.id, ult:""}; HOST.addUser(u);
-    notify("r:admin",`La empresa ${e.nom} solicita validación`,"bolsa"); notify("r:adm",`La empresa ${e.nom} solicita validación`,"bolsa");
-    log("Registrar","Bolsa laboral",`Empresa ${e.nom}`); save(); render();
-    if(window.pzMail){ const c = window.pzBolsaCfg(); window.pzMail(c.correo, `Nueva empresa por validar: ${e.nom}`, `RUC ${e.ruc} · ${e.contacto} (${e.correo})`); window.pzMail(e.correo, "Registro recibido - Bolsa laboral IESTP Pisco", "Su cuenta quedó pendiente de validación por la " + c.responsable + "."); }
-    openModal({title:"Cuenta creada", body:`<div class="alert ok"><b>${esc(e.nom)}</b> quedó registrada y <b>pendiente de validación</b> por la Unidad de Bienestar y Empleabilidad. Le notificaremos a ${esc(e.correo)}.</div><dl class="dl"><dt>Usuario</dt><dd class="mono">${e.ruc}</dd><dt>Contraseña</dt><dd>La que acaba de registrar</dd></dl>`, foot:`<a class="btn" href="#/admin">Ingresar ahora</a>`});
+  regEmp(form){
+    const fields=[...EMP_REG_FIELDS(),{k:"pass",req:true,pat:[/^.{12,}$/,"Mínimo 12 caracteres."]}];
+    const {vals,errs}=readFields(fields,form);
+    if(vals.ruc&&!errs.ruc&&!rucValido(vals.ruc))errs.ruc="El RUC no es válido.";
+    const decl=form.querySelector("#empDecl");if(!decl?.checked)errs.ruc="Debes aceptar la declaración jurada.";
+    if(!showErrs(form,errs))return;
+    try{const result=HOST.registerCompany(vals);DB.empresas.push(result.company);render();
+      openModal({title:"Empresa registrada",body:`<div class="alert ok">${esc(result.company.nom)} quedó pendiente de validación institucional.</div><p>Tu usuario es <b>${esc(result.username)}</b>. Entra con la contraseña que acabas de elegir.</p>`,foot:'<a class="btn" href="#/admin">Ingresar a la intranet</a>'});
+    }catch(error){toast(error.message);}
   },
   empSelf(form){
     const e = myEmp(), fields = ENT.empresas.fields().filter(f => f.k !== "validada" && f.k !== "ruc"), {vals, errs} = readFields(fields, form);
@@ -5100,6 +5092,7 @@ R('becas', (path, q) => {
       const f = $('[data-bf]'); BST.page = 1;
       const run = () => {
         const v = Object.fromEntries(new FormData(f)); const s = normTitle(v.s);
+        if (/^\d{8}$/.test(s)) portalLookup('becarios',s,'','dni');
         const perIds = pers.filter(b => String(b.anio) === v.anio && (!v.periodo || b.periodo === v.periodo)).map(b => b.id);
         let rows = P('becarios').filter(b => b.estado === 'Publicado' && perIds.includes(b.periodoId) && (!v.prog || b.programaId === v.prog) && (!v.tipo || b.tipoId === v.tipo));
         if (s) rows = rows.filter(b => /^\d+$/.test(s) ? b.dni === s : normTitle(b.apellidos + ' ' + b.nombres).includes(s) || normTitle(b.nombres + ' ' + b.apellidos).includes(s));
@@ -5328,7 +5321,7 @@ R('servicios/mesa-de-partes', (path, q0) => {
 });
 R('servicios/consulta-certificados', (path, q) => {
   const pre = (q.get('codigo') || '').trim().toUpperCase();
-  const body = `<h1>Consulta y verificación de documentos</h1><p class="lead">Verifica la autenticidad de un título, certificado, constancia de certificación modular u otro documento emitido por el instituto, con su código de verificación (también se abre al escanear el código QR) o con el DNI del titular.</p><form class="card cb" data-cq style="padding:20px" novalidate><div class="form-grid"><div class="field"><label for="cq-t">Buscar por</label><select id="cq-t" name="t"><option value="codigo">Código de verificación</option></select></div><div class="field"><label for="cq-v">Valor</label><input id="cq-v" name="v" placeholder="CERT-2025-000123 o ABCD-1234" value="${esc(pre)}"></div><div class="full">${captchaHTML('cap-cq')}</div><div class="full"><button class="btn">Verificar</button></div></div></form><div id="cq-r" style="margin-top:14px"></div>`;
+  const body = `<h1>Consulta y verificación de documentos</h1><p class="lead">Verifica la autenticidad de un título, certificado, constancia de certificación modular u otro documento emitido por el instituto, con su código de verificación (también se abre al escanear el código QR) o con el DNI del titular.</p><form class="card cb" data-cq style="padding:20px" novalidate><div class="form-grid"><div class="field"><label for="cq-t">Buscar por</label><select id="cq-t" name="t"><option value="codigo">Código de verificación</option><option value="dni">DNI del titular</option></select></div><div class="field"><label for="cq-v">Valor</label><input id="cq-v" name="v" placeholder="CERT-2025-000123 o ABCD-1234" value="${esc(pre)}"></div><div class="full">${captchaHTML('cap-cq')}</div><div class="full"><button class="btn">Verificar</button></div></div></form><div id="cq-r" style="margin-top:14px"></div>`;
   const html = shell(path, { title: 'Consulta y verificación de documentos', crumbs: [['Servicios', '#/servicios/complementarios'], ['Consulta y verificación de documentos']], banner: { kicker: 'Servicios', title: 'Consulta de Documentos', text: 'Validación en línea' }, side: servSide('consulta-certificados'), body });
   const show = (t, v) => {
     const rs = coll('certificados').filter(c => t === 'codigo' ? c.codigo === v : c.dni === v);
@@ -5498,7 +5491,7 @@ const ib = (act, icon, label, cls = '') => `<button class="icon-btn ${cls}" data
 function loginView() {
   return `<div class="login"><div class="card"><a class="brand" href="#/"><img src="${logoSrc()}" alt=""><span><strong>${esc(inst().nombreCorto)}</strong><small>Intranet institucional</small></span></a>
   <h1 style="font-size:20px;text-align:center">Iniciar sesión</h1><p style="text-align:center;color:var(--muted);font-size:13.5px;margin:-4px 0 12px">Un solo acceso para personal, docentes, estudiantes, egresados y empresas.</p><form data-login novalidate><div class="field"><label for="lg-u">Usuario</label><input id="lg-u" name="u" autocomplete="username" required></div><div class="field" style="margin-top:10px"><label for="lg-p">Contraseña</label><input id="lg-p" name="p" type="password" autocomplete="current-password" required></div><div id="lg-e" role="alert" style="color:var(--err);font-size:13.5px;margin-top:8px"></div><button class="btn" style="width:100%;margin-top:12px">${ic('lock').replace('<svg', '<svg style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"')} Ingresar</button></form>
-  <p style="font-size:12.5px;color:var(--muted);margin:14px 0 4px">Usuarios de demostración (un clic para completar). Tras 5 intentos fallidos la cuenta se bloquea 5 minutos.</p><div class="demo-users">${DEMO_USERS.map(([u, p, l]) => `<button type="button" data-du="${u}|${p}"><b>${u}</b> · ${l}</button>`).join('')}</div>
+  <p style="font-size:12.5px;color:var(--muted);margin:14px 0 4px">Las cuentas son administradas por la institución. Tras 5 intentos fallidos la cuenta se bloquea 5 minutos.</p><div class="demo-users">${DEMO_USERS.map(([u, p, l]) => `<button type="button" data-du="${u}|${p}"><b>${u}</b> · ${l}</button>`).join('')}</div>
   <p style="text-align:center;margin:14px 0 0"><a href="#/">← Volver al portal</a></p></div></div>`;
 }
 function bindLogin() {
@@ -5591,6 +5584,7 @@ function fieldHTML(f, rec) {
   const dis = f.ro && f.ro(rec) ? 'disabled' : '';
   let c = '';
   switch (f.t) {
+    case 'datetime-local': { const d = new Date(v); const value = v && !isNaN(d) ? new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16) : ''; c = `<input id="${id}" name="${f.n}" type="datetime-local" value="${value}" ${dis}>`; break; }
     case 'textarea': c = `<textarea id="${id}" name="${f.n}" ${f.max ? `maxlength="${f.max}"` : ''} ${dis}>${esc(v)}</textarea>`; break;
     case 'lines': c = `<textarea id="${id}" name="${f.n}" ${dis} placeholder="Un elemento por línea">${esc((v || []).join('\n'))}</textarea>`; break;
     case 'select': c = `<select id="${id}" name="${f.n}" ${dis}>${f.empty !== false ? `<option value="">${esc(f.empty || '— Seleccione —')}</option>` : ''}${optList(f, rec).map(([a, b]) => `<option value="${esc(a)}" ${String(v) === String(a) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`; break;
@@ -5635,7 +5629,7 @@ function bindFields(fields, work, root, rerender) {
     $$('[data-rdel]', box).forEach(b => b.onclick = async () => { if (await confirmBox('¿Quitar esta fila?', { ok: 'Quitar' })) { work[f.n].splice(+b.dataset.rdel, 1); rerender(); } });
     $$('[data-rup]', box).forEach(b => b.onclick = () => { const i = +b.dataset.rup; if (i > 0) { const a = work[f.n]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; rerender(); } });
     $$('[data-rdn]', box).forEach(b => b.onclick = () => { const i = +b.dataset.rdn; const a = work[f.n]; if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; rerender(); } });
-    $$('[data-rf]', box).forEach(inp => inp.onchange = async () => { const fl = inp.files[0]; if (!fl) return; const er = checkFile(fl, 'pdf'); if (er) return toast(er, 'err'); if (fl.size > 2.5 * 1048576) return toast('Use PDF menores de 2.5 MB.', 'err'); const [i, c] = inp.dataset.rf.split('|'); work[f.n][+i][c] = { nombre: safeName(fl.name), original: fl.name, size: fl.size, data: await readAsDataURL(fl), fecha: nowISO() }; rerender(); });
+    $$('[data-rf]', box).forEach(inp => inp.onchange = async () => { const fl = inp.files[0]; if (!fl) return; const er = checkFile(fl, 'pdf'); if (er) return toast(er, 'err');  const [i, c] = inp.dataset.rf.split('|'); work[f.n][+i][c] = { nombre: safeName(fl.name), original: fl.name, size: fl.size, data: await readAsDataURL(fl), fecha: nowISO() }; rerender(); });
     $$('[data-rfx]', box).forEach(b => b.onclick = () => { const [i, c] = b.dataset.rfx.split('|'); work[f.n][+i][c] = null; rerender(); });
   });
   fields.filter(f => f.t === 'custom' && f.bind).forEach(f => f.bind(work, $(`[data-custom="${f.n}"]`, root), rerender));
@@ -6068,10 +6062,10 @@ SPECS.usuarios = {
   rowActs: r => r.bloqueadoHasta > Date.now() ? ib('unlock', 'lock', 'Desbloquear') : '',
   onAct: (a, r, rer) => { if (a === 'unlock') { r.bloqueadoHasta = 0; r.intentos = 0; audit('Desbloqueo de cuenta', 'Usuarios', r.usuario); saveDB(); rer(); } },
   afterList: () => { $('.adm-main').insertAdjacentHTML('beforeend', `<div class="panel"><h2 id="perm-h">Matriz de permisos por rol</h2><div class="tbl-wrap" style="border:0" tabindex="0" role="region" aria-labelledby="perm-h"><table class="tbl light perm-grid"><thead><tr><th>Módulo</th>${Object.values(ROLES).map(r => `<th>${esc(r.label)}</th>`).join('')}</tr></thead><tbody>${Object.entries(MODULES).map(([k, l]) => `<tr><td>${esc(l)}</td>${Object.values(ROLES).map(r => `<td>${r.mods.includes(k) ? '✔' : '<span style="color:#ccc">—</span>'}</td>`).join('')}</tr>`).join('')}<tr><td><b>Publicar</b></td>${Object.values(ROLES).map(r => `<td>${r.publish ? '✔' : '—'}</td>`).join('')}</tr><tr><td><b>Aprobar (Transparencia, Admisión, Convocatorias)</b></td>${Object.values(ROLES).map(r => `<td>${r.approve ? '✔' : '—'}</td>`).join('')}</tr><tr><td><b>Eliminación definitiva</b></td>${Object.values(ROLES).map(r => `<td>${r.hardDelete ? '✔' : '—'}</td>`).join('')}</tr><tr><td><b>Ver DNI completo</b></td>${Object.values(ROLES).map(r => `<td>${r.viewDni ? '✔' : '—'}</td>`).join('')}</tr></tbody></table></div></div>`); },
-  fields: w => [{ n: 'usuario', l: 'Usuario', req: true, unique: true, ro: () => !!w.passHash }, { n: 'nombre', l: 'Nombre completo', req: true }, { n: 'rol', l: 'Rol', t: 'select', req: true, opts: Object.entries(ROLES).map(([k, r]) => [k, r.label]) }, { n: 'programaId', l: 'Programa (solo para Coordinador)', t: 'select', opts: progOpts }, { n: 'vin', l: 'Vinculado a (docente, estudiante o empresa)', t: 'select', opts: () => IX ? IX.vinOpts() : [], hint: 'Para cuentas de la comunidad educativa: muestra su horario, certificaciones o bolsa laboral.' }, { n: 'dni', l: 'DNI / RUC (opcional)', max: 11 }, { n: 'pass1', l: w.passHash ? 'Nueva contraseña (dejar vacío para mantener)' : 'Contraseña', t: 'password', hint: 'Mínimo 8 caracteres, con mayúscula, número y símbolo. Se almacena cifrada (SHA-256).' }, { n: 'pass2', l: 'Repetir contraseña', t: 'password' }],
-  validate: w => { const e = {}; if (w.pass1 || !w.passHash) { if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(w.pass1 || '')) e.pass1 = 'La contraseña no cumple la política de seguridad.'; else if (w.pass1 !== w.pass2) e.pass2 = 'Las contraseñas no coinciden.'; } if (w.rol === 'coordinador' && !w.programaId) e.programaId = 'Seleccione el programa del coordinador.'; if (['estudiante', 'egresado'].includes(w.rol) && !String(w.vin || '').startsWith('est:')) e.vin = 'Elija al alumno en «Vinculado a», o regístrelo primero en Gestión académica › Maestro de alumnos (también puede crear su acceso desde ahí).'; if (w.id === currentUser().id && (w.estado !== 'Activo' || w.rol !== 'admin')) e.rol = 'No puede quitarse a sí mismo el rol de Administrador ni desactivarse.'; return e; },
+  fields: w => [{ n: 'usuario', l: 'Usuario', req: true, unique: true, ro: () => !!w.has_password }, { n: 'nombre', l: 'Nombre completo', req: true }, { n: 'rol', l: 'Rol', t: 'select', req: true, opts: Object.entries(ROLES).map(([k, r]) => [k, r.label]) }, { n: 'programaId', l: 'Programa (solo para Coordinador)', t: 'select', opts: progOpts }, { n: 'vin', l: 'Vinculado a (docente, estudiante o empresa)', t: 'select', opts: () => IX ? IX.vinOpts() : [], hint: 'Para cuentas de la comunidad educativa: muestra su horario, certificaciones o bolsa laboral.' }, { n: 'dni', l: 'DNI / RUC (opcional)', max: 11 }, { n: 'pass1', l: w.has_password ? 'Nueva contraseña (dejar vacío para mantener)' : 'Contraseña', t: 'password', hint: 'Mínimo 8 caracteres, con mayúscula, número y símbolo. Se almacena cifrada (SHA-256).' }, { n: 'pass2', l: 'Repetir contraseña', t: 'password' }],
+  validate: w => { const e = {}; if (w.pass1 || !w.has_password) { if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(w.pass1 || '')) e.pass1 = 'La contraseña no cumple la política de seguridad.'; else if (w.pass1 !== w.pass2) e.pass2 = 'Las contraseñas no coinciden.'; } if (w.rol === 'coordinador' && !w.programaId) e.programaId = 'Seleccione el programa del coordinador.'; if (['estudiante', 'egresado'].includes(w.rol) && !String(w.vin || '').startsWith('est:')) e.vin = 'Elija al alumno en «Vinculado a», o regístrelo primero en Gestión académica › Maestro de alumnos (también puede crear su acceso desde ahí).'; if (w.id === currentUser().id && (w.estado !== 'Activo' || w.rol !== 'admin')) e.rol = 'No puede quitarse a sí mismo el rol de Administrador ni desactivarse.'; return e; },
   beforeSave: w => { w.usuario = String(w.usuario || '').toLowerCase().replace(/\s/g, ''); if (w.rol !== 'coordinador') w.programaId = ''; if (['estudiante', 'egresado'].includes(w.rol) && IX) { if (!String(w.vin || '').startsWith('est:')) { const e = IX.findEst(w.dni) || IX.findEst(w.usuario); if (e) w.vin = 'est:' + e.id; } const e2 = String(w.vin || '').startsWith('est:') ? IX.estById(String(w.vin).slice(4)) : null; if (e2) { w.dni = e2.dni; if (!w.nombre) w.nombre = e2.nom; } } },
-  afterSave: w => { if (w.pass1) { w.passHash = hashPass(w.usuario, w.pass1); w.intentos = 0; } delete w.pass1; delete w.pass2; if (!w.ixId) w.ixId = Math.max(100, ...coll('usuarios').map(u => +u.ixId || 0)) + 1; },
+  afterSave: w => { if (w.pass1) { w.has_password = hashPass(w.usuario, w.pass1); w.intentos = 0; } delete w.pass1; delete w.pass2; if (!w.ixId) w.ixId = Math.max(100, ...coll('usuarios').map(u => +u.ixId || 0)) + 1; },
 };
 
 /* ==== admin3.js ==== */
@@ -6224,7 +6218,6 @@ CUSTOM.config = () => singletonForm({
     { n: 'seoTitulo', l: 'Título SEO del sitio', req: true, full: true, max: 70 }, { n: 'seoDesc', l: 'Descripción SEO', t: 'textarea', full: true, max: 170 },
     { n: 'correoReclamos', l: 'Correo receptor del Libro de Reclamaciones (parámetro protegido)', t: 'email', req: true, ro: () => currentUser().rol !== 'admin' }, { n: 'correoContacto', l: 'Correo receptor de Contáctanos', t: 'email', req: true },
     { n: 'limDesc', l: 'Límite de caracteres: descripción del reclamo', t: 'number', min: 200 }, { n: 'limPed', l: 'Límite de caracteres: pedido del reclamo', t: 'number', min: 100 },
-    { n: 'simFail', l: 'Simular falla del servidor de correo (para probar “Reintentar envío”)', t: 'checkbox', full: true },
   ],
   onSave: (w, er) => {
     if (w.waOn && !/^\d{9,13}$/.test(w.waNum || '')) er.waNum = 'Número no válido (9 a 13 dígitos).'; if (Object.keys(er).length) return;
@@ -6395,7 +6388,7 @@ CUSTOM.dashboard = (parts, q) => {
   const hr = new Date().getHours(); const saludo = hr < 12 ? 'Buenos días' : hr < 19 ? 'Buenas tardes' : 'Buenas noches';
   const html = `<div class="db-hero"><div><span class="db-eyebrow">${fdate(now)} · ${esc(role().label)}</span><h1>${saludo}, ${esc(u.nombre)}</h1><p>Resumen de la actividad del portal en los últimos <b>${P} días</b>.</p></div><div class="db-hacts"><div class="db-period" role="group" aria-label="Período">${[7, 30, 90].map(p => `<a href="#/admin/dashboard?p=${p}" aria-current="${p === P}">${p} días</a>`).join('')}</div><button class="btn sec" data-dbcsv>${sic('download')} Exportar resumen</button><a class="btn" href="#/" target="_blank" rel="noopener">${sic('ext')} Ver portal</a></div></div>
   <div class="db-kpis n${tiles.length}">${tiles.map(tileHTML).join('')}</div>
-  <div class="db-row r21"><div class="panel db-card"><h2><span>Tráfico del portal</span><span class="db-lg"><span><i class="c"></i>Últimos ${P} días</span><span><i class="p"></i>${P} días previos</span></span></h2><div class="pb"><div class="db-big"><div><small>Total del período</small><b>${num(sum(cur))}</b>${deltaHTML(pct(sum(cur), sum(prev)), false)}</div><div><small>Promedio diario</small><b>${num(Math.round(sum(cur) / P))}</b></div><div><small>Día con más visitas</small><b>${labels[cur.indexOf(Math.max(...cur))]}</b></div></div>${lineChart(cur, prev, labels)}<p class="db-note">Visitas de demostración más las páginas abiertas en este navegador. En producción se conectan a la analítica del servidor.</p></div></div>${lrCard || pend}</div>
+  <div class="db-row r21"><div class="panel db-card"><h2><span>Tráfico del portal</span><span class="db-lg"><span><i class="c"></i>Últimos ${P} días</span><span><i class="p"></i>${P} días previos</span></span></h2><div class="pb"><div class="db-big"><div><small>Total del período</small><b>${num(sum(cur))}</b>${deltaHTML(pct(sum(cur), sum(prev)), false)}</div><div><small>Promedio diario</small><b>${num(Math.round(sum(cur) / P))}</b></div><div><small>Día con más visitas</small><b>${labels[cur.indexOf(Math.max(...cur))]}</b></div></div>${lineChart(cur, prev, labels)}<p class="db-note">Páginas consultadas por visitantes, registradas por el servidor. Las recargas inmediatas de una misma página no se suman.</p></div></div>${lrCard || pend}</div>
   <div class="db-row r3">${lrCard ? pend : ''}${cmCard}${agCard}</div>
   <div class="db-row ${hCard ? 'r12' : 'r1'}">${hCard}${acCard}</div>`;
   return {
@@ -6483,7 +6476,7 @@ function mensajeDetalle(id) {
     html, after: () => {
       const upd = (est, nota) => { m.estado = est; m.historial = m.historial || []; m.historial.push({ fecha: nowISO(), usuario: currentUser().usuario, estado: est, nota }); stamp(m); audit('Cambio de estado: ' + est, 'Mensajes de contacto', m.asunto, nota || ''); if (saveDB()) { toast('Estado actualizado.', 'ok'); route(); } };
       $('[data-st]').onclick = () => upd($('#mst').value);
-      $('[data-reply]').onclick = () => { const t = $('#mr').value.trim(); if (t.length < 5) return toast('Escriba la respuesta.', 'err'); const r = mailOut(m.correo, 'Re: ' + m.asunto, t); upd('Atendido', `Respuesta enviada por correo (${r}): ${clamp(t, 120)}`); };
+      $('[data-reply]').onclick = () => { const t = $('#mr').value.trim(); if (t.length < 5) return toast('Escriba la respuesta.', 'err'); m.respuesta=t; upd('Atendido', `Respuesta registrada: ${clamp(t,120)}. Correo desactivado.`); };
     }
   };
 }
@@ -6521,7 +6514,7 @@ function reclamoDetalle(id) {
       const adj = $('[data-adj]'); if (adj) adj.onclick = () => { downloadDoc(r.adjunto); audit('Descarga de adjunto', 'Libro de reclamaciones', r.codigo); saveDB(); };
       $('[data-nota]').onclick = () => { const t = $('#lr-nota').value.trim(); if (!t) return; r.notas = r.notas || []; r.notas.push({ fecha: nowISO(), usuario: me, texto: t }); audit('Nota interna', 'Libro de reclamaciones', r.codigo); save('Nota agregada.'); };
       const st = $('[data-st]'); if (st) st.onclick = () => { const v = $('#lr-st').value; if (v === r.estado) return toast('Seleccione un estado diferente.', 'err'); if (v === 'Atendido' && !r.respuesta) return toast('Registre primero la respuesta institucional.', 'err'); r.historial.push({ fecha: nowISO(), usuario: me, estado: v, nota: $('#lr-sn').value.trim() }); audit(`Cambio de estado: ${r.estado} → ${v}`, 'Libro de reclamaciones', r.codigo); r.estado = v; save('Estado actualizado.'); };
-      const rs = $('[data-resp]'); if (rs) rs.onclick = () => { const t = $('#lr-resp').value.trim(); if (t.length < 10) return toast('La respuesta debe tener al menos 10 caracteres.', 'err'); r.respuesta = t; r.atendidoPor = me; r.atendidoEn = nowISO(); r.notifUser = mailOut(r.correo, `Respuesta a su ${r.tipo.toLowerCase()} ${r.codigo}`, t); if (r.estado !== 'Atendido') r.historial.push({ fecha: nowISO(), usuario: me, estado: 'Atendido', nota: 'Respuesta registrada y notificada' }); r.estado = 'Atendido'; audit('Respuesta institucional', 'Libro de reclamaciones', r.codigo, 'Notificación al usuario: ' + r.notifUser); save(r.notifUser === 'Error' ? 'Respuesta registrada, pero falló el envío del correo.' : 'Respuesta registrada y enviada al ciudadano.'); };
+      const rs = $('[data-resp]'); if (rs) rs.onclick = () => { const t = $('#lr-resp').value.trim(); if (t.length < 10) return toast('La respuesta debe tener al menos 10 caracteres.', 'err'); r.respuesta = t; r.atendidoPor = me; r.atendidoEn = nowISO(); r.notifUser = mailOut(r.correo, `Respuesta a su ${r.tipo.toLowerCase()} ${r.codigo}`, t); if (r.estado !== 'Atendido') r.historial.push({ fecha: nowISO(), usuario: me, estado: 'Atendido', nota: 'Respuesta registrada en el portal' }); r.estado = 'Atendido'; audit('Respuesta institucional', 'Libro de reclamaciones', r.codigo, 'Notificación al usuario: ' + r.notifUser); save(r.notifUser === 'Error' ? 'Respuesta registrada, pero falló el envío del correo.' : 'Respuesta registrada. El correo está desactivado.'); };
       const rt = $('[data-retry]'); if (rt) rt.onclick = () => { r.notifInst = mailOut(DB.config.correoReclamos, `[${r.codigo}] Reenvío de notificación`, `${r.nombres} - ${r.asunto}`); audit('Reintento de notificación', 'Libro de reclamaciones', r.codigo, 'Resultado: ' + r.notifInst); save(r.notifInst === 'Enviado' ? 'Notificación reenviada correctamente.' : 'El envío volvió a fallar. Revise la configuración de correo.'); };
       const an = $('[data-anular]'); if (an) an.onclick = async () => { const m = await promptBox('Motivo de la anulación (quedará registrado):', { title: 'Anular registro', ok: 'Anular', textarea: true }); if (m == null) return; if (m.trim().length < 5) return toast('Indique el motivo.', 'err'); r.anulado = true; r.anuladoPor = me; r.motivoAnulacion = m.trim(); r.historial.push({ fecha: nowISO(), usuario: me, estado: 'Anulado', nota: m.trim() }); audit('Anulación', 'Libro de reclamaciones', r.codigo, m.trim()); save('Registro anulado.'); };
     }
@@ -6963,25 +6956,13 @@ function areaOptions(sel, { skipMP = false, placeholder = 'Seleccione el área d
   return `<option value="">${esc(placeholder)}</option>` + NIVELES.map(n => { const g = as.filter(a => (a.nivel || 'Áreas') === n); return g.length ? `<optgroup label="${esc(n)}">${g.map(a => `<option value="${esc(a.cod)}" ${a.cod === sel ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>` : ''; }).join('');
 }
 
-/* ---------- Archivos grandes (hasta 40 MB): IndexedDB, con respaldo en memoria ---------- */
-const FS = {
-  db: null, mem: {},
-  open() { if (this.db) return Promise.resolve(this.db); return new Promise((ok, ko) => { try { const r = indexedDB.open('portal_iestp_pisco_files', 1); r.onupgradeneeded = () => r.result.createObjectStore('f'); r.onsuccess = () => { this.db = r.result; ok(this.db); }; r.onerror = () => ko(r.error); } catch (e) { ko(e); } }); },
-  async put(key, blob) { try { const db = await this.open(); await new Promise((ok, ko) => { const t = db.transaction('f', 'readwrite'); t.objectStore('f').put(blob, key); t.oncomplete = ok; t.onerror = () => ko(t.error); }); return true; } catch (e) { this.mem[key] = blob; return false; } },
-  async get(key) { if (this.mem[key]) return this.mem[key]; try { const db = await this.open(); return await new Promise((ok, ko) => { const r = db.transaction('f').objectStore('f').get(key); r.onsuccess = () => ok(r.result || null); r.onerror = () => ko(r.error); }); } catch (e) { return null; } },
-};
+/* ---------- Archivos compartidos en el servidor ---------- */
 async function sha256File(file) { try { if (!(window.crypto && crypto.subtle)) return ''; const buf = await file.arrayBuffer(); return [...new Uint8Array(await crypto.subtle.digest('SHA-256', buf))].map(b => b.toString(16).padStart(2, '0')).join(''); } catch (e) { return ''; } }
-async function storeFile(file, prefix) {
-  const meta = { key: prefix + '_' + uid(), nombre: safeName(file.name, prefix), original: file.name, size: file.size, type: file.type || '', fecha: nowISO() };
-  meta.sha256 = await sha256File(file);
-  const ok = await FS.put(meta.key, file);
-  if (!ok && file.size <= 1.5 * 1048576) meta.data = await readAsDataURL(file); // sin IndexedDB: los archivos pequeños se guardan con el registro
-  return meta;
-}
+async function storeFile(file, prefix) { return portalUpload(file); }
 async function fileBlob(meta) {
   if (!meta) return null;
+  if (meta.fileId) { const response=await fetch(meta.url); if(!response.ok)throw new Error('No tienes acceso a ese archivo.');return response.blob(); }
   if (meta.data) return dataURItoBlob(meta.data);
-  if (meta.key) { const b = await FS.get(meta.key); if (b) return b; }
   if (meta.lineas || meta.titulo) return docBlob(meta);
   return null;
 }
@@ -7349,7 +7330,7 @@ function lrPage(path, q0) {
      <h3>Flujo de atención</h3><ol class="pz-flow"><li><b>Recibido</b><span>Registro y constancia enviada a tu correo.</span></li><li><b>Derivado</b><span>El responsable lo deriva al área competente.</span></li><li><b>En atención</b><span>El área evalúa y propone la respuesta.</span></li><li><b>Atendido</b><span>La respuesta se envía a tu correo.</span></li></ol>
      <h3>Responsable de la atención</h3><p><b>${esc(c.responsable)}</b> · ${esc(c.cargo)}<br><a href="mailto:${esc(c.correo)}">${esc(c.correo)}</a></p>
      <h3>A tener en cuenta</h3><ul><li>El plazo se cuenta desde el día hábil siguiente al registro.</li><li>La formulación del reclamo no impide acudir a otras vías de solución de controversias.</li><li>Base normativa: Decreto Supremo N.º 042-2011-PCM, que obliga a las entidades públicas a contar con un Libro de Reclamaciones.</li></ul></section></div>
-   <div class="pz-info3"><div>${ic('shield')}<b>Registro seguro</b><span>Tu información se registra de manera segura y protegida (Ley N.º 29733).</span></div><div>${ic('search')}<b>Seguimiento</b><span>Con tu código consultas el estado en cualquier momento.</span></div><div>${ic('mail')}<b>Notificación</b><span>Recibirás la respuesta en tu correo electrónico.</span></div></div>`;
+   <div class="pz-info3"><div>${ic('shield')}<b>Registro seguro</b><span>Tu información se registra de manera segura y protegida (Ley N.º 29733).</span></div><div>${ic('search')}<b>Seguimiento</b><span>Con tu código consultas el estado en cualquier momento.</span></div><div>${ic('mail')}<b>Notificación</b><span>Consulta el estado y la respuesta con tu código de seguimiento.</span></div></div>`;
   const side = `<section class="side-box"><h2>Responsable de la atención</h2><div class="pad" style="font-size:13.5px"><b>${esc(c.responsable)}</b><br>${esc(c.cargo)}<br>✉️ <a href="mailto:${esc(c.correo)}">${esc(c.correo)}</a></div></section>
    <section class="side-box"><h2>Plazos de respuesta</h2><div class="pad" style="font-size:13.5px"><ul style="padding-left:18px;margin:0"><li>Reclamos: hasta <b>${c.plazoReclamo} días hábiles</b>.</li><li>Quejas: hasta <b>${c.plazoQueja} días hábiles</b>.</li></ul></div></section>
    <section class="side-box"><h2>¿Necesitas ayuda?</h2><div class="pad" style="font-size:13.5px">📞 ${esc(i.telefono)}<br>✉️ ${esc(c.correo)}<br>🕗 ${esc(i.horario)}</div></section>`;
@@ -7474,7 +7455,7 @@ reclamoDetalle = function (id) {
     const d = $('[data-der]'); if (d) d.onclick = () => { const v = $('#lr-ar').value; if (!v) return toast('Seleccione el área.', 'err'); const a = areaOf(v); const ind = $('#lr-arn').value.trim(); const me = currentUser().usuario;
       r.area = v; if (r.estado === 'Recibido') r.estado = 'Derivado'; r.historial.push({ fecha: nowISO(), usuario: me, estado: r.estado, nota: `Derivado a ${areaName(v)}${ind ? ': ' + ind : ''}` });
       if (a) mailOut(a.correo, `[${r.codigo}] ${r.tipo} derivado para su atención`, `${r.nombres}: ${r.descripcion}${ind ? ' · Indicación: ' + ind : ''} · Vence: ${fshort(lrPlazo(r).due)}`);
-      audit('Derivación', 'Libro de reclamaciones', r.codigo, areaName(v)); stamp(r); if (saveDB()) { toast('Derivado y notificado' + (a ? ' a ' + a.correo : '') + '.', 'ok'); route(); } };
+      audit('Derivación', 'Libro de reclamaciones', r.codigo, areaName(v)); stamp(r); if (saveDB()) { toast('Derivación registrada. El envío por correo está pendiente de configuración.', 'ok'); route(); } };
   };
   return out;
 };
@@ -8072,7 +8053,7 @@ R('servicios/consulta-certificados', (path, q) => {
   const nCert = coll('certificados').length;
   const body = `${svNav('consulta-certificados')}${svHead('cert', [['zap', 'Resultado inmediato'], ['shield', 'Datos personales protegidos'], ['table', 'Código QR en cada documento']])}
    <div class="pz-cq-wrap"><form class="card cb pz-cq" data-cq novalidate><h2>${sic('search', 20)} Verificar un documento</h2>
-     <div class="pz-seg" role="radiogroup" aria-label="Buscar por"><label><input type="radio" name="t" value="codigo" checked><span>${sic('key', 15)} Código de verificación</span></label></div>
+     <div class="pz-seg" role="radiogroup" aria-label="Buscar por"><label><input type="radio" name="t" value="codigo" checked><span>${sic('key', 15)} Código de verificación</span></label><label><input type="radio" name="t" value="dni"><span>${sic('user', 15)} DNI del titular</span></label></div>
      <div class="field"><label for="cq-v" data-cql>Código de verificación</label><input id="cq-v" name="v" autocomplete="off" placeholder="Ej.: CERT-2025-000123" value="${esc(pre)}"><div class="hint" data-cqh>Figura en la parte inferior del documento, junto al código QR.</div></div>
      ${captchaHTML('cap-cq')}
      <button class="btn pz-cq-b">${sic('shield', 17)} Verificar autenticidad</button></form>
@@ -8109,7 +8090,7 @@ R('servicios/consulta-certificados', (path, q) => {
     const sync = () => { const dni = f.t.value === 'dni'; $('[data-cql]', f).textContent = dni ? 'DNI del titular' : 'Código de verificación'; f.v.placeholder = dni ? 'Ej.: 72345678' : 'Ej.: CERT-2025-000123'; f.v.inputMode = dni ? 'numeric' : 'text'; $('[data-cqh]', f).textContent = dni ? 'Se listan todos los documentos emitidos a nombre del titular.' : 'Figura en la parte inferior del documento, junto al código QR.'; };
     $$('[name=t]', f).forEach(x => x.onchange = sync);
     if (pre) { portalLookup('certificados', pre, ''); show('codigo', pre); }
-    f.onsubmit = e => { e.preventDefault(); const v = f.v.value.trim().toUpperCase(); const er = {}; if (!v) er.v = f.t.value === 'dni' ? 'Ingrese el DNI del titular.' : 'Ingrese el código de verificación.'; else if (f.t.value === 'dni' && !/^\d{8}$/.test(v)) er.v = 'El DNI debe tener 8 dígitos.'; const cap = checkCaptcha(f, 'cap-cq'); if (cap) er.captcha = cap; if (!showErrors(f, er)) return; if (f.t.value !== 'codigo') return toast('Consulta por código de verificación.', 'warn'); portalLookup('certificados', v, ''); show('codigo', v); };
+    f.onsubmit = e => { e.preventDefault(); const v = f.v.value.trim().toUpperCase(); const er = {}; if (!v) er.v = f.t.value === 'dni' ? 'Ingrese el DNI del titular.' : 'Ingrese el código de verificación.'; else if (f.t.value === 'dni' && !/^\d{8}$/.test(v)) er.v = 'El DNI debe tener 8 dígitos.'; const cap = checkCaptcha(f, 'cap-cq'); if (cap) er.captcha = cap; if (!showErrors(f, er)) return; portalLookup('certificados', v, '', f.t.value); show(f.t.value, v); };
   } };
 });
 
