@@ -36,7 +36,9 @@ try {
         $statement->execute([$id]);
         $username = $statement->fetchColumn();
         if ($username === false) throw new PortalError(422, 'La cuenta seleccionada no está activa.');
-        $app->db()->prepare('UPDATE pisco_users SET password = ? WHERE id = ? AND active = 1')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
+        $columns=$app->db()->query('SHOW COLUMNS FROM pisco_users')->fetchAll(PDO::FETCH_COLUMN);
+        $extra=in_array('auth_version',$columns,true)?', auth_version = auth_version + 1, login_failures = 0, locked_until = NULL':'';
+        $app->db()->prepare('UPDATE pisco_users SET password = ?'.$extra.' WHERE id = ? AND active = 1')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
         $loginKey = hash('sha256', 'login:'.$username.'|'.($_SERVER['REMOTE_ADDR'] ?? 'local').'|'.$window);
         $app->db()->prepare('DELETE FROM pisco_rate_limits WHERE rate_key = ?')->execute([$loginKey]);
         unset($_SESSION['owner_recovery_until'], $_SESSION['user_id']);
