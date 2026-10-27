@@ -1,6 +1,7 @@
 /* Persistencia y autorización PHP/MySQL. Los datos del navegador no conceden permisos. */
 function portalURL(url) { return url.startsWith('/api/') ? '/index.php?route=' + encodeURIComponent(url.slice(1)) : url; }
 const portalBootstrap=window.PORTAL_BOOTSTRAP;
+for(const [key,value] of Object.entries(portalBootstrap.roles||{}))if(ROLES[key])Object.assign(ROLES[key],value);
 let portalRevision=portalBootstrap.revision;
 let portalBaseline=structuredClone(portalBootstrap.data);
 const portalPasswords=new Map();
@@ -117,7 +118,7 @@ SPECS.usuarios.fields=function(work){const fields=portalUserFields(work);for(con
   fields.push({n:'correo',l:'Correo electrónico',t:'email'});
   fields.push({n:'personaId',l:'Persona del docente (para su CV)',t:'select',opts:()=>DB.personas.map(p=>[p.id,fullName(p)])});return fields;};
 const portalUserValidate=SPECS.usuarios.validate;
-SPECS.usuarios.validate=function(work){const errors=portalUserValidate(work);if(work.pass1&&[...work.pass1].length<12)errors.pass1='La contraseña necesita al menos 12 caracteres.';return errors;};
+SPECS.usuarios.validate=function(work){const errors=portalUserValidate(work);delete errors.pass1;if(work.pass1||!work.has_password){if([...String(work.pass1||'')].length<12||new TextEncoder().encode(work.pass1||'').length>72)errors.pass1='La contraseña necesita al menos 12 caracteres y máximo 72 bytes.';if(work.pass1!==work.pass2)errors.pass2='Las contraseñas no coinciden.';}return errors;};
 SPECS.usuarios.afterSave=function(work){if(work.pass1)portalPasswords.set(work.id,work.pass1);delete work.pass1;delete work.pass2;};
 const portalOriginalAdmin=renderAdmin;
 renderAdmin=function(parts,query){if(currentUser()?.rol==='admin'&&parts[1]==='respaldo')return {html:admHead('Respaldos y restauración','Crea, restaura y programa copias completas de contenido, cuentas y archivos.','','download')+`<section class="panel"><div class="pb"><a class="btn" href="/respaldos.php">Administrar respaldos y restauración</a><p>Las copias se guardan en la carpeta privada del portal.</p></div></section>`};if(currentUser()&&parts[1]==='perfil'){location.href='/accounts.php';return {html:''};}const out=portalOriginalAdmin(parts,query);if(currentUser()?.rol==='admin'&&parts[1]==='auditoria')out.html=`<p><a class="btn" href="/auditoria.php">Consultar y exportar el historial completo</a></p>`+out.html;return out;};
@@ -164,3 +165,18 @@ downloadBlob=function(blob,filename){if(currentUser())fetch(portalURL('/api/even
 
 const portalProgramFields=SPECS.programas.fields;
 SPECS.programas.fields=function(work){const fields=typeof portalProgramFields==='function'?portalProgramFields(work):portalProgramFields;for(const f of fields)if(f.n==='codigo'){f.unique='norm';f.hint='Código único del programa, compartido con la gestión académica.';}return fields;};
+
+// Acciones visibles y filtros específicos de cuentas.
+SPECS.usuarios.sub='Administre cuentas, cambie el rol, desactive accesos o restablezca contraseñas. Los cambios de rol cierran las sesiones anteriores.';
+SPECS.usuarios.extraActs=()=>'<a class="btn sec" href="/roles.php">Editar roles y permisos</a>';
+SPECS.usuarios.search=['usuario','nombre','correo',r=>ROLES[r.rol]?.label||''];
+SPECS.usuarios.searchPh='Usuario, nombre o correo';
+SPECS.usuarios.filters=[{n:'rol',l:'Rol',opts:()=>Object.entries(ROLES).map(([k,r])=>[k,r.label])},{n:'estado',l:'Estado',opts:['Activo','Inactivo']}];
+const portalUsersAfterList=SPECS.usuarios.afterList;
+SPECS.usuarios.afterList=()=>{
+  portalUsersAfterList();
+  const table=document.querySelector('.tbl-wrap .tbl');
+  if(table){table.querySelectorAll('tr').forEach(row=>{const cell=row.lastElementChild;if(cell){cell.style.position='sticky';cell.style.right='0';cell.style.background='var(--surface,#fff)';cell.style.zIndex='1';}});}
+  const panel=document.querySelector('#perm-h')?.closest('.panel');
+  if(panel)panel.insertAdjacentHTML('afterbegin','<div class="pb"><a class="btn" href="/roles.php">Editar permisos por rol</a><p>Seleccione los módulos habilitados para cada perfil institucional. El administrador conserva acceso completo.</p></div>');
+};

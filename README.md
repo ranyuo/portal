@@ -41,3 +41,5 @@ PHP sin Laravel, MySQL, HTML, CSS y JavaScript. No requiere Composer, Node ni co
 Las pruebas se realizaron en PHP/MySQL y Chromium locales. Los QR del Libro fueron decodificados con un lector independiente y su enlace abrió el seguimiento en otra sesión. La aplicación de estos cambios en Hostinger requiere la subida y la actualización indicadas arriba; publicar en GitHub no modifica el hosting.
 
 El correo saliente y la recuperación por correo continúan pendientes por indicación del propietario. Los mensajes y respuestas se guardan en el portal.
+
+La mejora de **Usuarios y roles** incluye edición de permisos por perfil, filtros y control de sesiones. Consulte [MEJORA-USUARIOS-ROLES.md](MEJORA-USUARIOS-ROLES.md) para actualizar Hostinger y conocer el alcance de los permisos editables.

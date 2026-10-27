@@ -67,6 +67,10 @@ final class PortalApp
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
             );
+            try {
+                $roles=$this->connection->query("SELECT setting_value FROM pisco_settings WHERE setting_key='role_permissions'")->fetchColumn();
+                PortalPolicy::configureRoles($roles?json_decode($roles,true,flags:JSON_THROW_ON_ERROR):[]);
+            } catch(PDOException $error) { if($error->getCode()!=='42S02')throw $error;PortalPolicy::configureRoles([]); }
         }
         return $this->connection;
     }
@@ -133,7 +137,7 @@ final class PortalApp
         $data=PortalPolicy::project($full,$user,$this->publicData($full));
         $data['usuarios']=$this->visibleAccounts($user,$full);
         if($user&&$user['rol']==='admin'){$data['auditoria']=[...PortalAudit::rows($this),...PortalAudit::legacy($this,$full)];$data['academico']['bitacora']=array_map(fn($r)=>['id'=>$r['id'],'f'=>$r['fecha'],'u'=>$r['usuario'],'a'=>$r['accion'],'m'=>$r['entidad'],'d'=>$r['registro'].' · '.$r['detalle']],PortalAudit::rows($this));}
-        return ['data'=>$data,'revision'=>(int)$state['revision'],'user'=>$user,'csrf'=>$_SESSION['csrf'],'schema_version'=>PortalSchema::VERSION];
+        return ['data'=>$data,'revision'=>(int)$state['revision'],'user'=>$user,'csrf'=>$_SESSION['csrf'],'schema_version'=>PortalSchema::VERSION,'roles'=>PortalPolicy::definitions()['roles']];
     }
     public function input(): array
     {

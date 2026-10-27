@@ -21,11 +21,34 @@ final class PortalPolicy
         'postulaciones'=>'bolsa','perfilesLab'=>'bolsa','perfilesDoc'=>'docentes','uds'=>'config','docentes'=>'config',
         'ambientes'=>'config','modulos'=>'config','areas'=>'config','tramites'=>'config','programas'=>'config',
         'cfg'=>'config','perms'=>'usuarios','docs'=>'certificados'];
+    private static array $roleOverrides = [];
+    public static function configureRoles(array $roles): void { self::$roleOverrides=$roles; }
+    public static function validateRoles(array $roles): void
+    {
+        $base=self::defaults()['roles'];
+        foreach($roles as $key=>$role){
+            if($key==='admin'||!isset($base[$key])||!is_array($role)||array_diff(array_keys($role),['label','mods'])||!is_string($role['label']??null)||trim($role['label'])===''||strlen($role['label'])>100||!preg_match('/^[\p{L}\p{N} ._,()\/-]+$/u',$role['label'])||!is_array($role['mods']??null)||!array_is_list($role['mods']))throw new PortalError(422,'Configuración de roles no válida.');
+            foreach($role['mods'] as $mod)if(!is_string($mod)||!in_array($mod,$base[$key]['mods'],true))throw new PortalError(422,'Permiso fuera del ámbito del rol.');
+            if(!in_array('dashboard',$role['mods'],true))throw new PortalError(422,'El inicio del panel debe permanecer habilitado.');
+        }
+    }
+    public static function defaults(): array
+    {
+        static $base;return $base ??= json_decode(file_get_contents(__DIR__.'/contracts/original.json'),true,flags:JSON_THROW_ON_ERROR);
+    }
     public static function definitions(): array
     {
-        static $definitions;
-        return $definitions ??= json_decode(file_get_contents(__DIR__.'/contracts/original.json'), true, flags: JSON_THROW_ON_ERROR);
+        $base=self::defaults();
+        foreach(self::$roleOverrides as $key=>$role)if($key!=='admin'&&isset($base['roles'][$key]))$base['roles'][$key]=array_replace($base['roles'][$key],$role);
+        return $base;
     }
+    public static function collectionModule(string $key,array $user=[]): string
+    {
+        if($key==='personas'&&self::role($user)==='docente')return 'cvdocente';
+        foreach(self::defaults()['specs'] as $spec)if($spec['collection']===$key)return $spec['module'];
+        return ['slides'=>'portada','enlaces'=>'enlaces','categoriasNoticia'=>'noticias','tiposDocumento'=>'documentos','tupaDocs'=>'tupa','tiposBeca'=>'becas','becasPeriodos'=>'becas','becarios'=>'becas','personas'=>'docentes'][$key]??$key;
+    }
+
     public static function role(array $user): string { return $user['rol'] ?? 'admin'; }
     public static function can(array $user, string $module): bool
     {
@@ -112,7 +135,7 @@ final class PortalPolicy
         // Counters and academic settings contain no credentials and are required by existing forms.
         $out['config']=$full['config'];
         foreach(self::TOP as $key=>$roles){
-            if(!in_array($role,$roles,true))continue;
+            if(!in_array($role,$roles,true)||!self::can($user,self::collectionModule($key,$user)))continue;
             $value=$full[$key]??[];
             if(is_array($value)&&array_is_list($value)) {
                 $allowed=array_values(array_filter($value,fn($r)=>self::topScope($key,$r,$user)));
@@ -165,12 +188,13 @@ final class PortalPolicy
                 foreach($value as $setting=>$settingValue){
                     if(self::equal($settingValue,$visible['config'][$setting]??null))continue;
                     $allowed=$role==='admin'||($role==='imagen'&&in_array($setting,['home','popup','temas','tema'],true))||($role==='atencion'&&$setting==='bolsa');
+                    if($role!=='admin'&&!self::can($user,['home'=>'portada','popup'=>'portada','temas'=>'temas','tema'=>'temas','bolsa'=>'ix-bolsa'][$setting]??'config'))$allowed=false;
                     if(!$allowed)throw new PortalError(403,'Tu rol no puede modificar esa configuración.');
                     $out['config'][$setting]=$settingValue;
                 }
                 continue;
             }
-            if($role!=='admin'&&!in_array($role,self::TOP[$key]??[],true))throw new PortalError(403,'Tu rol no puede modificar '.$key.'.');
+            if($role!=='admin'&&(!in_array($role,self::TOP[$key]??[],true)||!self::can($user,self::collectionModule($key,$user))))throw new PortalError(403,'Tu rol no puede modificar '.$key.'.');
             if(is_array($value)&&array_is_list($value)&&is_array($full[$key]??null)&&array_is_list($full[$key])){
                 $out[$key]=self::mergeRows($key,$full[$key],$visible[$key]??[],$value,$user,fn($row)=>self::topScope($key,$row,$user));
             }elseif($role==='admin'||isset(self::TOP[$key]))$out[$key]=$value;

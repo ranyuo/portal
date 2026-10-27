@@ -24,7 +24,10 @@ final class PortalBackups
         $hash=hash_init('sha256');$write=function(array $item)use($stream,$hash){$line=json_encode($item,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE)."\n";hash_update($hash,$line);if(gzwrite($stream,$line)!==strlen($line))throw new PortalError(503,'No hay espacio suficiente para guardar el respaldo.');};
         $header=['format'=>'pisco-backup','version'=>1,'schema'=>PortalSchema::VERSION,'created_at'=>date(DATE_ATOM),'kind'=>$kind];$counts=[];
         try{
-            $db->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');$db->beginTransaction();$write($header);
+            $db->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');$db->beginTransaction();
+            $storedRoles=$db->query("SELECT setting_value FROM pisco_settings WHERE setting_key='role_permissions'")->fetchColumn();
+            $header['role_permissions']=$storedRoles?json_decode($storedRoles,true,flags:JSON_THROW_ON_ERROR):[];
+            PortalPolicy::validateRoles($header['role_permissions']);$write($header);
             foreach(self::TABLES as $table){$counts[$table]=0;
                 if($table==='pisco_files'){
                     $ids=$db->query('SELECT id FROM pisco_files ORDER BY id')->fetchAll(PDO::FETCH_COLUMN);$get=$db->prepare('SELECT * FROM pisco_files WHERE id=?');
@@ -73,6 +76,7 @@ final class PortalBackups
         try{
             $line=gzgets($s,67108866);$header=json_decode($line?:'',true,flags:JSON_THROW_ON_ERROR);
             if(($header['format']??'')!=='pisco-backup'||($header['version']??0)!==1||($header['schema']??0)>PortalSchema::VERSION)throw new PortalError(422,'Formato de respaldo no admitido. Usa una copia portable .piscobak de este portal.');
+            $roles=$header['role_permissions']??[];if(!is_array($roles))throw new PortalError(422,'Roles del respaldo no válidos.');PortalPolicy::validateRoles($roles);
             hash_update($hash,$line);$db->beginTransaction();$db->query('SELECT id FROM pisco_state WHERE id=1 FOR UPDATE')->fetch();
             foreach(array_reverse(self::TABLES) as $table)$db->exec('DELETE FROM '.$table);
             while(($line=gzgets($s,67108866))!==false){$total+=strlen($line);if($total>2147483648||!str_ends_with($line,"\n"))throw new PortalError(422,'Respaldo demasiado grande o incompleto.');$item=json_decode($line,true,flags:JSON_THROW_ON_ERROR);
@@ -110,6 +114,7 @@ final class PortalBackups
             }
             if(!$ended||$counts['pisco_state']!==1||(int)$db->query("SELECT COUNT(*) FROM pisco_users WHERE role='admin' AND active=1")->fetchColumn()<1)throw new PortalError(422,'Falta el final del respaldo o una cuenta administradora activa.');
             if((int)$db->query('SELECT COUNT(*) FROM pisco_files WHERE sha256<>SHA2(contents,256) OR size<>OCTET_LENGTH(contents)')->fetchColumn())throw new PortalError(422,'Los archivos del respaldo no coinciden con sus hashes.');
+            $db->prepare("INSERT INTO pisco_settings (setting_key,setting_value) VALUES ('role_permissions',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")->execute([json_encode($roles,JSON_THROW_ON_ERROR)]);
             PortalAudit::write($app,'Restaurar respaldo','Respaldos','',['fecha_copia'=>$header['created_at'],'registros'=>$counts],$actor);
             $db->commit();gzclose($s);$_SESSION=[];session_regenerate_id(true);$_SESSION['csrf']=bin2hex(random_bytes(32));return ['counts'=>$counts,'created_at'=>$header['created_at']];
         }catch(Throwable $e){if($db->inTransaction())$db->rollBack();gzclose($s);if($e instanceof JsonException||$e instanceof PDOException)throw new PortalError(422,'El respaldo contiene datos inválidos; no se aplicó ningún cambio.');throw $e;}

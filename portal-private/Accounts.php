@@ -2,6 +2,34 @@
 declare(strict_types=1);
 trait PortalAccounts
 {
+    public function roleSettings(): array
+    {
+        $this->requireAdmin();
+        $value=$this->db()->query("SELECT setting_value FROM pisco_settings WHERE setting_key='role_permissions'")->fetchColumn();
+        return $value?json_decode($value,true,flags:JSON_THROW_ON_ERROR):[];
+    }
+    public function saveRole(array $input): void
+    {
+        $actor=$this->requireAdmin();$this->rate('roles',60,60);
+        $key=$input['role']??null;$defaults=PortalPolicy::defaults()['roles'];
+        if(!is_string($key)||!isset($defaults[$key])||$key==='admin')throw new PortalError(422,'El administrador está protegido. Selecciona otro rol.');
+        $label=($input['reset']??false)===true?$defaults[$key]['label']:($input['label']??'');$mods=($input['reset']??false)===true?$defaults[$key]['mods']:($input['mods']??[]);
+        if(!is_string($label)||trim($label)===''||strlen($label)>100||!preg_match('/^[\p{L}\p{N} ._,()\/-]+$/u',$label)||!is_array($mods)||!array_is_list($mods))throw new PortalError(422,'Nombre o módulos del rol no válidos.');
+        foreach($mods as $mod)if(!is_string($mod)||!in_array($mod,$defaults[$key]['mods'],true))throw new PortalError(422,'Módulo ajeno al ámbito institucional del rol.');
+        $new=['label'=>trim($label),'mods'=>array_values(array_unique(['dashboard',...$mods]))];
+        // Los vínculos personales y el ámbito del programa no son permisos transferibles.
+        $this->transaction(function()use($input,$key,$new,$actor){
+            $this->state(true);
+            $current=$this->roleSettings();
+            if(!array_key_exists('expected',$input)||!PortalPolicy::equal($current[$key]??null,$input['expected']))throw new PortalError(409,'Otra persona modificó este rol. Recarga antes de guardar.');
+            if(($input['reset']??false)===true)unset($current[$key]);else $current[$key]=$new;
+            $this->db()->prepare("INSERT INTO pisco_settings (setting_key,setting_value) VALUES ('role_permissions',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")->execute([json_encode($current,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE)]);
+            $this->db()->prepare('UPDATE pisco_users SET auth_version=auth_version+1 WHERE role=?')->execute([$key]);
+            PortalAudit::write($this,'Modificar rol','Roles',$key,['nombre'=>$new['label'],'modulos'=>$new['mods'],'restaurado'=>$input['reset']??false],$actor);
+            return [];
+        });
+        PortalPolicy::configureRoles($this->roleSettings());
+    }
     private function accountInput(array $input,bool $creating=true): array
     {
         $data=self::validate($input,['username'=>'required|string|min:3|max:80','name'=>'required|string|max:150','email'=>'nullable|email|max:254']);
